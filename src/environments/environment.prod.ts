@@ -1,8 +1,8 @@
 export const environment = {
   production: true,
-  apiGraphQL: 'https://api.tmtshop.io.vn/graphql',
-  socket: 'https://api.tmtshop.io.vn/graphql',
-  apiRestFull: 'https://api.tmtshop.io.vn',
+  apiGraphQL: 'gocheckbe-production.up.railway.app/graphql',
+  socket: 'gocheckbe-production.up.railway.app/graphql',
+  apiRestFull: 'gocheckbe-production.up.railway.app',
   // keymap: 'AIzaSyAY5uooPOZnlgZ2hHjM3zqUj3q0PRqaky8',
   keymap: 'AIzaSyBXt-XpsrduzVKg1RSjuk5whVe9jfzALQQ',
 };
