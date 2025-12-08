@@ -1,0 +1,14 @@
+:host {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.no-underline {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: none;
+}

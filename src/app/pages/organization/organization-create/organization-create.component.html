@@ -1,0 +1,113 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3 p-3">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">
+            {{queryParams?.id === 'create' ? 'Thêm' : 'Cập nhật'}} chi nhánh/cửa hàng
+        </h1>
+        <div class="flex items-center gap-2">
+            <button class="bg-white border border-gray-400 text-gray-700 px-4 flex items-center gap-2"
+                [routerLink]="['/organization']">
+                <span class="text-gray-700 font-semibold">Hủy</span>
+            </button>
+            <button class="bg-primary text-white p-2 flex items-center gap-2" (click)="onSaveOrganization()">
+                <mat-icon class="text-white">save</mat-icon>
+                <span class="text-white">Lưu</span>
+            </button>
+        </div>
+    </div>
+    <div class="flex-1 grid grid-cols-5 gap-3 overflow-auto">
+        <div
+            class="h-full col-span-5 md:col-span-3 flex flex-col items-stretch justify-start overflow-auto scroll-none md:gray-500-scroll">
+            <div
+                class="flex-1 flex flex-col items-stretch justify-start overflow-auto border border-gray-500 rounded-md bg-white">
+                <div class="flex items-center justify-between bg-gray-400 p-2 h-14">
+                    <h2 class="text-lg font-bold px-2 text-orange-500 rounded-md">
+                        Thông tin chi nhánh/cửa hàng
+                    </h2>
+                </div>
+                <form [formGroup]="organizationForm"
+                    class="flex-1 flex flex-col items-stretch justify-start gap-3 p-4 overflow-auto">
+                    <!-- Thông tin cơ bản -->
+                    <div class="bg-white rounded-lg border border-gray-300 p-4">
+                        <h2 class="text-lg font-semibold mb-4 pb-2 border-b border-gray-200">Thông tin cơ bản</h2>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-col gap-1">
+                                <label class="require font-medium">Tên chi nhánh/cửa hàng</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput formControlName="name" placeholder="Nhập tên chi nhánh/cửa hàng">
+                                </mat-form-field>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="require font-medium">Tên thương hiệu</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput formControlName="shortName" placeholder="Nhập tên thương hiệu">
+                                </mat-form-field>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="require font-medium">Email</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput formControlName="email" placeholder="Nhập email" type="email">
+                                </mat-form-field>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 justify-end items-end">
+                                <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
+                                    <label class="require font-medium">Số điện thoại</label>
+                                    <mat-form-field appearance="outline" floatLabel="auto">
+                                        <input matInput formControlName="phone" placeholder="Nhập số điện thoại">
+                                    </mat-form-field>
+                                </div>
+                                <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
+                                    <mat-form-field appearance="outline" floatLabel="auto">
+                                        <input matInput value="Trạng thái" readonly>
+                                        <mat-slide-toggle matSuffix formControlName="isActive"></mat-slide-toggle>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="require font-medium">Địa chỉ</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <textarea matInput formControlName="address" placeholder="Nhập địa chỉ"
+                                        rows="3"></textarea>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div
+            class="h-full col-span-5 md:col-span-2 flex flex-col items-stretch justify-start overflow-auto scroll-none md:gray-500-scroll">
+            <div
+                class="flex-1 flex flex-col items-stretch justify-start overflow-auto border border-gray-500 rounded-md bg-white">
+                <div class="flex items-center justify-between bg-gray-400 p-2 h-14">
+                    <h2 class="text-lg font-bold px-2 text-orange-500 rounded-md">
+                        Danh sách thiết bị
+                    </h2>
+                </div>
+                <form [formGroup]="organizationForm"
+                    class="flex flex-col items-stretch justify-start gap-3 p-4 overflow-auto">
+                    <div class="flex items-stretch justify-start gap-2">
+                        <app-select-search class="flex-1" [options]="deviceList" formControlName="deviceId"
+                            [valueKey]="'id'" [labelKey]="'name'" [placeholder]="'Chọn thiết bị'"
+                            [searchQuery]="deviceSearchQuery" [searchDataKey]="'devices'"
+                            [searchObject]="deviceSearchObject" [searchable]="true"
+                            (selected)="onSelectedDevice($event)">
+                        </app-select-search>
+                    </div>
+                    <div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gap-2">
+                        <ng-container formArrayName="devices">
+                            @for(device of devices.controls; track device.value.id; let i = $index) {
+                            <div class="flex items-center justify-start gap-2" [formGroupName]="i">
+                                <p class="flex-1 m-0 break-words">{{device.value.name}}
+                                    (<small>{{device.value.serial}}</small>)</p>
+                                <button class="bg-transparent border-none" (click)="onRemoveDevice(i)">
+                                    <mat-icon class="text-red-500">delete</mat-icon>
+                                </button>
+                            </div>
+                            }
+                        </ng-container>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

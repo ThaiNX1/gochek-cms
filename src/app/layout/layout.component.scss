@@ -1,0 +1,31 @@
+.menu-item{
+    color: white !important;
+    padding: 0 10px !important;
+    &:hover{
+        cursor: pointer;
+        background-color: #FFFFFF !important;
+        mat-icon,span{
+            color: var(--primary-color) !important;
+        }
+    }
+}
+:host::ng-deep.mdc-list-item__primary-text{
+    color: #FFFFFF !important;
+}
+.active{
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+    background-color: #FFFFFF !important; 
+    mat-icon,span{
+        color: var(--primary-color) !important;
+    }
+    span{
+        font-weight: 500 !important;
+    }
+}
+
+:host::ng-deep .download-menu {
+    .mat-mdc-menu-panel {
+        min-width: 600px !important;
+        max-width: 700px !important;
+    }
+}

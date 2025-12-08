@@ -1,0 +1,115 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3 p-3">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">
+            {{queryParams?.id === 'create' ? 'Thêm' : 'Cập nhật'}} firmware
+        </h1>
+        <a [routerLink]="['/firmware']"
+            class="flex items-center justify-center gap-2 px-3 no-underline text-orange-500 rounded-md border-none font-semibold">
+            <mat-icon class="text-orange-500">arrow_back</mat-icon>
+            Quay lại
+        </a>
+    </div>
+    <div
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto gap-1 scroll-none md:gray-500-scroll p-5 bg-white border border-gray-400 rounded-md">
+        <form [formGroup]="firmwareForm" class="flex-1 grid grid-cols-3 gap-3">
+            <div class="h-full col-span-3 md:col-span-2 flex flex-col items-stretch justify-start gap-3 p-4">
+                <div class="flex flex-col items-stretch justify-start pb-4">
+                    <h1 class="text-xl font-bold">
+                        Thông tin firmware
+                    </h1>
+                    <mat-divider class="my-3"></mat-divider>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold require">Tên firmware:</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <input matInput formControlName="name" placeholder="Nhập tên firmware">
+                    </mat-form-field>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold require">Phiên bản:</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <input matInput formControlName="version" placeholder="Nhập phiên bản">
+                    </mat-form-field>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold">Mô tả:</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <textarea matInput formControlName="description" placeholder="Nhập mô tả" rows="3"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold">Ghi chú release:</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <textarea matInput formControlName="releaseNotes" placeholder="Nhập ghi chú release"
+                            rows="3"></textarea>
+                    </mat-form-field>
+                </div>
+                @if(firmwareForm.get('filePath')?.value) {
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold">Base path</label>
+                    <mat-form-field appearance="outline" floatLabel="auto" class="bg-gray-300" disabled>
+                        <input matInput formControlName="filePath" placeholder="Nhập base path" readonly>
+                    </mat-form-field>
+                </div>
+                }
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold">File firmware:</label>
+                    <div class="flex items-center justify-start gap-3">
+                        <button type="button" (click)="firmwareFileInput.click()"
+                            class="flex items-center justify-center gap-2 p-2 rounded-md border-none bg-primary">
+                            <mat-icon class="text-white">file_upload</mat-icon>
+                            <span class="text-white font-semibold">Tải lên</span>
+                        </button>
+                        <span class="flex-1 text-sm break-all">{{firmwareForm.get('firmwareFile')?.value?.name}}</span>
+                    </div>
+                    <input #firmwareFileInput type="file" class="hidden" (change)="onSelectFirmwareFile($event)">
+                </div>
+            </div>
+            <div
+                class="h-full col-span-3 md:col-span-1 flex flex-col items-stretch justify-start gap-3 p-4 border-l border-gray-400">
+                <div class="flex flex-col items-stretch justify-start pb-4">
+                    <h1 class="text-xl font-bold">
+                        Thông tin loại thiết bị
+                    </h1>
+                    <mat-divider class="my-3"></mat-divider>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold">Loại thiết bị</label>
+                    <app-select-search [options]="deviceTypeList" formControlName="deviceTypeId"
+                        [placeholder]="'Chọn loại thiết bị'" [valueKey]="'id'" [labelKey]="'name'" [searchable]="true"
+                        [searchQuery]="deviceTypeSearchQuery" [searchDataKey]="'deviceTypes'"
+                        (selected)="onSelectDeviceType($event)">
+                    </app-select-search>
+                </div>
+                @if(!deviceTypes.length) {
+                <div class="flex items-center justify-center gap-3">
+                    <mat-icon class="text-gray-500 text-2xl">folder</mat-icon>
+                    <span class="text-gray-500">Không có dữ liệu</span>
+                </div>
+                }
+                <ng-container formArrayName="deviceTypes">
+                    @for(deviceType of deviceTypes.controls; track deviceType.value.id; let i = $index) {
+                    <div class="flex items-center justify-start">
+                        <div class="flex-1 flex items-center justify-start gap-3" [formGroupName]="i">
+                            <span>{{deviceType.value.name}} ({{deviceType.value.code}})</span>
+                            <span class="font-semibold">{{deviceType.value.switchCount}}</span>
+                        </div>
+                        <button type="button" (click)="onRemoveDeviceType(i)"
+                            class="flex items-center justify-center border-none bg-white rounded-md p-2">
+                            <mat-icon class="text-red-500">delete</mat-icon>
+                        </button>
+                    </div>
+                    }
+                </ng-container>
+            </div>
+        </form>
+        <div class="flex items-center justify-center gap-3">
+            <button
+                class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
+                type="button" (click)="onSave()">
+                <mat-icon class="text-white text-xl">save</mat-icon>
+                <span class="text-white font-semibold">Lưu</span>
+            </button>
+        </div>
+    </div>
+</div>

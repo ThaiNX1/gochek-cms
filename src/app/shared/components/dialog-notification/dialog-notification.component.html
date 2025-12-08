@@ -1,0 +1,48 @@
+<div class="dialog-container" [style.width]="data.width" [style.height]="data.height">
+    <!-- Header -->
+    <div class="dialog-header">
+        @switch(data.type) {
+            @case('success') {
+                <mat-icon class="text-green-500 text-4xl">task_alt</mat-icon>
+            }
+            @case('warning') {
+                <mat-icon class="text-yellow-500 text-4xl">report_problem</mat-icon>
+            }
+            @case('error') {
+                <mat-icon class="text-red-500 text-4xl">report</mat-icon>
+            }
+            @default {
+                <mat-icon class="text-blue-500 text-4xl">info</mat-icon>
+            }
+        }
+        <h2 mat-dialog-title class="flex-1 text-left">{{ data.title }}</h2>
+        @if(data.showCloseButton){
+            <button class="flex items-center justify-center bg-transparent border-none outline-none"
+                (click)="onCancel()">
+                <mat-icon>close</mat-icon>
+            </button>
+        }
+    </div>
+
+    <!-- Content -->
+    <mat-dialog-content>
+        @if(content){
+            <ng-container [ngTemplateOutlet]="content"></ng-container>
+        }
+    </mat-dialog-content>
+
+    <!-- Actions -->
+    @if(data.showActions){
+        <mat-dialog-actions [align]="data.align">
+            <button class="flex items-center justify-center bg-white border border-gray-400 rounded-md px-3 py-2"
+                (click)="onCancel()">
+                {{ data.cancelText }}
+            </button>
+            <button class="flex items-center justify-center border border-transparent rounded-md text-white px-3 py-2"
+                [style.background]="getConfirmButtonColor()"
+                (click)="onConfirm()">
+                {{ data.confirmText }}
+            </button>
+        </mat-dialog-actions>
+    }
+</div>

@@ -1,0 +1,22 @@
+<!-- @if (isLoading()) {
+  <div
+    class="w-full h-full fixed top-0 left-0 bg-gray-500 flex items-center justify-center opacity-60"
+    [style.z-index]="1001"></div>
+  <div class="w-full h-full fixed top-0 left-0 bg-transparent flex flex-col items-center justify-center gap-3"
+       [style.z-index]="1002">
+      <div class="spinner-color-loop">
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>
+  </div>
+} -->
+<router-outlet></router-outlet>
+
+<!-- Global error dialog -->
+<ng-template #globalErrorDialogContent>
+  <p class="w-full text-left break-words">
+      {{ dataDialogNotification().message }}
+  </p>
+</ng-template>
+
+

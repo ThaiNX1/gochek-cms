@@ -1,0 +1,43 @@
+<div class="dialog-container" [style.width]="data.width" [style.height]="data.height">
+    <!-- Header -->
+    <div class="dialog-header">
+        <h2 mat-dialog-title>{{ data.title }}</h2>
+        @if(data.showCloseButton){
+            <button class="flex items-center justify-center bg-transparent border-none outline-none"
+                (click)="onCancel()">
+                <mat-icon>close</mat-icon>
+            </button>
+        }
+    </div>
+
+    <!-- Content -->
+    <mat-dialog-content>
+        @if(content){
+            <ng-container [ngTemplateOutlet]="content"></ng-container>
+        } @else if (data.message?.length) {
+            @switch (data.type) {
+                @case ('warning') {
+                    <p class="text-center">{{data.message}}</p>
+                }
+                @case ('error') {
+                    <p class="text-center">{{data.message}}</p>
+                }
+            }
+        } 
+    </mat-dialog-content>
+
+    <!-- Actions -->
+    @if(data.showActions){
+        <mat-dialog-actions [align]="data.align">
+            <button class="flex items-center justify-center bg-white border border-gray-400 rounded-md px-3 py-2"
+                (click)="onCancel()">
+                {{ data.cancelText }}
+            </button>
+            <button class="flex items-center justify-center border border-transparent rounded-md text-white px-3 py-2"
+                [style.background]="getConfirmButtonColor()"
+                (click)="onConfirm()">
+                {{ data.confirmText }}
+            </button>
+        </mat-dialog-actions>
+    }
+</div>

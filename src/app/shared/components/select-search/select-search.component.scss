@@ -1,0 +1,59 @@
+.select-search-container {
+  width: 100%;
+
+  .search-container {
+    padding: 8px 16px;
+    background: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+
+    .search-field {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+
+      ::ng-deep {
+        .mat-mdc-form-field-subscript-wrapper {
+          display: none;
+        }
+
+        .mat-mdc-form-field-infix {
+          padding: 8px 0;
+        }
+
+        .mat-mdc-form-field-flex {
+          padding: 0 8px;
+        }
+      }
+    }
+  }
+
+  .loading-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    background: white;
+  }
+
+  .no-data-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    color: rgba(0, 0, 0, 0.54);
+    font-size: 14px;
+    background: white;
+  }
+
+  ::ng-deep {
+    .mat-mdc-select-panel {
+      padding: 0;
+    }
+
+    .mat-mdc-option {
+      min-height: 36px;
+      padding: 0 16px;
+    }
+  }
+} 

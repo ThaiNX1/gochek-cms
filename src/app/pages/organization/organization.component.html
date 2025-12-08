@@ -1,0 +1,64 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <div class="flex items-center justify-between px-4">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-2xl font-bold">Danh sách chi nhánh/cửa hàng</h1>
+            <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-center justify-start gap-3">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
+                    <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
+                </mat-form-field>
+            </form>
+        </div>
+        <a [routerLink]="['/organization/create']"
+            class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400">
+            <mat-icon class="text-white">add</mat-icon>
+            Thêm mới
+        </a>
+    </div>
+    <app-table
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+        (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<ng-template myTemplate tempCode="logoColumnTemplate" let-item="item">
+    @if (item.logoPath?.length) {
+    <div class="flex items-center justify-center px-4">
+        <img class="w-8 h-8 object-contain" [src]="item.logoPath" />
+    </div>
+    }
+</ng-template>
+
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4">
+        @if(item.isActive) {
+        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Hoạt động</span>
+        } @else {
+        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Không hoạt động</span>
+        }
+    </div>
+</ng-template>
+
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4 gap-3">
+        <a [routerLink]="['/organization', item.id]"
+            class="flex items-center justify-center border-none bg-transparent no-underline">
+            <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+        </a>
+        <button class="flex items-center justify-center border-none bg-transparent" (click)="onToggleStatus(item)"
+            [title]="item.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'">
+            <mat-icon [class]="item.isActive ? 'text-orange-500 text-4xl' : 'text-green-500 text-4xl'">
+                {{ item.isActive ? 'toggle_on' : 'toggle_off' }}
+            </mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Dialog Template -->
+<ng-template #organizationDialogContent>
+    @if (dialogData.type === 'error'){
+    <p class="w-full text-center">
+        {{dialogData.message}}
+    </p>
+    }
+</ng-template>

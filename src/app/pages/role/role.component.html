@@ -1,0 +1,137 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3 p-3">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">
+            Danh sách quyền
+        </h1>
+        <a [routerLink]="['/organization']"
+            class="flex items-center justify-center gap-2 px-3 no-underline text-orange-500 rounded-md border-none font-semibold">
+            <mat-icon class="text-orange-500">arrow_back</mat-icon>
+            Quay lại
+        </a>
+    </div>
+    <div class="flex-1 grid grid-cols-3 gap-3 overflow-auto">
+        <div class="h-full col-span-3 md:col-span-1 flex flex-col items-stretch justify-start overflow-auto">
+            <div
+                class="flex-1 flex flex-col items-stretch justify-start overflow-auto border border-gray-400 rounded-md  bg-white">
+                <div class="flex items-center justify-between bg-gray-400 p-2">
+                    <h2 class="text-lg font-bold px-2 text-orange-500 rounded-md">
+                        Danh sách role
+                    </h2>
+
+                    <div class="flex items-center gap-2">
+                        @if (roleForm.value.id?.[0]) {
+                        <button class="bg-red-500 text-white p-2 flex items-center gap-2" (click)="onDeleteRole()">
+                            <mat-icon class="text-white">delete</mat-icon>
+                            <span class="text-white">Xóa</span>
+                        </button>
+                        }
+                        <button class="bg-primary text-white p-2 flex items-center gap-2" (click)="onAddRole()">
+                            <mat-icon class="text-white">add</mat-icon>
+                            <span class="text-white">Thêm role</span>
+                        </button>
+                    </div>
+                </div>
+
+                <form [formGroup]="roleForm" class="flex-1 overflow-auto px-3 gray-500-scroll">
+                    <mat-selection-list formControlName="id" [multiple]="false">
+                        @for(role of dataSource; track role.id) {
+                        <mat-list-option [value]="role.id"
+                            [style.background-color]="role.id === roleForm.value.id?.[0] ? 'var(--gray-400) !important' : ''">
+                            <span class="font-semibold">{{role.name}}</span>
+                            <span class="text-sm italic">{{role.organization?.name}}</span>
+                        </mat-list-option>
+                        }
+                    </mat-selection-list>
+                </form>
+                <mat-paginator [length]="pagination.total" [pageSizeOptions]="[10, 20, 50]" [pageSize]="pagination.size"
+                    aria-label="Select page" [hidePageSize]="true" (page)="onPageChange($event)">
+                </mat-paginator>
+            </div>
+        </div>
+        <div class="h-full col-span-3 md:col-span-2 flex flex-col items-stretch justify-start overflow-auto">
+            <div
+                class="flex-1 flex flex-col items-stretch justify-start overflow-auto border border-gray-400 rounded-md bg-white gap-3">
+                <div class="flex items-center justify-between bg-gray-400 p-2">
+                    <h2 class="text-lg font-bold px-2 text-orange-500 rounded-md">
+                        {{roleForm.value.name || 'Danh sách quyền'}}
+                    </h2>
+                    <button class="bg-primary text-white p-2 flex items-center gap-2" (click)="onSavePermission()">
+                        <mat-icon class="text-white">save</mat-icon>
+                        <span class="text-white">Lưu</span>
+                    </button>
+                </div>
+                <form [formGroup]="roleForm" class="flex-1 overflow-auto gray-500-scroll">
+                    <div class="flex flex-col items-stretch justify-start gap-3 p-3 overflow-auto">
+                        <ng-container formArrayName="permissions">
+                            @for(permission of permissions.controls; track permission.value.code; let i = $index) {
+                            <div class="flex flex-col items-stretch md:flex-row md:items-start justify-start gap-1"
+                                [formGroupName]="i">
+                                <label
+                                    class="text-sm font-semibold w-full md:w-[200px]">{{permission.value.name}}</label>
+                                <ng-container formArrayName="actions">
+                                    <div class="w-full md:flex-1 grid grid-cols-3 gap-3">
+                                        @for(action of getPermissionActions(i).controls; track action.value.id; let j =
+                                        $index) {
+                                        <div class="col-span-3 md:col-span-1 flex items-start justify-start w-full gap-1"
+                                            [formGroupName]="j">
+                                            <input type="checkbox" formControlName="checked" class="w-4 h-4">
+                                            <label class="text-sm flex-1 break-words">{{action.value.name}}</label>
+                                        </div>
+                                        }
+                                    </div>
+                                </ng-container>
+                            </div>
+                            <mat-divider class="w-full border-gray-300"
+                                style="border-style: dashed !important;"></mat-divider>
+                            }
+                        </ng-container>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dialog Template -->
+<ng-template #roleDialogContent>
+    <form [formGroup]="newRoleForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Tên role</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="name" placeholder="Nhập tên role">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Mã role</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <mat-select formControlName="code">
+                    @for(roleCode of roleCodes; track roleCode.code) {
+                    <mat-option [value]="roleCode.code">{{roleCode.name}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <!-- <div *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]" class="flex flex-col items-stretch justify-start gap-1">
+            <label class="text-sm font-semibold">Tổ chức</label>
+            <app-select-search [options]="organizations" 
+                formControlName="organizationId" [required]="true"
+                [valueKey]="'id'" [labelKey]="'name'"
+                [placeholder]="'Chọn tổ chức'"
+                [searchable]="true"
+                [searchQuery]="orgSearchQuery"
+                [searchDataKey]="'organizations'">
+            </app-select-search>
+        </div> -->
+    </form>
+    <div class="flex items-center justify-center gap-4 pt-3">
+        <button class="flex items-center justify-center bg-white border border-gray-400 rounded px-3 py-2"
+            (click)="onCancel()">
+            Hủy
+        </button>
+        <button
+            class="flex items-center justify-center border border-transparent rounded text-white px-3 py-2 bg-primary"
+            (click)="saveNewRole()">
+            Lưu
+        </button>
+    </div>
+</ng-template>

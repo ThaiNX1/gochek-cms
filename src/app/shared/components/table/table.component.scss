@@ -1,0 +1,26 @@
+.table-line-form {
+  th,
+  td {
+    padding: 0 !important;
+  }
+  th{
+    border-top-width: 0px !important;
+    border-bottom-width: 0px !important;
+  }
+}
+// :host ::ng-deep {
+//   .mat-mdc-table tbody, .mat-mdc-table tfoot, .mat-mdc-table thead, .mat-mdc-cell, .mat-mdc-footer-cell, .mat-mdc-header-row, .mat-mdc-row, .mat-mdc-footer-row, .mat-mdc-table .mat-mdc-header-cell{
+//     border: 1px solid #c0c7d0 !important;
+//   }
+// }
+:host ::ng-deep {
+  .mat-mdc-table thead, .mat-mdc-header-row, .mat-mdc-table .mat-mdc-header-cell{
+    border: 1px solid #c0c7d0 !important;
+    border-top-width: 0px !important;
+  }
+}
+:host ::ng-deep {
+  .mat-mdc-table tbody, .mat-mdc-table tfoot, .mat-mdc-cell, .mat-mdc-footer-cell, .mat-mdc-row, .mat-mdc-footer-row{
+    border: 1px solid #c0c7d0 !important;
+  }
+}

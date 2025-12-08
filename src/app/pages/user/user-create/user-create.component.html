@@ -1,0 +1,68 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3 p-3">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">
+            {{queryParams?.id === 'create' ? 'Thêm' : 'Cập nhật'}} người dùng
+        </h1>
+    </div>
+    <div
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto gap-1 scroll-none md:gray-500-scroll p-5 bg-white border border-gray-400 rounded-md">
+        <form [formGroup]="userForm" class="flex-1 grid grid-cols-3 gap-3">
+            <div class="h-full col-span-3 md:col-span-2 flex flex-col items-stretch justify-start gap-3 p-4">
+                <div class="flex flex-col items-stretch justify-start pb-4">
+                    <h1 class="text-xl font-bold">
+                        Thông tin người dùng
+                    </h1>
+                    <mat-divider class="my-3"></mat-divider>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold required">Tên người dùng</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <input matInput formControlName="name" placeholder="Nhập tên người dùng">
+                    </mat-form-field>
+                </div>
+                <div class="grid grid-cols-2 gap-3 justify-end items-end">
+                    <div class="flex flex-col items-stretch justify-start gap-1">
+                        <label class="text-sm font-semibold required">Email</label>
+                        <mat-form-field appearance="outline" floatLabel="auto">
+                            <input matInput formControlName="email" placeholder="Nhập email" type="email">
+                        </mat-form-field>
+                    </div>
+                    <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
+                        <mat-form-field appearance="outline" floatLabel="auto">
+                            <input matInput value="Trạng thái" readonly>
+                            <mat-slide-toggle matSuffix formControlName="isActive"></mat-slide-toggle>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold required">Role</label>
+                    <app-select-search [options]="roles" formControlName="roleIds" [placeholder]="'Chọn role'"
+                        [valueKey]="'id'" [labelKey]="'name'" [searchable]="true" [searchQuery]="roleSearchQuery"
+                        [searchDataKey]="'businessRoles'" [multiple]="true">
+                    </app-select-search>
+                </div>
+                <div *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]"
+                    class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold required">Tổ chức</label>
+                    <app-select-search [options]="organizations" formControlName="organizationId"
+                        [placeholder]="'Chọn tổ chức'" [valueKey]="'id'" [labelKey]="'name'" [searchable]="true"
+                        [searchQuery]="orgSearchQuery" [searchDataKey]="'organizations'">
+                    </app-select-search>
+                </div>
+            </div>
+        </form>
+        <div class="flex items-center justify-center gap-3">
+            <button
+                class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border border-gray-400 bg-white"
+                type="button" [routerLink]="['/user']">
+                <span class="text-gray-700 font-semibold">Hủy</span>
+            </button>
+            <button
+                class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
+                type="button" (click)="onSave()">
+                <mat-icon class="text-white text-xl">save</mat-icon>
+                <span class="text-white font-semibold">Lưu</span>
+            </button>
+        </div>
+    </div>
+</div>

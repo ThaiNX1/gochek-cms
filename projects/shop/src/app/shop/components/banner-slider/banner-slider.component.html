@@ -1,0 +1,97 @@
+<div class="relative w-full overflow-hidden rounded-2xl bg-gray-100">
+  <!-- Slides -->
+  <div class="relative aspect-[16/9] md:aspect-[16/6]">
+    <div
+      *ngFor="let banner of banners; let i = index"
+      [class.opacity-100]="currentIndex === i"
+      [class.opacity-0]="currentIndex !== i"
+      class="absolute inset-0 transition-opacity duration-500"
+    >
+      <a
+        *ngIf="banner.link; else noLink"
+        [routerLink]="banner.link"
+        class="block w-full h-full"
+      >
+        <img
+          [src]="banner.image"
+          [alt]="banner.title"
+          class="w-full h-full object-cover"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center"
+        >
+          <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-xl">
+              <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
+                {{ banner.title }}
+              </h2>
+              <p *ngIf="banner.subtitle" class="text-sm sm:text-base md:text-lg text-white/90">
+                {{ banner.subtitle }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </a>
+      <ng-template #noLink>
+        <img
+          [src]="banner.image"
+          [alt]="banner.title"
+          class="w-full h-full object-cover"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center"
+        >
+          <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-xl">
+              <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
+                {{ banner.title }}
+              </h2>
+              <p *ngIf="banner.subtitle" class="text-sm sm:text-base md:text-lg text-white/90">
+                {{ banner.subtitle }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Navigation Arrows -->
+  <button
+    *ngIf="banners.length > 1"
+    (click)="prev()"
+    class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-lg transition-all z-10"
+    aria-label="Previous slide"
+  >
+    <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+  <button
+    *ngIf="banners.length > 1"
+    (click)="next()"
+    class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-lg transition-all z-10"
+    aria-label="Next slide"
+  >
+    <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+
+  <!-- Dots -->
+  <div
+    *ngIf="banners.length > 1"
+    class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10"
+  >
+    <button
+      *ngFor="let banner of banners; let i = index"
+      (click)="goTo(i)"
+      [ngClass]="{
+        'bg-white': currentIndex === i,
+        'bg-white bg-opacity-50': currentIndex !== i
+      }"
+      class="w-2 h-2 rounded-full transition-all duration-300"
+      [attr.aria-label]="'Go to slide ' + (i + 1)"
+    ></button>
+  </div>
+</div>

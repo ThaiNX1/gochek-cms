@@ -1,0 +1,14 @@
+<div class="flex items-baseline gap-3">
+  <span class="text-3xl font-bold text-red-600">
+    {{ (salePrice || price) | number: '1.0-0' }}₫
+  </span>
+  <span *ngIf="salePrice" class="text-xl text-gray-400 line-through">
+    {{ price | number: '1.0-0' }}₫
+  </span>
+  <span
+    *ngIf="discountPercent > 0"
+    class="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded"
+  >
+    -{{ discountPercent }}%
+  </span>
+</div>

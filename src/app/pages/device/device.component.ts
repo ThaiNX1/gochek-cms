@@ -1,0 +1,262 @@
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { BaseClass } from '../../commons/base.class';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { TableComponent } from '../../shared/components/table/table.component';
+import { MatIconModule } from '@angular/material/icon';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DirectiveModule } from '../../shared/directive.module';
+import { PermissionEnum, TableColumnType } from '../../core/constants/enum';
+import { ApiService } from '../../core/services/api.service';
+import { ASSIGN_DEVICE_TO_ORGANIZATION, GET_DEVICES, IMPORT_DEVICE, REMOVE_DEVICE_FROM_ORGANIZATION } from '../../commons/queries/device.query';
+import { Device, PaginatedDeviceResponse, PaginatedDeviceTypeResponse, PaginatedOrganizationResponse } from '../../commons/types';
+import { PageEvent } from '@angular/material/paginator';
+import { GET_ORGANIZATIONS } from '../../commons/queries/organization.query';
+import { SelectSearchComponent } from "../../shared/components/select-search/select-search.component";
+import { GET_DEVICE_TYPES } from '../../commons/queries/device-type.query';
+import { constant } from '../../core/constants/constant';
+import { MatMenuModule } from '@angular/material/menu';
+import * as _ from 'lodash';
+import { DialogComponent } from '../../shared/components/dialog/dialog.component';
+import { MatDialog } from '@angular/material/dialog';
+import { DialogNotificationComponent } from '../../shared/components/dialog-notification/dialog-notification.component';
+@Component({
+  selector: 'app-device',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatIconModule,
+    MatInputModule,
+    MatFormFieldModule,
+    TableComponent,
+    RouterModule,
+    DirectiveModule,
+    ReactiveFormsModule,
+    SelectSearchComponent,
+    MatMenuModule
+  ],
+  templateUrl: './device.component.html',
+  styleUrl: './device.component.scss'
+})
+export class DeviceComponent extends BaseClass {
+  statusList: any[] = constant.deviceStatusList;
+  organizationList: any[] = [];
+  deviceTypeList: any[] = [];
+  deviceTypeEditList: any[] = [];
+  orgSearchQuery = GET_ORGANIZATIONS;
+  deviceTypeSearchQuery = GET_DEVICE_TYPES;
+  importDeviceForm!: FormGroup;
+
+  @ViewChild('assignOrganizationDialogContent') assignOrganizationDialogContent!: TemplateRef<any>;
+  assignOrganizationForm!: FormGroup;
+
+  @ViewChild('editDeviceDialogContent') editDeviceDialogContent!: TemplateRef<any>;
+  editDeviceForm!: FormGroup;
+
+  @ViewChild('removeDeviceFromOrganizationDialogNotification') removeDeviceFromOrganizationDialogNotification!: TemplateRef<any>;
+  removeDeviceFromOrganizationSelected: any = null;
+
+  constructor() {
+    super();
+    this.columns = [
+      { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER, },
+      { name: 'Tên thiết bị', field: 'name', className: 'min-w-[200px] max-w-[200px]' },
+      { name: 'Loại thiết bị', field: 'deviceTypeName', className: 'min-w-[200px] max-w-[200px]' },
+      { name: 'Mã loại thiết bị', field: 'deviceTypeCode', className: 'min-w-[150px] max-w-[150px]' },
+      { name: 'Serial number', field: 'serialNumber', className: 'min-w-[50px] max-w-[50px]' },
+      { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
+      { name: 'Tổ chức', field: 'organizationName', className: 'min-w-[200px] max-w-[200px]' },
+      { name: 'Trạng thái', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
+      { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
+    ]
+  }
+  override async ngOnInit(): Promise<void> {
+    super.ngOnInit();
+    this.filterForm = new FormGroup({
+      keyword: new FormControl(''),
+      organizationId: new FormControl(''),
+      deviceTypeId: new FormControl(''),
+      status: new FormControl(''),
+    });
+    this.importDeviceForm = new FormGroup({
+      deviceFile: new FormControl(null),
+    });
+    this.assignOrganizationForm = new FormGroup({
+      deviceId: new FormControl('', [Validators.required]),
+      organizationId: new FormControl('', [Validators.required])
+    });
+    this.editDeviceForm = new FormGroup({
+      id: new FormControl(''),
+      name: new FormControl(''),
+      serialNumber: new FormControl(''),
+      deviceTypeId: new FormControl(''),
+      note: new FormControl(''),
+    });
+    await Promise.all([
+      this.onGetDevice(),
+      this.hasPermission([PermissionEnum.DEVICE_TYPES_MANAGE]) && this.onGetDeviceType(),
+      this.hasPermission([PermissionEnum.ORGANIZATIONS_MANAGE]) && this.onGetOrganization()
+    ]);
+  }
+
+  async onGetDevice(page: number = 1) {
+    const response = await this.injector.get(ApiService).executeQuery<PaginatedDeviceResponse>(GET_DEVICES, {
+      pagination: {
+        page: page < 1 ? 1 : page,
+        size: 20,
+        keyword: this.filterForm.value.keyword ?? '',
+        organizationId: this.filterForm.value.organizationId ?? '',
+        deviceTypeId: this.filterForm.value.deviceTypeId ?? '',
+      },
+    });
+    this.dataSource = response?.devices?.data?.reduce((acc: any, item: any, index: number) => {
+      acc.push({
+        ...item,
+        index: index + 1,
+        deviceTypeName: item.deviceType?.name,
+        deviceTypeCode: item.deviceType?.code,
+        organizationName: item.organization?.name,
+        statusName: item.isActive ? 'Kích hoạt' : 'Chưa kích hoạt',
+      });
+      return acc;
+    }, []) ?? [];
+    this.pagination = {
+      ...this.pagination,
+      page: (response?.devices?.pagination?.page ?? 1) - 1,
+      size: response?.devices?.pagination?.size ?? 20,
+      total: response?.devices?.pagination?.total ?? 0
+    }
+  }
+
+  async onGetDeviceType() {
+    const response = await this.injector.get(ApiService).executeQuery<PaginatedDeviceTypeResponse>(GET_DEVICE_TYPES, {
+      pagination: {
+        page: 1,
+        size: 20,
+      },
+    });
+    this.deviceTypeList = response?.deviceTypes?.data ?? [];
+  }
+
+  async onGetOrganization() {
+    const response = await this.injector.get(ApiService).executeQuery<PaginatedOrganizationResponse>(GET_ORGANIZATIONS, {
+      pagination: {
+        page: 1,
+        size: 20,
+      },
+    });
+    this.organizationList = response?.organizations?.data ?? [];
+  }
+
+  async onPageChange(event: PageEvent) {
+    await this.onGetDevice(event.pageIndex + 1);
+  }
+
+  async onImportDevice(event: any) {
+    const file = event.target.files?.[0];
+    if (file) {
+      this.injector.get(ApiService).executeMutation<Device>(IMPORT_DEVICE,
+        {
+          file
+        }).then(async () => {
+          this.importDeviceForm.reset();
+          this.commonService.openSnackBar('Thêm thiết bị thành công');
+          await this.onGetDevice();
+        }).catch(error => {
+          this.commonService.openSnackBarError('Thêm thiết bị thất bại');
+          this.importDeviceForm.reset();
+        });
+    }
+  }
+
+  async onEditDevice(item: any) {
+    this.editDeviceForm.patchValue({
+      id: item.id,
+      name: item.name,
+      serialNumber: item.serialNumber,
+      deviceTypeId: item.deviceTypeId,
+      note: item.note,
+    });
+    this.deviceTypeEditList = [item.deviceType]
+  }
+
+  async onResetDevice(item: any) {
+    this.removeDeviceFromOrganizationSelected = item;
+    const dialogRef = this.injector.get(MatDialog).open(DialogNotificationComponent, {
+      disableClose: true,
+      data: {
+        title: 'Xóa thiết bị khỏi tổ chức',
+        confirmText: 'Xóa',
+        cancelText: 'Hủy'
+      }
+    });
+    dialogRef.componentInstance.content = this.removeDeviceFromOrganizationDialogNotification;
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.injector.get(ApiService).executeMutation<Device>(REMOVE_DEVICE_FROM_ORGANIZATION,
+          {
+            deviceIds: [this.removeDeviceFromOrganizationSelected.id]
+          }
+        ).then(async response => {
+          this.commonService.openSnackBar('Xóa thiết bị khỏi tổ chức thành công');
+          await this.onGetDevice(this.dataSource.length === 1
+            ? this.pagination.page - 1
+            : this.pagination.page);
+        }).catch(error => {
+          this.commonService.openSnackBarError('Xóa thiết bị khỏi tổ chức thất bại');
+        });
+      }
+    });
+  }
+
+  async onAssignOrganization(item: any) {
+    this.assignOrganizationForm.reset();
+    this.assignOrganizationForm.patchValue({
+      organizationId: item.organizationId,
+      deviceId: item.id,
+    });
+    const dialogRef = this.injector.get(MatDialog).open(DialogComponent, {
+      disableClose: true,
+      data: {
+        title: 'Gán tổ chức',
+        confirmText: 'Gán',
+        cancelText: 'Hủy',
+        showActions: false,
+      }
+    });
+    dialogRef.componentInstance.content = this.assignOrganizationDialogContent;
+  }
+
+  async onAssignOrganizationSave() {
+    this.assignOrganizationForm.markAllAsTouched();
+    if (this.assignOrganizationForm.invalid) {
+      this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    const response = await this.injector.get(ApiService).executeMutation<Device>(ASSIGN_DEVICE_TO_ORGANIZATION,
+      {
+        ...this.assignOrganizationForm.value
+      });
+    if (response) {
+      this.commonService.openSnackBar('Gán tổ chức thành công');
+      this.onCancel();
+      // const itemIndex = this.dataSource.findIndex(item => item.id === response.assignDeviceToOrganization.id);
+      // this.dataSource[itemIndex] = response.assignDeviceToOrganization;
+      await this.onGetDevice(this.pagination.page)
+    }
+  }
+
+  onCancel() {
+    this.injector.get(MatDialog).closeAll();
+  }
+
+  async onDeleteDevice(item: any) {
+    this.assignOrganizationForm.patchValue({
+      organizationId: item.organizationId,
+      note: item.note,
+    });
+  }
+}

@@ -1,0 +1,51 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <div class="flex items-center justify-between px-4">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-2xl font-bold">Danh sách người dùng</h1>
+            <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-center justify-start gap-3">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
+                    <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
+                </mat-form-field>
+            </form>
+        </div>
+        <a [routerLink]="['/user/create']"
+            class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400">
+            <mat-icon class="text-white">add</mat-icon>
+            Thêm người dùng
+        </a>
+    </div>
+    <app-table
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+        (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4">
+        @if(item.isActive) {
+        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Hoạt động</span>
+        } @else {
+        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Không hoạt động</span>
+        }
+    </div>
+</ng-template>
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4 gap-3">
+        <a [routerLink]="['/user', item.id]" class="flex items-center justify-center border-none bg-transparent">
+            <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+        </a>
+        <button class="flex items-center justify-center border-none bg-transparent" (click)="onResetPassword(item)">
+            <mat-icon class="text-gray-500">lock</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Dialog Template -->
+<ng-template #userDialogContent>
+    @if (dialogData.type === 'error'){
+    <p class="w-full text-center">
+        {{dialogData.message}}
+    </p>
+    }
+</ng-template>

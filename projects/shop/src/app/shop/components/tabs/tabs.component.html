@@ -1,0 +1,12 @@
+<div class="border-b border-gray-200">
+  <nav class="flex gap-8" aria-label="Tabs">
+    <button
+      *ngFor="let tab of tabs"
+      (click)="selectTab(tab.id)"
+      [class]="getTabClasses(tab.id)"
+      type="button"
+    >
+      {{ tab.label }}
+    </button>
+  </nav>
+</div>

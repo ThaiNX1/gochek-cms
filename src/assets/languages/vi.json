@@ -1,0 +1,15 @@
+{
+  "MENU_ADMIN": {},
+  "MENU_GUEST": {
+    "HOME": "Trang chủ",
+    "MESSENGER": "Tin nhắn",
+    "PROFILE": "Hồ sơ",
+    "DOCUMENT": "Tài liệu",
+    "APPROVAL": "Phê duyệt",
+    "BOOKING_CAR": "Đặt xe",
+    "BOOKING_ROOM": "Đặt phòng",
+    "PAY_SLIP": "Bảng lương",
+    "TASK": "Công việc",
+    "LOG_OUT": "Đăng xuất"
+  }
+}

@@ -1,0 +1,145 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <div class="flex items-center justify-between px-4">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-xl font-bold">Danh sách thiết bị</h1>
+            <form [formGroup]="filterForm"
+                class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-3">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
+                    <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
+                </mat-form-field>
+                <app-select-search *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]"
+                    class="w-full md:w-[200px] bg-white" [options]="deviceTypeList" formControlName="deviceTypeId"
+                    [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="deviceTypeSearchQuery"
+                    [searchDataKey]="'deviceTypes'" placeholder="Loại thiết bị">
+                </app-select-search>
+                <app-select-search *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]"
+                    class="w-full md:w-[200px] bg-white" [options]="organizationList" formControlName="organizationId"
+                    [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="orgSearchQuery"
+                    [searchDataKey]="'organizations'" placeholder="Chọn tổ chức">
+                </app-select-search>
+                <button type="button"
+                    class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                    (click)="onGetDevice()">
+                    Tìm kiếm
+                </button>
+            </form>
+        </div>
+        <button *permission="[PermissionEnum.DEVICES_MANAGE]"
+            class="p-3 flex items-center justify-center gap-2 px-3 bg-gray-400 rounded border border-gray-400"
+            [matMenuTriggerFor]="menu">
+            <mat-icon class="text-gray-500">more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+            <a href="assets/files/Template_import_device.xlsx" target="_blank"
+                class="flex items-center justify-start gap-4 border-none bg-transparent px-4">
+                <mat-icon class="text-gray-500">add</mat-icon>
+                Tải file mẫu
+            </a>
+            <button class="flex items-center justify-start gap-4 border-none bg-transparent px-4"
+                (click)="deviceFile.click()">
+                <mat-icon class="text-gray-500">upload</mat-icon>
+                Import thiết bị
+            </button>
+        </mat-menu>
+        <form [formGroup]="importDeviceForm" class="hidden">
+            <input #deviceFile type="file" formControlName="deviceFile" (change)="onImportDevice($event)"
+                accept=".xlsx" />
+        </form>
+    </div>
+    <app-table
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+        (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4">
+        @if(item.isActive) {
+        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Hoạt động</span>
+        } @else {
+        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Không hoạt động</span>
+        }
+    </div>
+</ng-template>
+
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div *permission="[PermissionEnum.DEVICES_MANAGE]" class="flex items-center justify-start px-4 gap-3">
+        <button class="flex items-center justify-center border-none bg-transparent" title="Chỉnh sửa"
+            (click)="onEditDevice(item)">
+            <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+        </button>
+        <button class="flex items-center justify-center border-none bg-transparent" title="Reset"
+            (click)="onResetDevice(item)">
+            <mat-icon class="text-gray-500">autorenew</mat-icon>
+        </button>
+        <button class="flex items-center justify-center border-none bg-transparent" title="Gán tổ chức"
+            (click)="onAssignOrganization(item)">
+            <mat-icon class="text-blue-300">send_time_extension</mat-icon>
+        </button>
+        <button class="flex items-center justify-center border-none bg-transparent" title="Xóa"
+            (click)="onDeleteDevice(item)">
+            <mat-icon class="text-red-500">delete</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Dialog assign organization Template -->
+<ng-template #assignOrganizationDialogContent>
+    <form [formGroup]="assignOrganizationForm"
+        class="w-full md:w-[400px] flex flex-col items-stretch justify-start gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Tổ chức:</label>
+            <app-select-search class="bg-white" [options]="organizationList" formControlName="organizationId"
+                [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="orgSearchQuery" [searchDataKey]="'organizations'"
+                placeholder="Chọn tổ chức">
+            </app-select-search>
+        </div>
+        <div class="flex items-center justify-center gap-3">
+            <button class="flex items-center justify-center gap-2 px-4 bg-gray-400 rounded border border-gray-400"
+                (click)="onCancel()">
+                Hủy
+            </button>
+            <button class="flex items-center justify-center gap-2 px-4 bg-primary text-white font-semibold"
+                (click)="onAssignOrganizationSave()">
+                Gán
+            </button>
+        </div>
+    </form>
+</ng-template>
+
+<!-- Dialog edit device Template -->
+<ng-template #editDeviceDialogContent>
+    <form [formGroup]="editDeviceForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Tên thiết bị:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="name" placeholder="Nhập tên thiết bị">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Serial Number:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="serialNumber" placeholder="Nhập serial number">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Loại thiết bị:</label>
+            <app-select-search class="w-full md:w-[200px] bg-white" [options]="deviceTypeEditList"
+                formControlName="deviceTypeId" [valueKey]="'id'" [labelKey]="'name'"
+                [searchQuery]="deviceTypeSearchQuery" [searchDataKey]="'deviceTypes'" placeholder="Loại thiết bị">
+            </app-select-search>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Ghi chú:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="note" placeholder="Nhập ghi chú" rows="5"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+</ng-template>
+
+<!-- Dialog remove device from organization Template -->
+<ng-template #removeDeviceFromOrganizationDialogNotification>
+    <p>Bạn có chắc muốn xóa thiết bị {{removeDeviceFromOrganizationSelected?.name}} khỏi tổ chức?</p>
+</ng-template>

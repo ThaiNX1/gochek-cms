@@ -1,0 +1,158 @@
+<div class="w-full h-full flex items-stretch justify-start">
+  <mat-sidenav-container class="w-full h-full">
+    <mat-sidenav #sidenav [mode]="sidenavMode" [opened]="isSidenavOpen"
+      class="!w-80 !bg-primary">
+      <div class="h-16 flex items-center justify-center border-b !bg-primary/80">
+        <img [src]="logoPath()" alt="logo" class="object-contain h-12">
+      </div>
+      <mat-nav-list class="flex-1 flex flex-col items-stretch justify-start overflow-y-auto">
+        @for (menu of menus; track menu.path) {
+        <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: menu }"></ng-container>
+        }
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="flex flex-col items-stretch justify-start overflow-auto"
+      style="display:flex !important;">
+      <mat-toolbar class="h-16 border-b border-gray-400 flex items-center justify-between px-4 !bg-white">
+        <div class="flex items-center justify-start">
+          <button class="flex md:hidden items-center justify-center border-none" (click)="sidenav.toggle()">
+            <mat-icon>menu</mat-icon>
+          </button>
+          @if(!commonService.smallScreen()) {
+          <!-- @for(header of commonService.headerInfo(); track header.id; let i = $index) {
+              @if(i < commonService.headerInfo().length - 1) {
+                <span class="text-sm font-semibold">></span>
+              }
+            } -->
+          <span class="font-semibold">{{commonService.headerInfo()?.title || 'Oxii Work'}}</span>
+          }
+        </div>
+        <div class="flex md:hidden items-center justify-center">
+          <img [src]="logoPathMobile()" alt="logo" class="object-contain h-12">
+        </div>
+        <div class="flex items-center justify-end gap-3">
+          @if(downloadList().length > 0) {
+            <button class="flex items-center justify-center border-none relative" [matMenuTriggerFor]="downloadMenu">
+              @if(isDownloading()) {
+                <mat-icon class="text-green-600 animate-spin">data_usage</mat-icon>
+              } @else {
+                <mat-icon class="text-gray-600">arrow_circle_down</mat-icon>
+              }
+              @if(downloadList().length > 0) {
+                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {{downloadList().length}}
+                </span>
+              }
+            </button>
+          }
+          @if(!commonService.smallScreen()) {
+          <div class="flex flex-col items-start justify-start">
+            <span class="text-sm font-semibold">{{userInfo?.name}}</span>
+            <span class="text-sm text-gray-500">{{userInfo?.email}}</span>
+          </div>
+          <mat-divider [vertical]="true" class="border-gray-500"></mat-divider>
+          }
+          <button class="flex items-center justify-center border-none" [matMenuTriggerFor]="userMenu">
+            <mat-icon>account_circle</mat-icon>
+          </button>
+        </div>
+        <mat-menu #downloadMenu="matMenu" class="download-menu">
+          <div class="px-4 py-2 border-b border-gray-300 flex items-center justify-between">
+            <span class="font-semibold text-sm">Danh sách tải xuống</span>
+            @if(downloadList().length > 0) {
+              <button class="text-xs text-blue-500 hover:text-blue-700 border-none bg-transparent"
+                (click)="clearDownloadList(); $event.stopPropagation()">
+                Xóa tất cả
+              </button>
+            }
+          </div>
+          @if(downloadList().length === 0) {
+            <div class="px-4 py-3 text-center text-gray-500 text-sm">
+              Không có file tải xuống
+            </div>
+          } @else {
+            <div class="max-h-96 overflow-y-auto">
+              @for(item of downloadList(); track item.id) {
+                <div class="px-4 py-3 hover:bg-gray-100 border-b border-gray-200 flex items-start justify-between gap-2"
+                  [class.cursor-pointer]="item.status === 'completed'"
+                  (click)="item.status === 'completed' && downloadFile(item)">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-900 truncate">{{item.filename}}</div>
+                    <div class="text-xs mt-1 flex items-center gap-1" [ngClass]="getDownloadStatusColor(item.status)">
+                      @if(item.status === 'completed') {
+                        <mat-icon class="text-xs">download</mat-icon>
+                      }
+                      {{getDownloadStatusText(item.status)}}
+                    </div>
+                  </div>
+                  <button class="border-none bg-transparent p-0 flex-shrink-0"
+                    (click)="removeDownloadItem(item.id); $event.stopPropagation()"
+                    title="Xóa">
+                    <mat-icon class="text-gray-400 hover:text-red-500 text-sm">close</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </mat-menu>
+
+        <mat-menu #userMenu="matMenu">
+          <button mat-menu-item class="flex items-center justify-start gap-2 border-none px-3 border-b border-gray-500">
+            <mat-icon>account_circle</mat-icon>
+            <span>Hồ sơ</span>
+          </button>
+          <button mat-menu-item class="flex items-center justify-start gap-2 border-none px-3 border-b border-gray-500"
+            (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Đăng xuất</span>
+          </button>
+        </mat-menu>
+      </mat-toolbar>
+      <div class="p-4 flex-1 flex flex-col items-stretch justify-start overflow-auto bg-[#f6f7fb]">
+        <router-outlet></router-outlet>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>
+
+@if (isLoading()) {
+  <div class="w-full h-full fixed top-0 left-0 bg-gray-300 flex items-center justify-center opacity-60"
+    [style.z-index]="99998"></div>
+  <div class="w-full h-full fixed top-0 left-0 bg-transparent flex items-center justify-center"
+    [style.z-index]="99999">
+    <div class="spinner-color-loop">
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+  </div>
+}
+
+<ng-template #menuItemTemplate let-menu="menu">
+  @if (menu?.children?.length) {
+  <a mat-list-item (click)="menu.isExpanded = !menu.isExpanded" [title]="menu.name"
+    class="flex items-center justify-start gap-3 menu-item">
+    <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
+    <span matListItemTitle>{{menu.name}}</span>
+  </a>
+  <div class="flex flex-col items-stretch justify-start pl-8"
+    [@menuExpand]="menu.isExpanded ? 'expanded' : 'collapsed'">
+    @for (child of menu.children; track child.id) {
+    <!-- <a mat-list-item [routerLink]="child.path" routerLinkActive="active"
+            class="flex items-center justify-start gap-3 menu-item">
+            <mat-icon matListItemIcon>{{child.icon}}</mat-icon>
+            <span matListItemTitle>{{child.name}}</span>
+          </a> -->
+    <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child }"></ng-container>
+    }
+  </div>
+  }
+  @else {
+  <a mat-list-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams" [title]="menu.name"
+    routerLinkActive="active" class="flex items-center justify-start gap-3 menu-item"
+    (click)="commonService.smallScreen() ? sidenav.close() : null; onUpdateHeaderInfo(menu)">
+    <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
+    <span matListItemTitle>{{menu.name}}</span>
+  </a>
+  }
+</ng-template>

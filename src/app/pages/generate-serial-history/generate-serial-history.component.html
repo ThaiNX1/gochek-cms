@@ -1,0 +1,94 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <div class="flex items-center justify-between px-4">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-xl font-bold">Danh sách thiết bị</h1>
+            <form [formGroup]="filterForm"
+                class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-3">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
+                    <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
+                </mat-form-field>
+                <button type="button"
+                    class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                    (click)="onGetHistory()">
+                    Tìm kiếm
+                </button>
+            </form>
+        </div>
+        <div class="flex items-center justify-end gap-3">
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-3 bg-green-500 text-white font-semibold"
+                (click)="onReload()">
+                <mat-icon class="text-white">refresh</mat-icon>
+                Tải lại
+            </button>
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                (click)="onGenerate()">
+                <mat-icon class="text-white">add</mat-icon>
+                Sinh mã mới
+            </button>
+        </div>
+    </div>
+    <app-table
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+        (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div *permission="[PermissionEnum.DEVICES_MANAGE]" class="flex items-center justify-start px-4 gap-3">
+        <button class="flex items-center justify-center border-none bg-transparent" title="Tải xuống"
+            (click)="onDownload(item)">
+            <mat-icon class="text-gray-500">sim_card_download</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Dialog assign organization Template -->
+<ng-template #generateSerialDialogContent>
+    @if(dialogData.type === 'default'){
+    <form [formGroup]="generateSerialForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Tiền tố:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input type="text" placeholder="Chọn tiền tố (3 ký tự)" matInput formControlName="prefix" minlength="3"
+                    maxlength="3" [matAutocomplete]="auto">
+                <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                    @for (option of prefixStrList; track option) {
+                    <mat-option [value]="option">{{option}}</mat-option>
+                    }
+                </mat-autocomplete>
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Số lượng mã sinh:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput type="number" formControlName="count" placeholder="Nhập số lượng mã">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Ghi chú</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="descriptor" placeholder="Nhập ghi chú" rows="3"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+
+    <div class="flex items-center justify-center gap-4 pt-3">
+        <button class="flex items-center justify-center bg-white border border-gray-400 rounded px-3 py-2"
+            (click)="onCancel()">
+            Hủy
+        </button>
+        <button
+            class="flex items-center justify-center border border-transparent rounded text-white px-3 py-2 bg-primary"
+            (click)="onSave()">
+            Lưu
+        </button>
+    </div>
+    }@else if (dialogData.type === 'error'){
+    <p class="w-full text-center">
+        Bạn có chắc chắn muốn xóa hóa đơn này không?
+    </p>
+    }
+</ng-template>

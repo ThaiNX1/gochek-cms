@@ -1,0 +1,42 @@
+.dialog-container {
+    display: flex;
+    flex-direction: column;
+    min-width: 300px;
+    max-width: 90vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 4px;
+}
+
+.dialog-header {
+    height: 60px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    padding: 0 16px;
+
+    h2 {
+        &::before {
+            height: 0 !important;
+        }
+        margin: 0;
+        font-size: 20px;
+        font-weight: 500;
+        padding: 0 !important;
+    }
+}
+
+mat-dialog-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    margin: 0;
+}
+
+mat-dialog-actions {
+    margin: 0;
+    padding: 8px 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    gap: 8px;
+}
