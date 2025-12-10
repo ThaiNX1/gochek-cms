@@ -65,7 +65,7 @@ export class DeviceComponent extends BaseClass {
       { name: 'Tên thiết bị', field: 'name', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Loại thiết bị', field: 'deviceTypeName', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Mã loại thiết bị', field: 'deviceTypeCode', className: 'min-w-[150px] max-w-[150px]' },
-      { name: 'Serial number', field: 'serialNumber', className: 'min-w-[50px] max-w-[50px]' },
+      { name: 'Serial number', field: 'serialNumber', className: 'min-w-[100px] max-w-[100px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'Tổ chức', field: 'organizationName', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Trạng thái', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
