@@ -93,10 +93,14 @@ export type CreateDeviceTypeInput = {
 export type CreateFirmwareInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   deviceTypeIds?: InputMaybe<Array<Scalars['String']['input']>>;
-  fileName: Scalars['String']['input'];
-  filePath: Scalars['String']['input'];
+  fileName?: InputMaybe<Scalars['String']['input']>;
+  filePath?: InputMaybe<Scalars['String']['input']>;
+  md5?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+  raFileName?: InputMaybe<Scalars['String']['input']>;
+  raFilePath?: InputMaybe<Scalars['String']['input']>;
   releaseNotes?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<FirmwareTypeEnum>;
   version: Scalars['String']['input'];
 };
 
@@ -161,11 +165,12 @@ export type Device = {
   organization?: Maybe<Organization>;
   organizationId?: Maybe<Scalars['String']['output']>;
   otaStatus?: Maybe<DeviceControlOtaStatusEnum>;
-  owner?: Maybe<User>;
   ownerId?: Maybe<Scalars['String']['output']>;
   prefix?: Maybe<Scalars['String']['output']>;
   privateKeyBasepath?: Maybe<Scalars['String']['output']>;
   publicKeyBasepath?: Maybe<Scalars['String']['output']>;
+  raFirmware?: Maybe<Firmware>;
+  raFirmwareId?: Maybe<Scalars['String']['output']>;
   secretKey?: Maybe<Scalars['String']['output']>;
   serialNumber: Scalars['String']['output'];
   signature?: Maybe<Scalars['String']['output']>;
@@ -199,9 +204,11 @@ export type DeviceGenerateSerialNumberInput = {
 };
 
 export type DeviceOnboardInput = {
-  id: Scalars['String']['input'];
+  ids: Array<Scalars['String']['input']>;
   latitude?: InputMaybe<Scalars['Float']['input']>;
   longitude?: InputMaybe<Scalars['Float']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  ownerId: Scalars['String']['input'];
 };
 
 export type DeviceSearchInput = {
@@ -248,6 +255,8 @@ export type DeviceType = {
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
+  raFirmware?: Maybe<Firmware>;
+  raFirmwareId?: Maybe<Scalars['String']['output']>;
   switchCount?: Maybe<Scalars['Float']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   warrantyMonth?: Maybe<Scalars['Float']['output']>;
@@ -269,15 +278,23 @@ export type Firmware = {
   description?: Maybe<Scalars['String']['output']>;
   deviceTypes?: Maybe<Array<DeviceType>>;
   devices?: Maybe<Array<Device>>;
-  fileName: Scalars['String']['output'];
-  filePath: Scalars['String']['output'];
+  fileName?: Maybe<Scalars['String']['output']>;
+  filePath?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
+  md5?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   releaseNotes?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<FirmwareTypeEnum>;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['String']['output'];
 };
+
+/** The different types of firmware type */
+export enum FirmwareTypeEnum {
+  ESP_FIRMWARE = 'ESP_FIRMWARE',
+  RA_FIRMWARE = 'RA_FIRMWARE'
+}
 
 export type GenerateHistory = {
   createdAt: Scalars['DateTime']['output'];
@@ -316,12 +333,11 @@ export type LoginResponse = {
 };
 
 export type Mutation = {
-  activeDevice: Array<Device>;
   appLogin: LoginResponse;
   assignPermissionRole: Permission;
   assignUserRole: User;
   changePassword: User;
-  completeOnboarding: Device;
+  completeOnboarding: Array<Device>;
   confirmOtp: Scalars['Boolean']['output'];
   createBusinessRole: BusinessRole;
   createCountry: Country;
@@ -355,12 +371,6 @@ export type Mutation = {
   updateOrganization: Organization;
   updateUser: User;
   uploadFile: UploadFileResponse;
-  verifySignature: Scalars['Boolean']['output'];
-};
-
-
-export type MutationActiveDeviceArgs = {
-  ids: Array<Scalars['String']['input']>;
 };
 
 
@@ -547,11 +557,7 @@ export type MutationUpdateUserArgs = {
 export type MutationUploadFileArgs = {
   file: Scalars['Upload']['input'];
   folder: Scalars['String']['input'];
-};
-
-
-export type MutationVerifySignatureArgs = {
-  signature: Scalars['String']['input'];
+  md5?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type Organization = {
@@ -858,8 +864,10 @@ export type UpdateFirmwareInput = {
   fileName?: InputMaybe<Scalars['String']['input']>;
   filePath?: InputMaybe<Scalars['String']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  md5?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   releaseNotes?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<FirmwareTypeEnum>;
   version?: InputMaybe<Scalars['String']['input']>;
 };
 

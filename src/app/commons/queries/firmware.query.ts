@@ -20,6 +20,7 @@ query GetFirmwares($pagination: PaginationInput) {
             fileName
             releaseNotes
             version
+            type
         }
     }
 }
@@ -38,6 +39,7 @@ query GetFirmware($id: ID!) {
         releaseNotes
         version
         fileName
+        md5
         deviceTypes {
             id
             name
@@ -61,6 +63,7 @@ mutation CreateFirmware($input: CreateFirmwareInput!) {
         releaseNotes
         version
         fileName
+        md5
         deviceTypes {
             id
             name
@@ -84,6 +87,7 @@ mutation UpdateFirmware($id: ID!, $input: UpdateFirmwareInput!) {
         releaseNotes
         version
         fileName
+        md5
         deviceTypes {
             id
             name

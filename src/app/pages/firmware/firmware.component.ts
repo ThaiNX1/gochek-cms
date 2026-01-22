@@ -11,7 +11,7 @@ import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
-import { PaginatedFirmwareResponse } from '../../commons/types';
+import { FirmwareTypeEnum, PaginatedFirmwareResponse } from '../../commons/types';
 import { DELETE_FIRMWARE, GET_FIRMWARES } from '../../commons/queries/firmware.query';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -55,6 +55,7 @@ export class FirmwareComponent extends BaseClass {
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'Phiên bản', field: 'version', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'File firmware', field: 'fileName', className: 'min-w-[200px] max-w-[200px]' },
+      { name: 'Loại', field: 'typeName', className: 'min-w-[100px] max-w-[100px]' },
       { name: 'Mô tả', field: 'description', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Ghi chú release', field: 'releaseNotes', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Trạng thái', field: 'status', className: 'min-w-[80px] max-w-[80px]', templateCode: 'statusColumnTemplate' },
@@ -83,6 +84,7 @@ export class FirmwareComponent extends BaseClass {
         ...item,
         index: index + 1,
         status: item.isActive ? 'Hoạt động' : 'Không hoạt động',
+        typeName: item.type === FirmwareTypeEnum.ESP_FIRMWARE ? 'ESP32' : 'RA'
       });
       return acc;
     }, []) ?? [];

@@ -29,7 +29,7 @@ import { DialogNotificationComponent, DialogNotificationData } from './shared/co
   styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'SOffice17';
+  title = 'gochek-cms';
   displayNameMap = new Map([
     [Breakpoints.XSmall, 'XSmall'],
     [Breakpoints.Small, 'Small'],

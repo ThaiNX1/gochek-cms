@@ -56,6 +56,7 @@ export class FirmwareCreateComponent extends BaseClass {
       deviceTypeId: new FormControl(null),
       deviceTypes: new FormArray([]),
       firmwareFile: new FormControl(null),
+      md5: new FormControl(null, [Validators.required]),
     });
     this.deviceTypes = this.firmwareForm.get('deviceTypes') as FormArray;
     this.injector.get(ActivatedRoute).params.subscribe(async (params: any) => {
@@ -79,6 +80,7 @@ export class FirmwareCreateComponent extends BaseClass {
       releaseNotes: response?.firmware?.releaseNotes,
       description: response?.firmware?.description,
       firmwareFile: null,
+      md5: response?.firmware?.md5,
     });
     this.deviceTypes.clear();
     response?.firmware?.deviceTypes?.forEach((deviceType: any) => {
@@ -131,12 +133,14 @@ export class FirmwareCreateComponent extends BaseClass {
       return;
     }
     if (this.firmwareForm.get('firmwareFile')?.value) {
+
       const response = await this.injector.get(ApiService).executeMutation(UPLOAD_FILE, {
         file: this.firmwareForm.get('firmwareFile')?.value,
         folder: constant.fileFolder.firmwares,
       });
+
       if (response?.uploadFile) {
-        this.firmwareForm.get('filePath')?.setValue(response.uploadFile);
+        this.firmwareForm.get('filePath')?.setValue(response.uploadFile?.basePath);
         this.firmwareForm.get('fileName')?.setValue(this.firmwareForm.get('firmwareFile')?.value?.name);
       }
     }
@@ -147,6 +151,7 @@ export class FirmwareCreateComponent extends BaseClass {
       releaseNotes: this.firmwareForm.get('releaseNotes')?.value,
       filePath: this.firmwareForm.get('filePath')?.value,
       fileName: this.firmwareForm.get('fileName')?.value,
+      md5: this.firmwareForm.get('md5')?.value,
       deviceTypeIds: this.deviceTypes.getRawValue()?.map((deviceType: any) => deviceType.id) || [],
     }
     const response = this.firmwareForm.value?.id

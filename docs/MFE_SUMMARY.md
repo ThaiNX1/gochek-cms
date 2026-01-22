@@ -86,10 +86,10 @@ These services are **singleton** across Shell and Shop.
 
 ```json
 {
-  "start:shell": "ng serve --project OxiiCore --port 4500",
+  "start:shell": "ng serve --project Gochek --port 4500",
   "start:shop": "ng serve --project shop --port 4201",
   "start:mfe": "concurrently \"npm run start:shell\" \"npm run start:shop\"",
-  "build:shell": "ng build OxiiCore --configuration production",
+  "build:shell": "ng build Gochek --configuration production",
   "build:shop": "ng build shop --configuration production",
   "build:all-mfe": "npm run build:shop && npm run build:shell"
 }

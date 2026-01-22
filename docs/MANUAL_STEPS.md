@@ -6,10 +6,10 @@ Due to the complexity of the `angular.json` file, you need to manually add the S
 
 ## 📝 Step 1: Update angular.json
 
-Open `angular.json` and add the Shop project configuration after the OxiiCore project.
+Open `angular.json` and add the Shop project configuration after the Gochek project.
 
 ### Location
-Find the `"projects"` section and add this after `"OxiiCore": { ... }`:
+Find the `"projects"` section and add this after `"Gochek": { ... }`:
 
 ```json
 "shop": {
@@ -120,11 +120,11 @@ Verify these directories exist:
 
 ## 📝 Step 4: Update Shell Builder (Already Done)
 
-The Shell (OxiiCore) builder has been updated to use `ngx-build-plus:browser` with webpack config.
+The Shell (Gochek) builder has been updated to use `ngx-build-plus:browser` with webpack config.
 
 Verify in `angular.json`:
 ```json
-"OxiiCore": {
+"Gochek": {
   "architect": {
     "build": {
       "builder": "ngx-build-plus:browser",

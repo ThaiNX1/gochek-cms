@@ -3,7 +3,7 @@
 	"version": 1,
 	"newProjectRoot": "projects",
 	"projects": {
-		"OxiiCore": {
+		"Gochek": {
 			"projectType": "application",
 			"schematics": {
 				"@schematics/angular:component": {
@@ -113,10 +113,10 @@
 					"builder": "@angular-devkit/build-angular:dev-server",
 					"configurations": {
 						"production": {
-							"buildTarget": "OxiiCore:build:production"
+							"buildTarget": "Gochek:build:production"
 						},
 						"development": {
-							"buildTarget": "OxiiCore:build:development",
+							"buildTarget": "Gochek:build:development",
 							"port": 4500
 						}
 					},
@@ -128,7 +128,7 @@
 				"extract-i18n": {
 					"builder": "@angular-devkit/build-angular:extract-i18n",
 					"options": {
-						"buildTarget": "OxiiCore:build"
+						"buildTarget": "Gochek:build"
 					}
 				},
 				"test": {

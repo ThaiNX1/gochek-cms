@@ -179,7 +179,7 @@ Add Shop project to `angular.json`:
 # Terminal 1: Start Shell (Host)
 npm run start:shell
 # or
-ng serve --project OxiiCore --port 4500
+ng serve --project Gochek --port 4500
 
 # Terminal 2: Start Shop (Remote)
 npm run start:shop
@@ -194,7 +194,7 @@ ng serve --project shop --port 4201
 ng build shop --configuration production
 
 # Build Shell
-ng build OxiiCore --configuration production
+ng build Gochek --configuration production
 ```
 
 ## 📦 Package.json Scripts
@@ -204,10 +204,10 @@ Add these scripts to `package.json`:
 ```json
 {
   "scripts": {
-    "start:shell": "ng serve --project OxiiCore --port 4500",
+    "start:shell": "ng serve --project Gochek --port 4500",
     "start:shop": "ng serve --project shop --port 4201",
     "start:mfe": "concurrently \"npm run start:shell\" \"npm run start:shop\"",
-    "build:shell": "ng build OxiiCore --configuration production",
+    "build:shell": "ng build Gochek --configuration production",
     "build:shop": "ng build shop --configuration production",
     "build:all": "npm run build:shop && npm run build:shell"
   }
