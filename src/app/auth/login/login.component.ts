@@ -162,6 +162,14 @@ export class LoginComponent implements OnInit, OnDestroy {
           permissions: actions
         }];
         break;
+      case 'customers':
+        result = [{
+          path: '/customer',
+          icon: 'people',
+          name: 'Khách hàng',
+          permissions: actions
+        }];
+        break;
       default:
         return [];
     }

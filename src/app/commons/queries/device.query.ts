@@ -24,6 +24,20 @@ export const GET_DEVICES = gql`
               id
               name
               code
+              models {
+                id
+                code
+                name
+                description
+                isActive
+              }
+          }
+          model {
+            id
+            code
+            name
+            description
+            isActive
           }
           organization {
               id
@@ -100,6 +114,13 @@ export const UPDATE_DEVICE = gql`
         id
         name
         code
+      }
+      model {
+        id
+        code
+        name
+        description
+        isActive
       }
       organization {
         id

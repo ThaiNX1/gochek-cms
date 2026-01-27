@@ -23,6 +23,11 @@ export type Scalars = {
   Upload: { input: any; output: any; }
 };
 
+export type AssignCustomerInput = {
+  customerId: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+};
+
 export type BusinessRole = {
   children?: Maybe<Array<BusinessRole>>;
   code: Scalars['String']['output'];
@@ -77,6 +82,7 @@ export type CreateDeviceInput = {
   firmwareVersion?: InputMaybe<Scalars['String']['input']>;
   hardwareVersion?: InputMaybe<Scalars['String']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  modelId?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   organizationId?: InputMaybe<Scalars['ID']['input']>;
   serialNumber: Scalars['String']['input'];
@@ -96,12 +102,21 @@ export type CreateFirmwareInput = {
   fileName?: InputMaybe<Scalars['String']['input']>;
   filePath?: InputMaybe<Scalars['String']['input']>;
   md5?: InputMaybe<Scalars['String']['input']>;
+  modelIds?: InputMaybe<Array<Scalars['String']['input']>>;
   name: Scalars['String']['input'];
   raFileName?: InputMaybe<Scalars['String']['input']>;
   raFilePath?: InputMaybe<Scalars['String']['input']>;
   releaseNotes?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<FirmwareTypeEnum>;
   version: Scalars['String']['input'];
+};
+
+export type CreateModelInput = {
+  code: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  deviceTypeId: Scalars['String']['input'];
+  isActive: Scalars['Boolean']['input'];
+  name: Scalars['String']['input'];
 };
 
 export type CreateOrganizationInput = {
@@ -127,6 +142,42 @@ export type CreateUserInput = {
   password?: InputMaybe<Scalars['String']['input']>;
   roleIds?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
+
+export type Customer = {
+  assignedToId?: Maybe<Scalars['String']['output']>;
+  company?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  email: Scalars['String']['output'];
+  formKeyId?: Maybe<Scalars['String']['output']>;
+  fullName: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  ipAddress?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['String']['output']>;
+  phone: Scalars['String']['output'];
+  source?: Maybe<Scalars['String']['output']>;
+  status: CustomerStatus;
+  updatedAt: Scalars['DateTime']['output'];
+  userAgent?: Maybe<Scalars['String']['output']>;
+};
+
+export type CustomerSearchInput = {
+  dateFrom?: InputMaybe<Scalars['String']['input']>;
+  dateTo?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  size?: InputMaybe<Scalars['Int']['input']>;
+  status?: InputMaybe<CustomerStatus>;
+};
+
+/** Customer/Lead status */
+export enum CustomerStatus {
+  CONTACTED = 'CONTACTED',
+  CONVERTED = 'CONVERTED',
+  NEW = 'NEW',
+  REJECTED = 'REJECTED'
+}
 
 export type DeleteConnectionInput = {
   cleanSession?: InputMaybe<Scalars['Boolean']['input']>;
@@ -160,6 +211,8 @@ export type Device = {
   isActive: Scalars['Boolean']['output'];
   latitude?: Maybe<Scalars['Float']['output']>;
   longitude?: Maybe<Scalars['Float']['output']>;
+  model?: Maybe<Model>;
+  modelId?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   noSerialNumber?: Maybe<Scalars['Float']['output']>;
   organization?: Maybe<Organization>;
@@ -171,6 +224,8 @@ export type Device = {
   publicKeyBasepath?: Maybe<Scalars['String']['output']>;
   raFirmware?: Maybe<Firmware>;
   raFirmwareId?: Maybe<Scalars['String']['output']>;
+  raFirmwareVersion?: Maybe<Scalars['String']['output']>;
+  raHardwareVersion?: Maybe<Scalars['String']['output']>;
   secretKey?: Maybe<Scalars['String']['output']>;
   serialNumber: Scalars['String']['output'];
   signature?: Maybe<Scalars['String']['output']>;
@@ -200,6 +255,7 @@ export enum DeviceControlOtaStatusEnum {
 export type DeviceGenerateSerialNumberInput = {
   count: Scalars['Float']['input'];
   descriptor?: InputMaybe<Scalars['String']['input']>;
+  exportId?: InputMaybe<Scalars['String']['input']>;
   prefix?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -254,6 +310,7 @@ export type DeviceType = {
   firmwareId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
+  models?: Maybe<Array<Model>>;
   name: Scalars['String']['output'];
   raFirmware?: Maybe<Firmware>;
   raFirmwareId?: Maybe<Scalars['String']['output']>;
@@ -266,8 +323,10 @@ export type ExportProgress = {
   error?: Maybe<Scalars['String']['output']>;
   exportId: Scalars['String']['output'];
   message: Scalars['String']['output'];
+  processed?: Maybe<Scalars['Int']['output']>;
   progress: Scalars['Int']['output'];
   status: Scalars['String']['output'];
+  total?: Maybe<Scalars['Int']['output']>;
   url?: Maybe<Scalars['String']['output']>;
   userId?: Maybe<Scalars['String']['output']>;
 };
@@ -283,6 +342,7 @@ export type Firmware = {
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   md5?: Maybe<Scalars['String']['output']>;
+  models?: Maybe<Array<Model>>;
   name: Scalars['String']['output'];
   releaseNotes?: Maybe<Scalars['String']['output']>;
   type?: Maybe<FirmwareTypeEnum>;
@@ -295,6 +355,12 @@ export enum FirmwareTypeEnum {
   ESP_FIRMWARE = 'ESP_FIRMWARE',
   RA_FIRMWARE = 'RA_FIRMWARE'
 }
+
+export type GenerateFormKeyResponse = {
+  domain: Scalars['String']['output'];
+  expiredAt: Scalars['Float']['output'];
+  key: Scalars['String']['output'];
+};
 
 export type GenerateHistory = {
   createdAt: Scalars['DateTime']['output'];
@@ -332,8 +398,26 @@ export type LoginResponse = {
   userPermissions: Array<Scalars['String']['output']>;
 };
 
+export type Model = {
+  code: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  deviceType?: Maybe<DeviceType>;
+  deviceTypeId?: Maybe<Scalars['String']['output']>;
+  firmware?: Maybe<Firmware>;
+  firmwareId?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  raFirmware?: Maybe<Firmware>;
+  raFirmwareId?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
 export type Mutation = {
   appLogin: LoginResponse;
+  assignCustomer: Customer;
   assignPermissionRole: Permission;
   assignUserRole: User;
   changePassword: User;
@@ -344,6 +428,7 @@ export type Mutation = {
   createDevice: Device;
   createDeviceType: DeviceType;
   createFirmware: Firmware;
+  createModel: Model;
   createOrganization: Organization;
   createUser: User;
   deleteBusinessRole: Scalars['Boolean']['output'];
@@ -351,8 +436,10 @@ export type Mutation = {
   deleteCountry: Country;
   deleteDeviceType: Scalars['Boolean']['output'];
   deleteFirmware: Scalars['Boolean']['output'];
+  deleteModel: Scalars['Boolean']['output'];
   deleteOrganization: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
+  generateFormKey: GenerateFormKeyResponse;
   generateSerialNumber: Scalars['String']['output'];
   importPermissions: Array<Permission>;
   importProvince: Array<Province>;
@@ -363,11 +450,16 @@ export type Mutation = {
   removePermissionRole: Permission;
   removeUserRole: User;
   resendOtp: Scalars['Boolean']['output'];
+  submitConsultationForm: SubmitConsultationFormResponse;
   subscribeNotification: User;
   updateBusinessRole: BusinessRole;
   updateCountry: Country;
+  updateCustomerStatus: Customer;
+  updateDevice: Device;
   updateDeviceType: DeviceType;
   updateFirmware: Firmware;
+  updateFirmwareStatus: Scalars['Boolean']['output'];
+  updateModel: Model;
   updateOrganization: Organization;
   updateUser: User;
   uploadFile: UploadFileResponse;
@@ -376,6 +468,11 @@ export type Mutation = {
 
 export type MutationAppLoginArgs = {
   input: LoginInput;
+};
+
+
+export type MutationAssignCustomerArgs = {
+  input: AssignCustomerInput;
 };
 
 
@@ -431,6 +528,11 @@ export type MutationCreateFirmwareArgs = {
 };
 
 
+export type MutationCreateModelArgs = {
+  input: CreateModelInput;
+};
+
+
 export type MutationCreateOrganizationArgs = {
   input: CreateOrganizationInput;
 };
@@ -462,6 +564,11 @@ export type MutationDeleteDeviceTypeArgs = {
 
 
 export type MutationDeleteFirmwareArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteModelArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -513,6 +620,11 @@ export type MutationRemoveUserRoleArgs = {
 };
 
 
+export type MutationSubmitConsultationFormArgs = {
+  input: SubmitConsultationFormInput;
+};
+
+
 export type MutationSubscribeNotificationArgs = {
   deviceToken: Scalars['String']['input'];
 };
@@ -530,6 +642,17 @@ export type MutationUpdateCountryArgs = {
 };
 
 
+export type MutationUpdateCustomerStatusArgs = {
+  input: UpdateCustomerStatusInput;
+};
+
+
+export type MutationUpdateDeviceArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateDeviceInput;
+};
+
+
 export type MutationUpdateDeviceTypeArgs = {
   id: Scalars['ID']['input'];
   input: UpdateDeviceTypeInput;
@@ -539,6 +662,18 @@ export type MutationUpdateDeviceTypeArgs = {
 export type MutationUpdateFirmwareArgs = {
   id: Scalars['ID']['input'];
   input: UpdateFirmwareInput;
+};
+
+
+export type MutationUpdateFirmwareStatusArgs = {
+  id: Scalars['ID']['input'];
+  isActive: Scalars['Boolean']['input'];
+};
+
+
+export type MutationUpdateModelArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateModelInput;
 };
 
 
@@ -579,6 +714,11 @@ export type PaginatedBusinessRoleResponse = {
   pagination: PaginationResponse;
 };
 
+export type PaginatedCustomerResponse = {
+  data: Array<Customer>;
+  pagination: PaginationInfo;
+};
+
 export type PaginatedDeviceResponse = {
   data: Array<Device>;
   pagination: PaginationResponse;
@@ -599,6 +739,11 @@ export type PaginatedGenerateHistoryResponse = {
   pagination: PaginationResponse;
 };
 
+export type PaginatedModelResponse = {
+  data: Array<Model>;
+  pagination: PaginationResponse;
+};
+
 export type PaginatedOrganizationResponse = {
   data: Array<Organization>;
   pagination: PaginationResponse;
@@ -607,6 +752,13 @@ export type PaginatedOrganizationResponse = {
 export type PaginatedUserResponse = {
   data: Array<User>;
   pagination: PaginationResponse;
+};
+
+export type PaginationInfo = {
+  page: Scalars['Int']['output'];
+  size: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+  totalPages: Scalars['Int']['output'];
 };
 
 export type PaginationInput = {
@@ -666,6 +818,8 @@ export type Query = {
   businessRoles: PaginatedBusinessRoleResponse;
   countries: Array<Country>;
   country: Country;
+  customer: Customer;
+  customers: PaginatedCustomerResponse;
   device: Device;
   deviceType: DeviceType;
   deviceTypes: PaginatedDeviceTypeResponse;
@@ -675,6 +829,8 @@ export type Query = {
   firmwaresByDeviceType: Array<Firmware>;
   generateHistories: PaginatedGenerateHistoryResponse;
   getDeviceBySerials: Array<Device>;
+  model: Model;
+  models: PaginatedModelResponse;
   organization: Organization;
   organizations: PaginatedOrganizationResponse;
   permission: Permission;
@@ -711,6 +867,16 @@ export type QueryBusinessRolesArgs = {
 
 export type QueryCountryArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryCustomerArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type QueryCustomersArgs = {
+  pagination?: InputMaybe<CustomerSearchInput>;
 };
 
 
@@ -756,6 +922,16 @@ export type QueryGenerateHistoriesArgs = {
 
 export type QueryGetDeviceBySerialsArgs = {
   serials: Array<Scalars['String']['input']>;
+};
+
+
+export type QueryModelArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryModelsArgs = {
+  pagination?: InputMaybe<PaginationInput>;
 };
 
 
@@ -825,6 +1001,22 @@ export enum RoleCode {
   ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN'
 }
 
+export type SubmitConsultationFormInput = {
+  company?: InputMaybe<Scalars['String']['input']>;
+  email: Scalars['String']['input'];
+  formKey: Scalars['String']['input'];
+  fullName: Scalars['String']['input'];
+  message?: InputMaybe<Scalars['String']['input']>;
+  metadata?: InputMaybe<Scalars['String']['input']>;
+  phone: Scalars['String']['input'];
+};
+
+export type SubmitConsultationFormResponse = {
+  customerId: Scalars['String']['output'];
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type Subscription = {
   generateSerialNumberProgress: ExportProgress;
 };
@@ -849,6 +1041,24 @@ export type UpdateCountryInput = {
   zipCode?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateCustomerStatusInput = {
+  customerId: Scalars['String']['input'];
+  status: CustomerStatus;
+};
+
+export type UpdateDeviceInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  deviceTypeId?: InputMaybe<Scalars['String']['input']>;
+  firmwareVersion?: InputMaybe<Scalars['String']['input']>;
+  hardwareVersion?: InputMaybe<Scalars['String']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  modelId?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  organizationId?: InputMaybe<Scalars['ID']['input']>;
+  serial?: InputMaybe<Scalars['String']['input']>;
+  warrantyMonth?: InputMaybe<Scalars['Float']['input']>;
+};
+
 export type UpdateDeviceTypeInput = {
   code?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -865,10 +1075,19 @@ export type UpdateFirmwareInput = {
   filePath?: InputMaybe<Scalars['String']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
   md5?: InputMaybe<Scalars['String']['input']>;
+  modelIds?: InputMaybe<Array<Scalars['String']['input']>>;
   name?: InputMaybe<Scalars['String']['input']>;
   releaseNotes?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<FirmwareTypeEnum>;
   version?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateModelInput = {
+  code?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  deviceTypeId?: InputMaybe<Scalars['String']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateOrganizationInput = {

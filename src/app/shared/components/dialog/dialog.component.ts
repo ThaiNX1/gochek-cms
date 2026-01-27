@@ -14,7 +14,7 @@ export interface DialogData {
   confirmText?: string;
   cancelText?: string;
   align?: 'start' | 'end' | 'center';
-  type?: 'default' | 'warning' | 'error' | 'confirm';
+  type?: 'default' | 'warning' | 'error' | 'confirm' | 'model';
 }
 
 @Component({

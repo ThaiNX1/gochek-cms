@@ -12,7 +12,7 @@ import { DirectiveModule } from '../../shared/directive.module';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
 import { FirmwareTypeEnum, PaginatedFirmwareResponse } from '../../commons/types';
-import { DELETE_FIRMWARE, GET_FIRMWARES } from '../../commons/queries/firmware.query';
+import { DELETE_FIRMWARE, GET_FIRMWARES, UPDATE_FIRMWARE_STATUS } from '../../commons/queries/firmware.query';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -54,9 +54,9 @@ export class FirmwareComponent extends BaseClass {
       { name: 'Tên firmware', field: 'name', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'Phiên bản', field: 'version', className: 'min-w-[120px] max-w-[120px]' },
-      { name: 'File firmware', field: 'fileName', className: 'min-w-[200px] max-w-[200px]' },
+      // { name: 'File firmware', field: 'fileName', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Loại', field: 'typeName', className: 'min-w-[100px] max-w-[100px]' },
-      { name: 'Mô tả', field: 'description', className: 'min-w-[150px] max-w-[150px]' },
+      // { name: 'Mô tả', field: 'description', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Ghi chú release', field: 'releaseNotes', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Trạng thái', field: 'status', className: 'min-w-[80px] max-w-[80px]', templateCode: 'statusColumnTemplate' },
       { name: 'Hành động', field: 'action', className: 'min-w-[80px] max-w-[80px]', templateCode: 'actionColumnTemplate' },
@@ -98,6 +98,48 @@ export class FirmwareComponent extends BaseClass {
 
   async onPageChange(event: PageEvent) {
     await this.onGetFirmwares(event.pageIndex + 1);
+  }
+
+  async onToggleStatus(item: any) {
+    const newStatus = !item.isActive;
+    const statusText = newStatus ? 'kích hoạt' : 'vô hiệu hóa';
+
+    this.dialogData.type = 'default';
+    this.dialogData.message = `Bạn có chắc chắn muốn ${statusText} firmware "${item.name}" không?`;
+    const dialogRef = this.dialog.open(DialogComponent, {
+      data: {
+        ...this.dialogData,
+        title: `${newStatus ? 'Kích hoạt' : 'Vô hiệu hóa'} firmware`,
+        confirmText: 'Xác nhận',
+        showActions: true,
+      },
+      width: this.dialogData.width
+    });
+
+    dialogRef.componentInstance.content = this.firmwareDialogContent;
+
+    dialogRef.afterClosed().pipe(takeUntil(this.destroyRef)).subscribe(async result => {
+      if (result) {
+        await this.toggleFirmwareStatus(item, newStatus);
+      }
+    });
+  }
+
+  async toggleFirmwareStatus(item: any, newStatus: boolean) {
+    const response = await this.injector.get(ApiService).executeMutation(
+      UPDATE_FIRMWARE_STATUS,
+      {
+        id: item.id,
+        isActive: newStatus
+      }
+    );
+
+    if (response) {
+      this.commonService.openSnackBar(`${newStatus ? 'Kích hoạt' : 'Vô hiệu hóa'} firmware thành công`);
+      await this.onGetFirmwares(this.pagination.page + 1);
+    } else {
+      this.commonService.openSnackBarError(`${newStatus ? 'Kích hoạt' : 'Vô hiệu hóa'} firmware thất bại`);
+    }
   }
 
   async onDelete(item: any) {

@@ -2,9 +2,9 @@ import { Component } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { BaseClass } from '../../../commons/base.class';
-import { GET_DEVICE_TYPES } from '../../../commons/queries/device-type.query';
+import { GET_DEVICE_TYPES, GET_MODELS } from '../../../commons/queries/device-type.query';
 import { CREATE_FIRMWARE, GET_FIRMWARE_BY_ID, UPDATE_FIRMWARE } from '../../../commons/queries/firmware.query';
-import { CreateFirmwareInput, Firmware, PaginatedDeviceTypeResponse } from '../../../commons/types';
+import { CreateFirmwareInput, Firmware, FirmwareTypeEnum, PaginatedDeviceTypeResponse } from '../../../commons/types';
 import { ApiService } from '../../../core/services/api.service';
 import { CommonModule } from '@angular/common';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -37,8 +37,15 @@ export class FirmwareCreateComponent extends BaseClass {
   queryParams: any;
   firmwareForm!: FormGroup;
   deviceTypes!: FormArray;
+  models!: FormArray;
   deviceTypeSearchQuery = GET_DEVICE_TYPES;
   deviceTypeList: any[] = [];
+  modelSearchQuery = GET_MODELS;
+  modelList: any[] = [];
+  firmwareTypeList = [
+    { name: 'ESP32', value: FirmwareTypeEnum.ESP_FIRMWARE },
+    { name: 'RA', value: FirmwareTypeEnum.RA_FIRMWARE },
+  ]
   constructor() {
     super();
   }
@@ -53,12 +60,16 @@ export class FirmwareCreateComponent extends BaseClass {
       fileName: new FormControl(''),
       releaseNotes: new FormControl(''),
       description: new FormControl(''),
+      type: new FormControl(null, [Validators.required]),
       deviceTypeId: new FormControl(null),
       deviceTypes: new FormArray([]),
+      modelId: new FormControl(null),
+      models: new FormArray([]),
       firmwareFile: new FormControl(null),
       md5: new FormControl(null, [Validators.required]),
     });
     this.deviceTypes = this.firmwareForm.get('deviceTypes') as FormArray;
+    this.models = this.firmwareForm.get('models') as FormArray;
     this.injector.get(ActivatedRoute).params.subscribe(async (params: any) => {
       this.queryParams = params;
       if (params.id && params.id !== 'create') {
@@ -79,6 +90,7 @@ export class FirmwareCreateComponent extends BaseClass {
       filePath: response?.firmware?.filePath,
       releaseNotes: response?.firmware?.releaseNotes,
       description: response?.firmware?.description,
+      type: response?.firmware?.type,
       firmwareFile: null,
       md5: response?.firmware?.md5,
     });
@@ -91,16 +103,33 @@ export class FirmwareCreateComponent extends BaseClass {
         switchCount: new FormControl(deviceType.switchCount),
       }));
     });
+    this.models.clear();
+    response?.firmware?.models?.forEach((model: any) => {
+      this.models.push(new FormGroup({
+        id: new FormControl(model.id),
+        name: new FormControl(model.name),
+        code: new FormControl(model.code),
+      }));
+    });
   }
 
   async onGetDeviceType() {
-    const response = await this.injector.get(ApiService).executeQuery<PaginatedDeviceTypeResponse>(GET_DEVICE_TYPES, {
-      pagination: {
-        page: 1,
-        size: 20,
-      },
-    });
-    this.deviceTypeList = response?.deviceTypes?.data || [];
+    const responses = await Promise.all([
+      this.injector.get(ApiService).executeQuery<PaginatedDeviceTypeResponse>(GET_DEVICE_TYPES, {
+        pagination: {
+          page: 1,
+          size: 20,
+        },
+      }),
+      this.injector.get(ApiService).executeQuery<PaginatedDeviceTypeResponse>(GET_MODELS, {
+        pagination: {
+          page: 1,
+          size: 20,
+        },
+      }),
+    ]);
+    this.deviceTypeList = responses[0]?.deviceTypes?.data || [];
+    this.modelList = responses[1]?.models?.data || [];
   }
 
   onRemoveDeviceType(index: number) {
@@ -119,6 +148,26 @@ export class FirmwareCreateComponent extends BaseClass {
       switchCount: new FormControl(event.switchCount),
     }));
     this.firmwareForm.get('deviceTypeId')?.reset();
+  }
+
+  onSelectModel(event: any) {
+    const checked = this.models.controls.find((model: any) => model.value.id === event.id);
+    console.log(checked);
+    console.log(event);
+    
+    if (checked) {
+      return;
+    }
+    this.models.push(new FormGroup({
+      id: new FormControl(event.id),
+      name: new FormControl(event.name),
+      code: new FormControl(event.code),
+    }));
+    this.firmwareForm.get('modelId')?.reset();
+  }
+
+  onRemoveModel(index: number) {
+    this.models.removeAt(index);
   }
 
   onSelectFirmwareFile(event: any) {
@@ -152,7 +201,9 @@ export class FirmwareCreateComponent extends BaseClass {
       filePath: this.firmwareForm.get('filePath')?.value,
       fileName: this.firmwareForm.get('fileName')?.value,
       md5: this.firmwareForm.get('md5')?.value,
+      type: this.firmwareForm.get('type')?.value,
       deviceTypeIds: this.deviceTypes.getRawValue()?.map((deviceType: any) => deviceType.id) || [],
+      modelIds: this.models.getRawValue()?.map((model: any) => model.id) || [],
     }
     const response = this.firmwareForm.value?.id
       ? await this.injector.get(ApiService).executeMutation(UPDATE_FIRMWARE, {

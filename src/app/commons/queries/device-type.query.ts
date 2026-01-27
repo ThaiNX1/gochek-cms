@@ -1,27 +1,34 @@
 import { gql } from 'apollo-angular';
 
 export const GET_DEVICE_TYPES = gql`
-  query GetDeviceTypes($pagination: PaginationInput) {
+query GetDeviceTypes($pagination: PaginationInput) {
     deviceTypes(pagination: $pagination) {
-      pagination {
-          page
-          size
-          total
-          totalPages
-      }
-      data {
-          code
-          createdAt
-          deletedAt
-          description
-          id
-          isActive
-          name
-          updatedAt
-          warrantyMonth
-      }
+        pagination {
+            page
+            size
+            total
+            totalPages
+        }
+        data {
+            code
+            createdAt
+            deletedAt
+            description
+            id
+            isActive
+            name
+            updatedAt
+            warrantyMonth
+            models {
+                id
+                code
+                name
+                description
+                isActive
+            }
+        }
     }
-  }
+}
 `;
 
 export const GET_DEVICE_TYPE = gql`
@@ -68,3 +75,38 @@ export const UPDATE_DEVICE_TYPE = gql`
     }
   }
 `; 
+
+export const GET_MODELS = gql`
+  query GetModels($pagination: PaginationInput) {
+    models(pagination: $pagination) {
+      pagination {
+        page
+        size
+        total
+        totalPages
+      }
+      data {
+        id
+        name
+        code
+        description
+        isActive
+        deviceTypeId
+      }
+    }
+  }
+`;
+
+export const CREATE_MODEL = gql`
+  mutation CreateModel($input: CreateModelInput!) {
+    createModel(input: $input) {
+      id
+      name
+      code
+      description
+      isActive
+      deviceTypeId
+    }
+  }
+`;
+ 

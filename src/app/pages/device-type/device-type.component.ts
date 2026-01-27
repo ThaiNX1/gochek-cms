@@ -9,7 +9,7 @@ import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormControl } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { PaginatedDeviceTypeResponse } from '../../commons/types';
-import { CREATE_DEVICE_TYPE, GET_DEVICE_TYPES, UPDATE_DEVICE_TYPE } from '../../commons/queries/device-type.query';
+import { CREATE_DEVICE_TYPE, CREATE_MODEL, GET_DEVICE_TYPES, UPDATE_DEVICE_TYPE } from '../../commons/queries/device-type.query';
 import { TableColumnType } from '../../core/constants/enum';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -34,6 +34,7 @@ import { takeUntil } from 'rxjs';
 })
 export class DeviceTypeComponent extends BaseClass {
   deviceTypeForm!: FormGroup;
+  modelForm!: FormGroup;
   @ViewChild('deviceTypeDialogContent') deviceTypeDialogContent!: TemplateRef<any>;
   dialogData: DialogData = {
     title: 'Thêm loại thiết bị',
@@ -67,7 +68,15 @@ export class DeviceTypeComponent extends BaseClass {
       id: new FormControl(''),
       name: new FormControl('', [Validators.required]),
       code: new FormControl('', [Validators.required]),
-      warrantyMonth: new FormControl('', [Validators.required]),
+      warrantyMonth: new FormControl(''),
+    });
+    this.modelForm = new FormGroup({
+      deviceTypeId: new FormControl(''),
+      deviceTypeName: new FormControl({ value: '', disabled: true }),
+      name: new FormControl('', [Validators.required]),
+      code: new FormControl('', [Validators.required]),
+      description: new FormControl(''),
+      isActive: new FormControl(true),
     });
     await this.onGetDeviceType();
   }
@@ -84,6 +93,7 @@ export class DeviceTypeComponent extends BaseClass {
       acc.push({
         ...item,
         index: index + 1,
+        warrantyMonth: item.warrantyMonth || '-',
       });
       return acc;
     }, []) ?? [];
@@ -159,7 +169,7 @@ export class DeviceTypeComponent extends BaseClass {
         input: {
           name: this.deviceTypeForm.get('name')?.value,
           code: this.deviceTypeForm.get('code')?.value,
-          warrantyMonth: this.deviceTypeForm.get('warrantyMonth')?.value || 0,
+          warrantyMonth: this.deviceTypeForm.get('warrantyMonth')?.value,
         },
       })
       : await this.injector.get(ApiService).executeMutation(CREATE_DEVICE_TYPE, {
@@ -171,6 +181,7 @@ export class DeviceTypeComponent extends BaseClass {
       });
     if (response) {
       this.commonService.openSnackBar(this.deviceTypeForm.get('id')?.value ? 'Cập nhật loại thiết bị thành công' : 'Thêm loại thiết bị thành công');
+      this.dialog.closeAll();
       await this.onGetDeviceType();
     } else {
       this.commonService.openSnackBarError(this.deviceTypeForm.get('id')?.value ? 'Cập nhật loại thiết bị thất bại' : 'Thêm loại thiết bị thất bại');
@@ -184,5 +195,51 @@ export class DeviceTypeComponent extends BaseClass {
 
   onCancel() {
     this.dialog.closeAll();
+  }
+
+  onAddModel(deviceType: any) {
+    this.modelForm.reset();
+    this.modelForm.patchValue({
+      deviceTypeId: deviceType.id,
+      deviceTypeName: deviceType.name,
+      isActive: true,
+    });
+    this.dialogData.type = 'model';
+    const dialogRef = this.dialog.open(DialogComponent, {
+      data: {
+        ...this.dialogData,
+        title: 'Thêm model',
+        type: 'model',
+        confirmText: 'Thêm',
+        showActions: false,
+      },
+      width: this.dialogData.width
+    });
+
+    dialogRef.componentInstance.content = this.deviceTypeDialogContent;
+  }
+
+  async saveModel() {
+    this.modelForm.markAllAsTouched();
+    if (this.modelForm.invalid) {
+      this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+    const response = await this.injector.get(ApiService).executeMutation(CREATE_MODEL, {
+      input: {
+        deviceTypeId: this.modelForm.get('deviceTypeId')?.value,
+        name: this.modelForm.get('name')?.value,
+        code: this.modelForm.get('code')?.value,
+        description: this.modelForm.get('description')?.value || '',
+        isActive: this.modelForm.get('isActive')?.value,
+      },
+    });
+    if (response) {
+      this.commonService.openSnackBar('Thêm model thành công');
+      await this.onGetDeviceType();
+      this.dialog.closeAll();
+    } else {
+      this.commonService.openSnackBarError('Thêm model thất bại');
+    }
   }
 }

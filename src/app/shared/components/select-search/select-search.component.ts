@@ -45,13 +45,16 @@ export class SelectSearchComponent implements ControlValueAccessor {
   @Input() searchQuery?: any;
   @Input() searchDataKey?: string;
   @Input() searchObject?: any;
+  @Input() manySearchQuery?: any[];
+  @Input() manySearchDataKey?: string[];
+  @Input() manySearchObject?: any[];
   @Input() clearable: boolean = true;
   @Input() matLabel: string = '';
   @Input() paginationSearch: boolean = false;
 
   @Output() selected = new EventEmitter<SelectOption>();
 
-  formControl = new FormControl('');
+  formControl = new FormControl({ value: '', disabled: this.disabled });
   searchControl = new FormControl('');
   filteredOptions: SelectOption[] = [];
   isLoading: boolean = false;
@@ -74,29 +77,71 @@ export class SelectSearchComponent implements ControlValueAccessor {
         distinctUntilChanged()
       )
       .subscribe(value => {
+        // Build queries array from both searchQuery and manySearchQuery
+        const queries: any[] = [];
+        const dataKeys: string[] = [];
+        const searchObjects: any[] = [];
+
+        // Add single searchQuery if exists
         if (this.searchQuery) {
+          queries.push(this.searchQuery);
+          dataKeys.push(this.searchDataKey || 'items');
+          searchObjects.push(this.searchObject || {});
+        }
+
+        // Add multiple searchQueries if exists
+        if (this.manySearchQuery && this.manySearchQuery.length > 0) {
+          this.manySearchQuery.forEach((query, index) => {
+            queries.push(query);
+            dataKeys.push(this.manySearchDataKey?.[index] || 'items');
+            searchObjects.push(this.manySearchObject?.[index] || {});
+          });
+        }
+
+        // Execute queries if any exist
+        if (queries.length > 0) {
           if (value?.length) {
             this.isLoading = true;
-            this.injector.get(CommonService).setRemoveShowGlobalLoading(true)
-            this.injector.get(ApiService).executeQuery(this.searchQuery, {
-              ...(this.paginationSearch
-                ? { pagination: { page: 1, size: 20, keyword: value } }
-                : {
-                  page: 1,
-                  size: 20,
-                  keyword: value
-                }),
-              ...(this.searchObject || {})
-            }).then((response: any) => {
+            this.injector.get(CommonService).setRemoveShowGlobalLoading(true);
+            
+            // Execute all queries in parallel
+            const queryPromises = queries.map((query, index) => {
+              return this.injector.get(ApiService).executeQuery(query, {
+                ...(this.paginationSearch
+                  ? { pagination: { page: 1, size: 20, keyword: value } }
+                  : {
+                    page: 1,
+                    size: 20,
+                    keyword: value
+                  }),
+                ...searchObjects[index]
+              }).then((response: any) => {
+                return response?.[dataKeys[index]]?.data || [];
+              }).catch(() => {
+                return [];
+              });
+            });
+
+            Promise.all(queryPromises).then((results) => {
               this.isLoading = false;
-              this.injector.get(CommonService).setRemoveShowGlobalLoading(false)
-              this.options = response?.[this.searchDataKey || 'items']?.data || [];
-            }).catch((error: any) => {
+              this.injector.get(CommonService).setRemoveShowGlobalLoading(false);
+              
+              // Merge all results
+              const mergedResults = results.flat();
+              
+              // Remove duplicates based on valueKey
+              const uniqueResults = mergedResults.filter((item, index, self) =>
+                index === self.findIndex((t) => t[this.valueKey] === item[this.valueKey])
+              );
+              
+              this.options = uniqueResults;
+            }).catch(() => {
               this.isLoading = false;
-              this.injector.get(CommonService).setRemoveShowGlobalLoading(false)
+              this.injector.get(CommonService).setRemoveShowGlobalLoading(false);
             });
           }
         } else {
+          // No queries provided, use local filtering
           if (!this.initialOptions.length) {
             this.initialOptions = [...this.options];
           }

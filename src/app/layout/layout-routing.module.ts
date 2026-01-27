@@ -15,6 +15,7 @@ import { FirmwareComponent } from '../pages/firmware/firmware.component';
 import { FirmwareCreateComponent } from '../pages/firmware/firmware-create/firmware-create.component';
 import { GenerateSerialHistoryComponent } from '../pages/generate-serial-history/generate-serial-history.component';
 import { HomeComponent } from '../pages/home/home.component';
+import { CustomerComponent } from '../pages/customer/customer.component';
 const routes: Routes = [
   {
     path: '',
@@ -92,6 +93,10 @@ const routes: Routes = [
   {
     path: 'firmware/:id',
     component: FirmwareCreateComponent,
+  },
+  {
+    path: 'customer',
+    component: CustomerComponent,
   },
   // {
   //   path: 'guest',

@@ -63,6 +63,7 @@ export class DownloadService {
           take(1)
         ).subscribe({
           next: (response) => {
+            console.log('======response', response)
             this.isDownloadingSubject.next(false)
             const _currentList = this.downloadListSubject.value;
             for (let index = 0; index < _currentList.length; index++) {
@@ -77,6 +78,7 @@ export class DownloadService {
             }
           },
           error: (error) => {
+            console.log('======error', error)
             this.isDownloadingSubject.next(false)
             this.removeDownloadItem(downloadItem.id);
           }

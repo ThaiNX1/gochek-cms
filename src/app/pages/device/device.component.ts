@@ -10,12 +10,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { DirectiveModule } from '../../shared/directive.module';
 import { PermissionEnum, TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
-import { ASSIGN_DEVICE_TO_ORGANIZATION, GET_DEVICES, IMPORT_DEVICE, REMOVE_DEVICE_FROM_ORGANIZATION } from '../../commons/queries/device.query';
+import { ASSIGN_DEVICE_TO_ORGANIZATION, GET_DEVICES, IMPORT_DEVICE, REMOVE_DEVICE_FROM_ORGANIZATION, UPDATE_DEVICE } from '../../commons/queries/device.query';
 import { Device, PaginatedDeviceResponse, PaginatedDeviceTypeResponse, PaginatedOrganizationResponse } from '../../commons/types';
 import { PageEvent } from '@angular/material/paginator';
 import { GET_ORGANIZATIONS } from '../../commons/queries/organization.query';
 import { SelectSearchComponent } from "../../shared/components/select-search/select-search.component";
-import { GET_DEVICE_TYPES } from '../../commons/queries/device-type.query';
+import { GET_DEVICE_TYPES, GET_MODELS } from '../../commons/queries/device-type.query';
 import { constant } from '../../core/constants/constant';
 import { MatMenuModule } from '@angular/material/menu';
 import * as _ from 'lodash';
@@ -45,8 +45,10 @@ export class DeviceComponent extends BaseClass {
   organizationList: any[] = [];
   deviceTypeList: any[] = [];
   deviceTypeEditList: any[] = [];
+  modelEditList: any[] = [];
   orgSearchQuery = GET_ORGANIZATIONS;
   deviceTypeSearchQuery = GET_DEVICE_TYPES;
+  modelSearchQuery = GET_MODELS;
   importDeviceForm!: FormGroup;
 
   @ViewChild('assignOrganizationDialogContent') assignOrganizationDialogContent!: TemplateRef<any>;
@@ -58,13 +60,14 @@ export class DeviceComponent extends BaseClass {
   @ViewChild('removeDeviceFromOrganizationDialogNotification') removeDeviceFromOrganizationDialogNotification!: TemplateRef<any>;
   removeDeviceFromOrganizationSelected: any = null;
 
-  constructor() {
+  constructor(private dialog: MatDialog) {
     super();
     this.columns = [
       { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER, },
       { name: 'Tên thiết bị', field: 'name', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Loại thiết bị', field: 'deviceTypeName', className: 'min-w-[200px] max-w-[200px]' },
-      { name: 'Mã loại thiết bị', field: 'deviceTypeCode', className: 'min-w-[150px] max-w-[150px]' },
+      // { name: 'Mã loại thiết bị', field: 'deviceTypeCode', className: 'min-w-[150px] max-w-[150px]' },
+      { name: 'Model', field: 'modelCode', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Serial number', field: 'serialNumber', className: 'min-w-[100px] max-w-[100px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'Tổ chức', field: 'organizationName', className: 'min-w-[200px] max-w-[200px]' },
@@ -92,13 +95,21 @@ export class DeviceComponent extends BaseClass {
       name: new FormControl(''),
       serialNumber: new FormControl(''),
       deviceTypeId: new FormControl(''),
+      modelId: new FormControl(''),
       note: new FormControl(''),
     });
+    this.onValueChange();
     await Promise.all([
       this.onGetDevice(),
-      this.hasPermission([PermissionEnum.DEVICE_TYPES_MANAGE]) && this.onGetDeviceType(),
-      this.hasPermission([PermissionEnum.ORGANIZATIONS_MANAGE]) && this.onGetOrganization()
+      this.onGetDeviceType()
     ]);
+  }
+
+  onValueChange() {
+    this.editDeviceForm.get('deviceTypeId')?.valueChanges.subscribe((value) => {
+      const deviceType = this.deviceTypeList.find((item) => item.id === value);
+      this.modelEditList = deviceType?.models ?? [];
+    })
   }
 
   async onGetDevice(page: number = 1) {
@@ -117,6 +128,8 @@ export class DeviceComponent extends BaseClass {
         index: index + 1,
         deviceTypeName: item.deviceType?.name,
         deviceTypeCode: item.deviceType?.code,
+        modelName: item.model?.name,
+        modelCode: item.model?.code,
         organizationName: item.organization?.name,
         statusName: item.isActive ? 'Kích hoạt' : 'Chưa kích hoạt',
       });
@@ -134,7 +147,7 @@ export class DeviceComponent extends BaseClass {
     const response = await this.injector.get(ApiService).executeQuery<PaginatedDeviceTypeResponse>(GET_DEVICE_TYPES, {
       pagination: {
         page: 1,
-        size: 20,
+        size: 100,
       },
     });
     this.deviceTypeList = response?.deviceTypes?.data ?? [];
@@ -179,7 +192,54 @@ export class DeviceComponent extends BaseClass {
       deviceTypeId: item.deviceTypeId,
       note: item.note,
     });
-    this.deviceTypeEditList = [item.deviceType]
+    this.deviceTypeEditList = item.deviceType ? [item.deviceType] : this.deviceTypeList;
+    const deviceType = this.deviceTypeList.find((_item) => _item.id === item.deviceTypeId);
+    this.modelEditList = deviceType?.models ?? [];
+    const dialogRef = this.injector.get(MatDialog).open(DialogComponent, {
+      data: {
+        title: 'Sửa thiết bị',
+        type: 'default',
+        confirmText: 'Sửa',
+        showActions: false,
+      },
+      width: '600px'
+    });
+    dialogRef.componentInstance.content = this.editDeviceDialogContent;
+  }
+
+  async onSave() {
+    const response = await this.injector.get(ApiService).executeMutation<Device>(UPDATE_DEVICE,
+      {
+        id: this.editDeviceForm.value.id,
+        input: {
+          name: this.editDeviceForm.value.name,
+          serial: this.editDeviceForm.value.serialNumber,
+          deviceTypeId: this.editDeviceForm.value.deviceTypeId,
+          modelId: this.editDeviceForm.value.modelId,
+          description: this.editDeviceForm.value.note,
+        }
+      })
+      if (response) {
+        this.commonService.openSnackBar('Sửa thiết bị thành công');
+        this.dialog?.closeAll();
+        const index = this.dataSource.findIndex((item) => item.id === this.editDeviceForm.value.id);
+        if (index > -1) {
+          this.dataSource[index] = {
+            ...this.dataSource[index],
+            name: response.updateDevice?.name,
+            serialNumber: response.updateDevice?.serialNumber,
+            deviceTypeId: response.updateDevice?.deviceTypeId,
+            modelId: response.updateDevice?.modelId,
+            note: response.updateDevice?.description,
+            model: response.updateDevice?.model,
+            deviceType: response.updateDevice?.deviceType,
+            modelCode: response.updateDevice?.model?.code,
+            deviceTypeCode: response.updateDevice?.deviceType?.code,
+          };
+        }
+      } else {
+        this.commonService.openSnackBarError('Sửa thiết bị thất bại');
+      }
   }
 
   async onResetDevice(item: any) {

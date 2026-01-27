@@ -56,9 +56,9 @@
 <ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
     <div class="flex items-center justify-center px-4">
         @if(item.isActive) {
-        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Hoạt động</span>
+        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Hoạt động</span>
         } @else {
-        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Không hoạt động</span>
+        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Không hoạt động</span>
         }
     </div>
 </ng-template>
@@ -125,18 +125,36 @@
         </div>
         <div class="flex flex-col gap-1">
             <label class="require">Loại thiết bị:</label>
-            <app-select-search class="w-full md:w-[200px] bg-white" [options]="deviceTypeEditList"
+            <app-select-search class="w-full bg-white" [options]="deviceTypeEditList"
                 formControlName="deviceTypeId" [valueKey]="'id'" [labelKey]="'name'"
                 [searchQuery]="deviceTypeSearchQuery" [searchDataKey]="'deviceTypes'" placeholder="Loại thiết bị">
             </app-select-search>
         </div>
         <div class="flex flex-col gap-1">
-            <label class="require">Ghi chú:</label>
+            <label class="require">Model:</label>
+            <app-select-search class="w-full bg-white" [options]="modelEditList" formControlName="modelId"
+                [valueKey]="'id'" [labelKey]="'name'" placeholder="Model">
+            </app-select-search>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Ghi chú:</label>
             <mat-form-field appearance="outline" floatLabel="auto">
-                <textarea matInput formControlName="note" placeholder="Nhập ghi chú" rows="5"></textarea>
+                <textarea matInput formControlName="note" placeholder="Nhập ghi chú" rows="3"></textarea>
             </mat-form-field>
         </div>
     </form>
+    <div class="flex items-stretch justify-center gap-3 pt-3">
+        <button class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
+            type="button" (click)="onCancel()">
+            <mat-icon class="text-white text-xl">cancel</mat-icon>
+            <span class="text-white font-semibold">Hủy</span>
+        </button>
+        <button class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
+            type="button" (click)="onSave()">
+            <mat-icon class="text-white text-xl">save</mat-icon>
+            <span class="text-white font-semibold">Lưu</span>
+        </button>
+    </div>
 </ng-template>
 
 <!-- Dialog remove device from organization Template -->

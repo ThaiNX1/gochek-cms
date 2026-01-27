@@ -21,6 +21,19 @@ query GetFirmwares($pagination: PaginationInput) {
             releaseNotes
             version
             type
+            deviceTypes {
+                id
+                name
+                switchCount
+                code
+                isActive
+            }
+            models {
+                id
+                name
+                code
+                isActive
+            }
         }
     }
 }
@@ -40,11 +53,19 @@ query GetFirmware($id: ID!) {
         version
         fileName
         md5
+        type
         deviceTypes {
             id
             name
             switchCount
             code
+            isActive
+        }
+        models {
+            id
+            name
+            code
+            isActive
         }
     }
 }
@@ -64,12 +85,6 @@ mutation CreateFirmware($input: CreateFirmwareInput!) {
         version
         fileName
         md5
-        deviceTypes {
-            id
-            name
-            switchCount
-            code
-        }
     }
 }
 `;
@@ -88,12 +103,6 @@ mutation UpdateFirmware($id: ID!, $input: UpdateFirmwareInput!) {
         version
         fileName
         md5
-        deviceTypes {
-            id
-            name
-            switchCount
-            code
-        }
     }
 }
 `;
@@ -101,5 +110,11 @@ mutation UpdateFirmware($id: ID!, $input: UpdateFirmwareInput!) {
 export const DELETE_FIRMWARE = gql`
 mutation DeleteFirmware($id: ID!) {
     deleteFirmware(id: $id)
+}
+`;
+
+export const UPDATE_FIRMWARE_STATUS = gql`
+mutation UpdateFirmwareStatus($id: ID!, $isActive: Boolean!) {
+    updateFirmwareStatus(id: $id, isActive: $isActive)
 }
 `;

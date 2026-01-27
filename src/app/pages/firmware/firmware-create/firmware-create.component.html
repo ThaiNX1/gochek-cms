@@ -3,16 +3,11 @@
         <h1 class="text-2xl font-bold">
             {{queryParams?.id === 'create' ? 'Thêm' : 'Cập nhật'}} firmware
         </h1>
-        <a [routerLink]="['/firmware']"
-            class="flex items-center justify-center gap-2 px-3 no-underline text-orange-500 rounded-md border-none font-semibold">
-            <mat-icon class="text-orange-500">arrow_back</mat-icon>
-            Quay lại
-        </a>
     </div>
     <div
         class="flex-1 flex flex-col items-stretch justify-start overflow-auto gap-1 scroll-none md:gray-500-scroll p-5 bg-white border border-gray-400 rounded-md">
-        <form [formGroup]="firmwareForm" class="flex-1 grid grid-cols-3 gap-3">
-            <div class="h-full col-span-3 md:col-span-2 flex flex-col items-stretch justify-start gap-3 p-4">
+        <form [formGroup]="firmwareForm" class="flex-1 grid grid-cols-4 gap-3">
+            <div class="h-full col-span-4 md:col-span-2 flex flex-col items-stretch justify-start gap-3 p-4">
                 <div class="flex flex-col items-stretch justify-start pb-4">
                     <h1 class="text-xl font-bold">
                         Thông tin firmware
@@ -25,11 +20,23 @@
                         <input matInput formControlName="name" placeholder="Nhập tên firmware">
                     </mat-form-field>
                 </div>
-                <div class="flex flex-col items-stretch justify-start gap-1">
-                    <label class="text-sm font-semibold require">Phiên bản:</label>
-                    <mat-form-field appearance="outline" floatLabel="auto">
-                        <input matInput formControlName="version" placeholder="Nhập phiên bản">
-                    </mat-form-field>
+                <div class="flex items-stretch justify-start gap-3">
+                    <div class="flex-1 flex flex-col items-stretch justify-start gap-1">
+                        <label class="text-sm font-semibold require">Phiên bản:</label>
+                        <mat-form-field appearance="outline" floatLabel="auto">
+                            <input matInput formControlName="version" placeholder="Nhập phiên bản">
+                        </mat-form-field>
+                    </div>
+                    <div class="flex-1 flex flex-col items-stretch justify-start gap-1">
+                        <label class="text-sm font-semibold require">Loại chip:</label>
+                        <mat-form-field appearance="outline" floatLabel="auto">
+                            <mat-select formControlName="type">
+                                <mat-option *ngFor="let type of firmwareTypeList" [value]="type.value">
+                                    {{type.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
                 </div>
                 <div class="flex flex-col items-stretch justify-start gap-1">
                     <label class="text-sm font-semibold">Mô tả:</label>
@@ -72,10 +79,10 @@
                 </div>
             </div>
             <div
-                class="h-full col-span-3 md:col-span-1 flex flex-col items-stretch justify-start gap-3 p-4 border-l border-gray-400">
+                class="h-full col-span-4 md:col-span-1 flex flex-col items-stretch justify-start gap-3 p-4 border-l border-gray-400">
                 <div class="flex flex-col items-stretch justify-start pb-4">
                     <h1 class="text-xl font-bold">
-                        Thông tin loại thiết bị
+                        Loại thiết bị
                     </h1>
                     <mat-divider class="my-3"></mat-divider>
                 </div>
@@ -108,8 +115,48 @@
                     }
                 </ng-container>
             </div>
+            <div
+                class="h-full col-span-4 md:col-span-1 flex flex-col items-stretch justify-start gap-3 p-4 border-l border-gray-400">
+                <div class="flex flex-col items-stretch justify-start pb-4">
+                    <h1 class="text-xl font-bold">
+                        Model
+                    </h1>
+                    <mat-divider class="my-3"></mat-divider>
+                </div>
+                <div class="flex flex-col items-stretch justify-start gap-1">
+                    <label class="text-sm font-semibold">Model</label>
+                    <app-select-search [options]="modelList" formControlName="modelId"
+                        [placeholder]="'Chọn model'" [valueKey]="'id'" [labelKey]="'name'" [searchable]="true"
+                        [searchQuery]="modelSearchQuery" [searchDataKey]="'models'"
+                        (selected)="onSelectModel($event)">
+                    </app-select-search>
+                </div>
+                @if(!models.length) {
+                <div class="flex items-center justify-center gap-3">
+                    <mat-icon class="text-gray-500 text-2xl">folder</mat-icon>
+                    <span class="text-gray-500">Không có dữ liệu</span>
+                </div>
+                }
+                <ng-container formArrayName="models">
+                    @for(model of models.controls; track model.value.id; let i = $index) {
+                    <div class="flex items-center justify-start">
+                        <div class="flex-1 flex items-center justify-start gap-3" [formGroupName]="i">
+                            <span>{{model.value.name}} ({{model.value.code}})</span>
+                        </div>
+                        <button type="button" (click)="onRemoveModel(i)"
+                            class="flex items-center justify-center border-none bg-white rounded-md p-2">
+                            <mat-icon class="text-red-500">delete</mat-icon>
+                        </button>
+                    </div>
+                    }
+                </ng-container>
+            </div>
         </form>
-        <div class="flex items-center justify-center gap-3">
+        <div class="flex items-stretch justify-center gap-3">
+            <a [routerLink]="['/firmware']"
+                class="flex items-center justify-center gap-2 px-3 no-underline bg-gray-500 text-white rounded-md border-none font-semibold">
+                Quay lại
+            </a>
             <button
                 class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
                 type="button" (click)="onSave()">

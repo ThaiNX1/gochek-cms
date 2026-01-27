@@ -15,12 +15,43 @@
 // }
 :host ::ng-deep {
   .mat-mdc-table thead, .mat-mdc-header-row, .mat-mdc-table .mat-mdc-header-cell{
-    border: 1px solid #c0c7d0 !important;
     border-top-width: 0px !important;
+    border-left-width: 1px !important;
+    border-right-width: 1px !important;
+    border-bottom-width: 1px !important;
+    border-style: solid !important;
+    border-color: #c0c7d0 !important;
   }
 }
 :host ::ng-deep {
   .mat-mdc-table tbody, .mat-mdc-table tfoot, .mat-mdc-cell, .mat-mdc-footer-cell, .mat-mdc-row, .mat-mdc-footer-row{
-    border: 1px solid #c0c7d0 !important;
+    border-top-width: 1px !important;
+    border-left-width: 1px !important;
+    border-right-width: 1px !important;
+    border-bottom-width: 1px !important;
+    border-style: solid !important;
+    border-color: #c0c7d0 !important;
+  }
+}
+
+// Expand Row Styles
+.element-row {
+  &.expanded-row {
+    border-bottom-color: transparent !important;
+  }
+}
+
+.detail-row {
+  height: 0 !important;
+}
+
+.element-detail {
+  overflow: hidden;
+  display: flex;
+  padding: 0;
+  transition: all 0.3s ease-in-out;
+  
+  &[style*="expanded"] {
+    padding: 16px;
   }
 }

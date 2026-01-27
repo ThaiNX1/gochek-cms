@@ -17,19 +17,66 @@
     </div>
     <app-table
         class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
-        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
-        (pageChange)="onPageChange($event)">
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination" [expandable]="true"
+        [expandTemplate]="expandTemplate" (pageChange)="onPageChange($event)">
     </app-table>
 </div>
 
 <ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
     <div class="flex items-center justify-center px-4 gap-3">
-        <button class="flex items-center justify-center border-none bg-transparent" (click)="onAddEditDeviceType(item)">
+        <button class="flex items-center justify-center border-none bg-transparent" (click)="onAddEditDeviceType(item)"
+            title="Sửa">
             <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
         </button>
-        <button class="flex items-center justify-center border-none bg-transparent" (click)="onDeleteDeviceType(item)">
+        <button class="flex items-center justify-center border-none bg-transparent" (click)="onDeleteDeviceType(item)"
+            title="Xóa">
             <mat-icon class="text-red-500">delete</mat-icon>
         </button>
+        <button class="flex items-center justify-center border-none bg-transparent" (click)="onAddModel(item)"
+            title="Thêm model">
+            <mat-icon class="text-blue-500">add_circle_outline</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<ng-template #expandTemplate let-item="item">
+    <div class="flex flex-col gap-4 w-full p-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Danh sách Model</h3>
+        </div>
+        @if(item.models && item.models.length > 0) {
+        <table class="w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border border-gray-300 px-4 py-2 text-left">STT</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Tên model</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Code</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Mô tả</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for(model of item.models; track model.id; let i = $index) {
+                <tr class="bg-white">
+                    <td class="border border-gray-400 px-4 py-2">{{ i + 1 }}</td>
+                    <td class="border border-gray-400 px-4 py-2">{{ model.name }}</td>
+                    <td class="border border-gray-400 px-4 py-2">{{ model.code }}</td>
+                    <td class="border border-gray-400 px-4 py-2">{{ model.description || '-' }}</td>
+                    <td class="border border-gray-400 px-4 py-2">
+                        <span class="px-2 py-1 rounded text-xs"
+                            [ngClass]="model.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                            {{ model.isActive ? 'Hoạt động' : 'Không hoạt động' }}
+                        </span>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        } @else {
+        <div class="text-center text-gray-500 py-4">
+            Chưa có model nào
+        </div>
+        }
     </div>
 </ng-template>
 
@@ -50,7 +97,7 @@
             </mat-form-field>
         </div>
         <div class="flex flex-col gap-1">
-            <label class="require">Thời gian bảo hành (tháng)</label>
+            <label>Thời gian bảo hành (tháng)</label>
             <mat-form-field appearance="outline" floatLabel="auto">
                 <input matInput formControlName="warrantyMonth" placeholder="Nhập thời gian bảo hành (tháng)">
             </mat-form-field>
@@ -72,5 +119,50 @@
     <p class="w-full text-center">
         Bạn có chắc chắn muốn xóa loại thiết bị này không?
     </p>
+    }@else if (dialogData.type === 'model'){
+    <form [formGroup]="modelForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Loại thiết bị</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="deviceTypeName" placeholder="Loại thiết bị">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Tên model</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="name" placeholder="Nhập tên model">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Code</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="code" placeholder="Nhập code">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Mô tả</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="description" placeholder="Nhập mô tả" rows="3"></textarea>
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="flex items-center gap-2">
+                <input type="checkbox" formControlName="isActive">
+                Hoạt động
+            </label>
+        </div>
+    </form>
+
+    <div class="flex items-center justify-center gap-4 pt-3">
+        <button class="flex items-center justify-center bg-white border border-gray-400 rounded px-3 py-2"
+            (click)="onCancel()">
+            Hủy
+        </button>
+        <button
+            class="flex items-center justify-center border border-transparent rounded text-white px-3 py-2 bg-primary"
+            (click)="saveModel()">
+            Lưu
+        </button>
+    </div>
     }
 </ng-template>

@@ -5,7 +5,38 @@
       mat-table
       [dataSource]="dataSource"
       class="max-h-full max-w-full table-line-form overflow-auto"
+      multiTemplateDataRows
     >
+      <!-- Expand Column -->
+      @if(expandable) {
+        <ng-container matColumnDef="expand">
+          @if(showHeader) {
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              style="background-color: #f1f5f9 !important; width: 60px;"
+            >
+              <div class="h-[52px] w-full flex items-center justify-center break-words border-t border-[#c0c7d0]">
+                
+              </div>
+            </th>
+          }
+          <td mat-cell *matCellDef="let element" style="width: 60px;">
+            <div class="h-[52px] w-full flex items-center justify-center">
+              <button
+                mat-icon-button
+                (click)="toggleRow(element); $event.stopPropagation()"
+                aria-label="expand row"
+              >
+                <mat-icon>
+                  {{ expandedElement === element ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+                </mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+      }
+
       @for(column of columns; track column.field; let i = $index) {
       <ng-container
         matColumnDef="{{ column.field }}"
@@ -66,17 +97,40 @@
         </td>
       </ng-container>
       }
+
+      <!-- Expanded Content Column -->
+      @if(expandable && expandTemplate) {
+        <ng-container matColumnDef="expandedDetail">
+          <td mat-cell *matCellDef="let element" [attr.colspan]="displayedColumnsWithExpand.length">
+            <div class="element-detail"
+              [@detailExpand]="element === expandedElement ? 'expanded' : 'collapsed'">
+              <ng-container
+                *ngTemplateOutlet="expandTemplate; context: { item: element }"
+              ></ng-container>
+            </div>
+          </td>
+        </ng-container>
+      }
+
       @if(showHeader) {
         <tr
           mat-header-row
-          *matHeaderRowDef="displayedStringColumns; sticky: true"
+          *matHeaderRowDef="expandable ? displayedColumnsWithExpand : displayedStringColumns; sticky: true"
         ></tr>
       }
       <tr
         mat-row
-        *matRowDef="let element; columns: displayedStringColumns"
+        *matRowDef="let element; columns: expandable ? displayedColumnsWithExpand : displayedStringColumns"
         class="element-row hover:bg-gray-300"
+        [class.expanded-row]="expandedElement === element"
       ></tr>
+      @if(expandable && expandTemplate) {
+        <tr
+          mat-row
+          *matRowDef="let row; columns: ['expandedDetail']"
+          class="detail-row"
+        ></tr>
+      }
     </table>
     } @else { 
       @for(item of dataSource; track item.id) {
