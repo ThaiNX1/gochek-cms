@@ -7,6 +7,7 @@ mutation UploadFile($file: Upload!, $folder: String!) {
         folder
         url
         basePath
+        md5
     }
 }
 `;

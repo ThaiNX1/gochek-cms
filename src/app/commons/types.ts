@@ -217,6 +217,7 @@ export type Device = {
   noSerialNumber?: Maybe<Scalars['Float']['output']>;
   organization?: Maybe<Organization>;
   organizationId?: Maybe<Scalars['String']['output']>;
+  otaMessage?: Maybe<Scalars['String']['output']>;
   otaStatus?: Maybe<DeviceControlOtaStatusEnum>;
   ownerId?: Maybe<Scalars['String']['output']>;
   prefix?: Maybe<Scalars['String']['output']>;
@@ -1121,6 +1122,7 @@ export type UploadFileResponse = {
   basePath?: Maybe<Scalars['String']['output']>;
   filename?: Maybe<Scalars['String']['output']>;
   folder?: Maybe<Scalars['String']['output']>;
+  md5?: Maybe<Scalars['String']['output']>;
   url?: Maybe<Scalars['String']['output']>;
 };
 

@@ -66,7 +66,7 @@ export class FirmwareCreateComponent extends BaseClass {
       modelId: new FormControl(null),
       models: new FormArray([]),
       firmwareFile: new FormControl(null),
-      md5: new FormControl(null, [Validators.required]),
+      md5: new FormControl(null),
     });
     this.deviceTypes = this.firmwareForm.get('deviceTypes') as FormArray;
     this.models = this.firmwareForm.get('models') as FormArray;
@@ -92,7 +92,7 @@ export class FirmwareCreateComponent extends BaseClass {
       description: response?.firmware?.description,
       type: response?.firmware?.type,
       firmwareFile: null,
-      md5: response?.firmware?.md5,
+      md5: null,
     });
     this.deviceTypes.clear();
     response?.firmware?.deviceTypes?.forEach((deviceType: any) => {
@@ -181,29 +181,39 @@ export class FirmwareCreateComponent extends BaseClass {
       this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin');
       return;
     }
-    if (this.firmwareForm.get('firmwareFile')?.value) {
-
-      const response = await this.injector.get(ApiService).executeMutation(UPLOAD_FILE, {
-        file: this.firmwareForm.get('firmwareFile')?.value,
-        folder: constant.fileFolder.firmwares,
-      });
-
-      if (response?.uploadFile) {
-        this.firmwareForm.get('filePath')?.setValue(response.uploadFile?.basePath);
-        this.firmwareForm.get('fileName')?.setValue(this.firmwareForm.get('firmwareFile')?.value?.name);
-      }
-    }
     let input: any = {
       name: this.firmwareForm.get('name')?.value,
       version: this.firmwareForm.get('version')?.value,
       description: this.firmwareForm.get('description')?.value,
       releaseNotes: this.firmwareForm.get('releaseNotes')?.value,
-      filePath: this.firmwareForm.get('filePath')?.value,
-      fileName: this.firmwareForm.get('fileName')?.value,
-      md5: this.firmwareForm.get('md5')?.value,
       type: this.firmwareForm.get('type')?.value,
       deviceTypeIds: this.deviceTypes.getRawValue()?.map((deviceType: any) => deviceType.id) || [],
       modelIds: this.models.getRawValue()?.map((model: any) => model.id) || [],
+    }
+    if (this.firmwareForm.get('firmwareFile')?.value) {
+      if(!this.firmwareForm.get('md5')?.value){
+        this.commonService.openSnackBarError('Vui lòng nhập mã md5');
+        return;
+      }
+      const response = await this.injector.get(ApiService).executeMutation(UPLOAD_FILE, {
+        file: this.firmwareForm.get('firmwareFile')?.value,
+        folder: constant.fileFolder.firmwares,
+        md5: this.firmwareForm.get('md5')?.value,
+      });
+
+      if (response?.uploadFile) {
+        this.firmwareForm.get('filePath')?.setValue(response.uploadFile?.basePath);
+        this.firmwareForm.get('fileName')?.setValue(this.firmwareForm.get('firmwareFile')?.value?.name);
+        input = {
+          ...input,
+          filePath: response.uploadFile?.basePath,
+          fileName: this.firmwareForm.get('firmwareFile')?.value?.name,
+          md5: response.uploadFile?.md5,
+        }
+      } else{
+        this.commonService.openSnackBarError('Lỗi khi upload file. Kiểm tra file hoặc md5');
+        return;
+      }
     }
     const response = this.firmwareForm.value?.id
       ? await this.injector.get(ApiService).executeMutation(UPDATE_FIRMWARE, {
