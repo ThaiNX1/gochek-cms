@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, Injector, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CREATE_WEBSITE_BANNER, GET_WEBSITE_BANNER, UPDATE_WEBSITE_BANNER } from '../../../../commons/queries/website.query';
-import { WebsiteBanner } from '../../../../commons/types';
+import { WebsiteBanner, WebsiteBannerPageEnum } from '../../../../commons/types';
 import { ApiService } from '../../../../core/services/api.service';
 import { CommonService } from '../../../../core/services/common.service';
 
@@ -23,6 +24,7 @@ import { CommonService } from '../../../../core/services/common.service';
     MatIconModule,
     MatCheckboxModule,
     MatSnackBarModule,
+    MatSelectModule,
   ],
   templateUrl: './website-banner-create.component.html',
   styleUrl: './website-banner-create.component.scss'
@@ -33,18 +35,25 @@ export class WebsiteBannerCreateComponent implements OnInit {
   bannerId: string | null = null;
   imagePreview: string | null = null;
   imageFile: File | null = null;
-
+  ownerPages = [
+    { label: 'Trang chủ', value: WebsiteBannerPageEnum.HOME },
+    { label: 'Học tập', value: WebsiteBannerPageEnum.LEARNING },
+    { label: 'Giới thiệu', value: WebsiteBannerPageEnum.ABOUT },
+    { label: 'Liên hệ', value: WebsiteBannerPageEnum.CONTACT },
+  ]
   constructor(
     private injector: Injector,
     private router: Router,
     private route: ActivatedRoute,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.bannerForm = new FormGroup({
       title: new FormControl('', [Validators.required]),
       order: new FormControl(0, [Validators.required, Validators.min(0)]),
       isActive: new FormControl(true),
+      redirectUrl: new FormControl(''),
+      page: new FormControl(WebsiteBannerPageEnum.HOME, [Validators.required]),
     });
 
     this.bannerId = this.route.snapshot.paramMap.get('id');
@@ -68,6 +77,8 @@ export class WebsiteBannerCreateComponent implements OnInit {
         title: banner.title,
         order: banner.order,
         isActive: banner.isActive,
+        redirectUrl: banner.redirectUrl,
+        page: banner.page,
       });
       this.imagePreview = banner.imageUrlCallback || null;
     }
@@ -120,6 +131,8 @@ export class WebsiteBannerCreateComponent implements OnInit {
         title: this.bannerForm.value.title,
         order: parseInt(this.bannerForm.value.order),
         isActive: this.bannerForm.value.isActive,
+        redirectUrl: this.bannerForm.value.redirectUrl || '',
+        page: this.bannerForm.value.page,
       };
 
       if (this.imageFile) {

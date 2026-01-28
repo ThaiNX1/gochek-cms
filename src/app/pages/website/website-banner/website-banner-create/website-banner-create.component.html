@@ -33,11 +33,22 @@
                         </mat-form-field>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="flex flex-col gap-1">
                             <label class="require font-medium">Thứ tự hiển thị</label>
                             <mat-form-field appearance="outline" floatLabel="auto">
                                 <input matInput type="number" formControlName="order" placeholder="Nhập thứ tự">
+                            </mat-form-field>
+                        </div>
+                        
+                        <div class="flex flex-col gap-1">
+                            <label class="font-medium">Vị trí hiển thị</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <mat-select formControlName="page">
+                                    @for (page of ownerPages; track page.value) {
+                                    <mat-option [value]="page.value">{{ page.label }}</mat-option>
+                                    }
+                                </mat-select>
                             </mat-form-field>
                         </div>
 
@@ -48,6 +59,13 @@
                             </mat-checkbox>
                         </div>
                     </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="font-medium">Liên kết</label>
+                        <mat-form-field appearance="outline" floatLabel="auto">
+                            <input matInput formControlName="redirectUrl" placeholder="Nhập liên kết">
+                        </mat-form-field>
+                    </div>
                 </div>
             </div>
 
@@ -57,7 +75,7 @@
                 <div class="flex flex-col gap-2">
                     <p class="text-sm text-gray-600">Kích thước đề xuất: 1920x600px, tối đa 5MB</p>
                     @if(imagePreview) {
-                        <div class="relative w-full max-w-2xl border border-gray-300 rounded overflow-hidden">
+                        <div class="relative w-full max-w-2xl border border-gray-300 rounded overflow-hidden min-h-20">
                             <img [src]="imagePreview" alt="Banner preview" class="w-full h-auto object-cover">
                             <button type="button" 
                                 class="absolute w-7 !h-7 top-2 right-2 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"

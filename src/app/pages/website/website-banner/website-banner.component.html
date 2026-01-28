@@ -31,7 +31,7 @@
 
 <ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
     <div class="flex items-center justify-center px-4">
-        <span [class]="getStatusClass(item.isActive)">{{ getStatusText(item.isActive) }}</span>
+        <span [class]="getStatusClass(item.isActive)" class="whitespace-nowrap">{{ getStatusText(item.isActive) }}</span>
     </div>
 </ng-template>
 

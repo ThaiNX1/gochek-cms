@@ -17,6 +17,7 @@ import { GenerateSerialHistoryComponent } from '../pages/generate-serial-history
 import { HomeComponent } from '../pages/home/home.component';
 import { CustomerComponent } from '../pages/customer/customer.component';
 import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
+import { WebsiteBannerCreateComponent } from '../pages/website/website-banner/website-banner-create/website-banner-create.component';
 const routes: Routes = [
   {
     path: '',
@@ -102,6 +103,10 @@ const routes: Routes = [
   {
     path: 'website/banner',
     component: WebsiteBannerComponent,
+  },
+  {
+    path: 'website/banner/:id',
+    component: WebsiteBannerCreateComponent,
   },
   // {
   //   path: 'guest',

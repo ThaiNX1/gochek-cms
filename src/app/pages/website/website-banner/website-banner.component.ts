@@ -8,7 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { BaseClass } from '../../../commons/base.class';
-import { WebsiteBanner } from '../../../commons/types';
+import { WebsiteBanner, WebsiteBannerPageEnum } from '../../../commons/types';
 import { TableColumnType } from '../../../core/constants/enum';
 import { ApiService } from '../../../core/services/api.service';
 import { TableComponent } from '../../../shared/components/table/table.component';
@@ -43,6 +43,8 @@ export class WebsiteBannerComponent extends BaseClass {
       { name: 'Hình ảnh', field: 'imageUrl', className: 'min-w-[150px] max-w-[150px]', templateCode: 'imageColumnTemplate' },
       { name: 'Tiêu đề', field: 'title', className: 'min-w-[200px] max-w-[300px]' },
       { name: 'Thứ tự', field: 'order', className: 'text-center min-w-[80px] max-w-[80px]', type: TableColumnType.NUMBER },
+      { name: 'Vị trí', field: 'pageName', className: 'text-center min-w-[150px] max-w-[150px]' },
+      { name: 'Liên kết', field: 'redirectUrl', className: 'min-w-[200px] max-w-[300px]' },
       { name: 'Trạng thái', field: 'isActive', className: 'min-w-[120px] max-w-[120px]', templateCode: 'statusColumnTemplate' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
@@ -68,6 +70,7 @@ export class WebsiteBannerComponent extends BaseClass {
       acc.push({
         ...item,
         index: (page - 1) * 20 + index + 1,
+        pageName: this.getPageName(item.page as WebsiteBannerPageEnum),
       });
       return acc;
     }, []) || [];
@@ -77,6 +80,21 @@ export class WebsiteBannerComponent extends BaseClass {
       size: 20,
       total: response?.websiteBanners?.pagination?.total || 0,
     };
+  }
+
+  getPageName(page?: WebsiteBannerPageEnum): string {
+    switch (page) {
+      case WebsiteBannerPageEnum.HOME:
+        return 'Trang chủ';
+      case WebsiteBannerPageEnum.LEARNING:
+        return 'Trang học tập';
+      case WebsiteBannerPageEnum.ABOUT:
+        return 'Trang giới thiệu';
+      case WebsiteBannerPageEnum.CONTACT:
+        return 'Trang liên hệ';
+      default:
+        return '';
+    }
   }
 
   async onPageChange(event: PageEvent) {

@@ -147,6 +147,8 @@ export type CreateWebsiteBannerInput = {
   image?: InputMaybe<Scalars['Upload']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
   order?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<WebsiteBannerPageEnum>;
+  redirectUrl?: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
 };
 
@@ -1166,6 +1168,8 @@ export type UpdateWebsiteBannerInput = {
   image?: InputMaybe<Scalars['Upload']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
   order?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<WebsiteBannerPageEnum>;
+  redirectUrl?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1235,6 +1239,16 @@ export type WebsiteBanner = {
   order: Scalars['Int']['output'];
   organization?: Maybe<Organization>;
   organizationId?: Maybe<Scalars['String']['output']>;
+  page?: Maybe<WebsiteBannerPageEnum>;
+  redirectUrl?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
 };
+
+/** The different types of website banner page */
+export enum WebsiteBannerPageEnum {
+  ABOUT = 'ABOUT',
+  CONTACT = 'CONTACT',
+  HOME = 'HOME',
+  LEARNING = 'LEARNING'
+}

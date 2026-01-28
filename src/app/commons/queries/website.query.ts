@@ -14,6 +14,8 @@ query GetWebsiteBanners($pagination: PaginationInput) {
       isActive
       createdAt
       updatedAt
+      redirectUrl
+      page
     }
     pagination {
       page
@@ -36,6 +38,8 @@ query GetWebsiteBanner($id: String!) {
     isActive
     createdAt
     updatedAt
+    redirectUrl
+    page
   }
 }
 `;
@@ -50,6 +54,7 @@ mutation CreateWebsiteBanner($input: CreateWebsiteBannerInput!) {
     isActive
     createdAt
     updatedAt
+    page
   }
 }
 `;

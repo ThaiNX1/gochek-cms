@@ -94,7 +94,7 @@ export class ApiService {
   async executeMutation<T>(
     query: any,
     variables: any = null,
-    context: any = null
+    multipart: boolean = false
   ): Promise<Mutation | null | undefined> {
     const useMultipart = !!variables?.file && variables.file instanceof File;
     try {
@@ -107,7 +107,7 @@ export class ApiService {
               headers: {
                 'apollo-require-preflight': 'true',
               },
-              useMultipart
+              useMultipart: useMultipart || multipart
             },
           })
           .pipe(map((response) => response?.data))
