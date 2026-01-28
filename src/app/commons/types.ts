@@ -143,6 +143,13 @@ export type CreateUserInput = {
   roleIds?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
+export type CreateWebsiteBannerInput = {
+  image?: InputMaybe<Scalars['Upload']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  order?: InputMaybe<Scalars['Int']['input']>;
+  title: Scalars['String']['input'];
+};
+
 export type Customer = {
   assignedToId?: Maybe<Scalars['String']['output']>;
   company?: Maybe<Scalars['String']['output']>;
@@ -432,6 +439,7 @@ export type Mutation = {
   createModel: Model;
   createOrganization: Organization;
   createUser: User;
+  createWebsiteBanner: WebsiteBanner;
   deleteBusinessRole: Scalars['Boolean']['output'];
   deleteConnection: DeleteConnectionResponse;
   deleteCountry: Country;
@@ -442,6 +450,7 @@ export type Mutation = {
   deleteUser: Scalars['Boolean']['output'];
   generateFormKey: GenerateFormKeyResponse;
   generateSerialNumber: Scalars['String']['output'];
+  getAllBannerActivePublic: Array<WebsiteBanner>;
   importPermissions: Array<Permission>;
   importProvince: Array<Province>;
   importWard: Array<Ward>;
@@ -450,6 +459,7 @@ export type Mutation = {
   refreshToken: RefreshTokenResponse;
   removePermissionRole: Permission;
   removeUserRole: User;
+  removeWebsiteBanner: Scalars['Boolean']['output'];
   resendOtp: Scalars['Boolean']['output'];
   submitConsultationForm: SubmitConsultationFormResponse;
   subscribeNotification: User;
@@ -463,6 +473,7 @@ export type Mutation = {
   updateModel: Model;
   updateOrganization: Organization;
   updateUser: User;
+  updateWebsiteBanner: WebsiteBanner;
   uploadFile: UploadFileResponse;
 };
 
@@ -544,6 +555,11 @@ export type MutationCreateUserArgs = {
 };
 
 
+export type MutationCreateWebsiteBannerArgs = {
+  input: CreateWebsiteBannerInput;
+};
+
+
 export type MutationDeleteBusinessRoleArgs = {
   id: Scalars['ID']['input'];
 };
@@ -621,6 +637,11 @@ export type MutationRemoveUserRoleArgs = {
 };
 
 
+export type MutationRemoveWebsiteBannerArgs = {
+  id: Scalars['String']['input'];
+};
+
+
 export type MutationSubmitConsultationFormArgs = {
   input: SubmitConsultationFormInput;
 };
@@ -690,6 +711,12 @@ export type MutationUpdateUserArgs = {
 };
 
 
+export type MutationUpdateWebsiteBannerArgs = {
+  id: Scalars['String']['input'];
+  input: UpdateWebsiteBannerInput;
+};
+
+
 export type MutationUploadFileArgs = {
   file: Scalars['Upload']['input'];
   folder: Scalars['String']['input'];
@@ -752,6 +779,11 @@ export type PaginatedOrganizationResponse = {
 
 export type PaginatedUserResponse = {
   data: Array<User>;
+  pagination: PaginationResponse;
+};
+
+export type PaginatedWebsiteBannerResponse = {
+  data: Array<WebsiteBanner>;
   pagination: PaginationResponse;
 };
 
@@ -848,6 +880,8 @@ export type Query = {
   ward: Ward;
   wards: Array<Ward>;
   wardsByProvince: Array<Ward>;
+  websiteBanner: WebsiteBanner;
+  websiteBanners: PaginatedWebsiteBannerResponse;
 };
 
 
@@ -990,6 +1024,16 @@ export type QueryWardsByProvinceArgs = {
   provinceId: Scalars['ID']['input'];
 };
 
+
+export type QueryWebsiteBannerArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type QueryWebsiteBannersArgs = {
+  pagination?: InputMaybe<PaginationInput>;
+};
+
 export type RefreshTokenResponse = {
   access_token: Scalars['String']['output'];
   refresh_token: Scalars['String']['output'];
@@ -1118,6 +1162,13 @@ export type UpdateUserInput = {
   roleIds?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
+export type UpdateWebsiteBannerInput = {
+  image?: InputMaybe<Scalars['Upload']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  order?: InputMaybe<Scalars['Int']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UploadFileResponse = {
   basePath?: Maybe<Scalars['String']['output']>;
   filename?: Maybe<Scalars['String']['output']>;
@@ -1171,5 +1222,19 @@ export type Ward = {
   provinceId: Scalars['String']['output'];
   slug?: Maybe<Scalars['String']['output']>;
   type?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type WebsiteBanner = {
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  imageUrl: Scalars['String']['output'];
+  imageUrlCallback?: Maybe<Scalars['String']['output']>;
+  isActive: Scalars['Boolean']['output'];
+  order: Scalars['Int']['output'];
+  organization?: Maybe<Organization>;
+  organizationId?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
 };

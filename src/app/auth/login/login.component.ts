@@ -170,6 +170,22 @@ export class LoginComponent implements OnInit, OnDestroy {
           permissions: actions
         }];
         break;
+      case 'website':
+        result = [{
+          path: '/website',
+          icon: 'language',
+          name: 'Website',
+          permissions: actions,
+          children: [
+            {
+              id: 'banner',
+              path: '/website/banner',
+              icon: 'panorama',
+              name: 'Banner',
+            },
+          ]
+        }];
+        break;
       default:
         return [];
     }
@@ -177,8 +193,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 }
 export type MenuItem = {
+  id?: string;
   path: string;
   icon: string;
   name: string;
-  permissions: string[];
+  permissions?: string[];
+  children?: MenuItem[];
 }

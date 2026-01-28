@@ -16,6 +16,7 @@ import { FirmwareCreateComponent } from '../pages/firmware/firmware-create/firmw
 import { GenerateSerialHistoryComponent } from '../pages/generate-serial-history/generate-serial-history.component';
 import { HomeComponent } from '../pages/home/home.component';
 import { CustomerComponent } from '../pages/customer/customer.component';
+import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
 const routes: Routes = [
   {
     path: '',
@@ -97,6 +98,10 @@ const routes: Routes = [
   {
     path: 'customer',
     component: CustomerComponent,
+  },
+  {
+    path: 'website/banner',
+    component: WebsiteBannerComponent,
   },
   // {
   //   path: 'guest',

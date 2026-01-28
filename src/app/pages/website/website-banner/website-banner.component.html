@@ -1,0 +1,49 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <div class="flex items-center justify-between px-4">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-2xl font-bold">Danh sách Banner</h1>
+        </div>
+        <div class="flex items-stretch gap-3">
+            <button
+                class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400"
+                (click)="onAddBanner()">
+                <mat-icon class="text-white">add</mat-icon>
+                Thêm banner
+            </button>
+        </div>
+    </div>
+    <app-table
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+        (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<ng-template myTemplate tempCode="imageColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center p-2">
+        @if(item.imageUrlCallback) {
+            <img [src]="item.imageUrlCallback" alt="Banner" class="h-11 w-32 object-contain rounded">
+        } @else {
+            <span class="text-gray-400">-</span>
+        }
+    </div>
+</ng-template>
+
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4">
+        <span [class]="getStatusClass(item.isActive)">{{ getStatusText(item.isActive) }}</span>
+    </div>
+</ng-template>
+
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4 gap-3">
+        <button class="flex items-center justify-center border-none bg-transparent" title="Chỉnh sửa"
+            (click)="onEditBanner(item)">
+            <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+        </button>
+        <button class="flex items-center justify-center border-none bg-transparent" title="Xóa"
+            (click)="onDeleteBanner(item)">
+            <mat-icon class="text-red-500">delete</mat-icon>
+        </button>
+    </div>
+</ng-template>

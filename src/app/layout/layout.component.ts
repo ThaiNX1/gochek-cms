@@ -97,6 +97,23 @@ export class LayoutComponent implements OnInit {
       });
   }
 
+  isParentActive(menu: RouterMenu): boolean {
+    if (!menu.children || menu.children.length === 0) {
+      return false;
+    }
+    const currentUrl = this.injector.get(Router).url;
+    return menu.children.some(child => {
+      if (child.path && currentUrl.includes(child.path)) {
+        return true;
+      }
+      // Recursive check for nested children
+      if (child.children && child.children.length > 0) {
+        return this.isParentActive(child);
+      }
+      return false;
+    });
+  }
+
   getActiveMenu() {
     const menuActive = this.menus.find(menu => this.injector.get(Router).url?.includes(menu?.path || 'undefined'));
     if (menuActive) {
