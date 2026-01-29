@@ -60,7 +60,7 @@
           *matCellDef="let element"
           [ngClass]="column.tdClassName"
         >
-        <div class="h-[52px] w-full flex items-center justify-center break-words">
+        <div class="h-[52px] w-full flex items-center justify-center break-words" [ngClass]="column.tdClassName">
             @if(!column?.template) {
               @switch(column.type) {
                   @case(TableColumnType.NUMBER) {

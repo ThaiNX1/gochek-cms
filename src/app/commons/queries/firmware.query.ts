@@ -26,11 +26,18 @@ query GetFirmwares($pagination: PaginationInput) {
                 name
                 code
                 isActive
-                deviceType{
+                deviceType {
                     id
                     name
                 }
             }
+        }
+        lastItems {
+            id
+            name
+            version
+            type
+            createdAt
         }
     }
 }

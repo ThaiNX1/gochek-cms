@@ -59,7 +59,7 @@ export class FirmwareComponent extends BaseClass {
       // { name: 'Mô tả', field: 'description', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Ghi chú release', field: 'releaseNotes', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Trạng thái', field: 'status', className: 'min-w-[80px] max-w-[80px]', templateCode: 'statusColumnTemplate' },
-      { name: 'Hành động', field: 'action', className: 'min-w-[80px] max-w-[80px]', templateCode: 'actionColumnTemplate' },
+      { name: 'Hành động', field: 'action', className: 'min-w-[80px] max-w-[80px]', tdClassName: '!justify-start', templateCode: 'actionColumnTemplate' },
     ]
   }
 
@@ -79,12 +79,15 @@ export class FirmwareComponent extends BaseClass {
         keyword: this.filterForm.value.keyword ?? '',
       },
     });
+    const latestESP = response?.firmwares?.lastItems?.find((item: any) => item.type === FirmwareTypeEnum.ESP_FIRMWARE);
+    const latestRA = response?.firmwares?.lastItems?.find((item: any) => item.type === FirmwareTypeEnum.RA_FIRMWARE);
     this.dataSource = response?.firmwares?.data?.reduce((acc: any, item: any, index: number) => {
       acc.push({
         ...item,
         index: index + 1,
         status: item.isActive ? 'Hoạt động' : 'Không hoạt động',
-        typeName: item.type === FirmwareTypeEnum.ESP_FIRMWARE ? 'ESP32' : 'RA'
+        typeName: item.type === FirmwareTypeEnum.ESP_FIRMWARE ? 'ESP' : 'RA',
+        isLatest: item.id === latestESP?.id || item.id === latestRA?.id
       });
       return acc;
     }, []) ?? [];

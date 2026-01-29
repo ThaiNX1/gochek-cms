@@ -768,6 +768,7 @@ export type PaginatedDeviceTypeResponse = {
 
 export type PaginatedFirmwareResponse = {
   data: Array<Firmware>;
+  lastItems?: Maybe<Array<Firmware>>;
   pagination: PaginationResponse;
 };
 

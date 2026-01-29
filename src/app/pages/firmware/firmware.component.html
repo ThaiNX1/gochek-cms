@@ -33,16 +33,18 @@
 </ng-template>
 
 <ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
-    <div class="flex items-center justify-center px-4 gap-3">
+    <div class="flex items-center justify-start px-4 gap-3">
         <button class="flex items-center justify-center border-none bg-transparent" (click)="onToggleStatus(item)"
             [title]="item.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'">
             <mat-icon [class]="item.isActive ? 'text-orange-500 text-4xl' : 'text-green-500 text-4xl'">
                 {{ item.isActive ? 'toggle_on' : 'toggle_off' }}
             </mat-icon>
         </button>
-        <a [routerLink]="['/firmware', item.id]" class="flex items-center justify-center border-none bg-transparent">
-            <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
-        </a>
+        @if(item.isLatest) {
+            <a [routerLink]="['/firmware', item.id]" class="flex items-center justify-center border-none bg-transparent">
+                <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+            </a>
+        }
         <button class="flex items-center justify-center border-none bg-transparent" (click)="onDelete(item)">
             <mat-icon class="text-red-500">delete</mat-icon>
         </button>
