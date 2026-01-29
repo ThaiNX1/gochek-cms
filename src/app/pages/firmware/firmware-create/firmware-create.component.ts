@@ -43,7 +43,7 @@ export class FirmwareCreateComponent extends BaseClass {
   modelSearchQuery = GET_MODELS;
   modelList: any[] = [];
   firmwareTypeList = [
-    { name: 'ESP32', value: FirmwareTypeEnum.ESP_FIRMWARE },
+    { name: 'ESP', value: FirmwareTypeEnum.ESP_FIRMWARE },
     { name: 'RA', value: FirmwareTypeEnum.RA_FIRMWARE },
   ]
   constructor() {
@@ -109,6 +109,7 @@ export class FirmwareCreateComponent extends BaseClass {
         id: new FormControl(model.id),
         name: new FormControl(model.name),
         code: new FormControl(model.code),
+        deviceTypeId: new FormControl(model.deviceTypeId),
       }));
     });
   }
@@ -133,6 +134,12 @@ export class FirmwareCreateComponent extends BaseClass {
   }
 
   onRemoveDeviceType(index: number) {
+    const deviceType = this.deviceTypes.controls[index].value;
+    this.models.controls.forEach((model: any) => {
+      if (model.value.deviceTypeId === deviceType.id) {
+        this.models.removeAt(this.models.controls.indexOf(model));
+      }
+    });
     this.deviceTypes.removeAt(index);
   }
 
@@ -152,8 +159,6 @@ export class FirmwareCreateComponent extends BaseClass {
 
   onSelectModel(event: any) {
     const checked = this.models.controls.find((model: any) => model.value.id === event.id);
-    console.log(checked);
-    console.log(event);
 
     if (checked) {
       return;
@@ -162,6 +167,7 @@ export class FirmwareCreateComponent extends BaseClass {
       id: new FormControl(event.id),
       name: new FormControl(event.name),
       code: new FormControl(event.code),
+      deviceTypeId: new FormControl(event.deviceTypeId),
     }));
     this.firmwareForm.get('modelId')?.reset();
   }

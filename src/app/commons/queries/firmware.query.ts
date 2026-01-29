@@ -63,6 +63,7 @@ query GetFirmware($id: ID!) {
             name
             code
             isActive
+            deviceTypeId
         }
     }
 }

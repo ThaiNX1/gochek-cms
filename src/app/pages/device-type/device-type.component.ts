@@ -9,7 +9,7 @@ import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormControl } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { PaginatedDeviceTypeResponse } from '../../commons/types';
-import { CREATE_DEVICE_TYPE, CREATE_MODEL, GET_DEVICE_TYPES, UPDATE_DEVICE_TYPE } from '../../commons/queries/device-type.query';
+import { CREATE_DEVICE_TYPE, CREATE_MODEL, GET_DEVICE_TYPES, REMOVE_MODEL, UPDATE_DEVICE_TYPE } from '../../commons/queries/device-type.query';
 import { TableColumnType } from '../../core/constants/enum';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -137,12 +137,12 @@ export class DeviceTypeComponent extends BaseClass {
 
   onDeleteDeviceType(item: any) {
     this.dialogData.type = 'error';
+    this.dialogData.message = `Bạn có chắc chắn muốn xóa loại thiết bị ${item.name} không?`;
     const dialogRef = this.dialog.open(DialogComponent, {
       data: {
         ...this.dialogData,
         title: 'Xóa loại thiết bị',
         confirmText: 'Xóa',
-        message: 'Bạn có chắc chắn muốn xóa loại thiết bị này không?',
         showActions: true,
       },
       width: this.dialogData.width
@@ -241,5 +241,39 @@ export class DeviceTypeComponent extends BaseClass {
     } else {
       this.commonService.openSnackBarError('Thêm model thất bại');
     }
+  }
+
+  onDeleteModel(item: any, model: any) {
+    this.dialogData.type = 'error';
+    this.dialogData.message = `Bạn có chắc chắn muốn xóa model "${model.name}" không?`;
+    const dialogRef = this.dialog.open(DialogComponent, {
+      data: {
+        ...this.dialogData,
+        title: 'Xóa model',
+        confirmText: 'Xóa',
+        showActions: true,
+      },
+      width: this.dialogData.width
+    });
+
+    dialogRef.componentInstance.content = this.deviceTypeDialogContent;
+
+    dialogRef.afterClosed().pipe(takeUntil(this.destroyRef)).subscribe(async result => {
+      if (result) {
+        const response = await this.injector.get(ApiService).executeMutation(REMOVE_MODEL, {
+          id: model.id,
+        })
+        if (response) {
+          this.commonService.openSnackBar('Xóa model thành công');
+          const deviceType = this.dataSource.find((d: any) => d.id === item.id);
+          if (deviceType) {
+            deviceType.models = deviceType.models.filter((m: any) => m.id !== model.id);
+          }
+          this.dialog.closeAll();
+        } else {
+          this.commonService.openSnackBarError('Xóa model thất bại');
+        }
+      }
+    });
   }
 }

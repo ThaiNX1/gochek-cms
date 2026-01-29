@@ -53,6 +53,7 @@
                     <th class="border border-gray-300 px-4 py-2 text-left">Code</th>
                     <th class="border border-gray-300 px-4 py-2 text-left">Mô tả</th>
                     <th class="border border-gray-300 px-4 py-2 text-left">Trạng thái</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,6 +68,14 @@
                             [ngClass]="model.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
                             {{ model.isActive ? 'Hoạt động' : 'Không hoạt động' }}
                         </span>
+                    </td>
+                    <td class="border border-gray-400 px-4 py-2">
+                        <div class="flex items-center justify-center gap-2">
+                            <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
+                                (click)="onDeleteModel(item, model)">
+                                <mat-icon class="text-red-500">delete</mat-icon>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 }
@@ -117,7 +126,7 @@
     </div>
     }@else if (dialogData.type === 'error'){
     <p class="w-full text-center">
-        Bạn có chắc chắn muốn xóa loại thiết bị này không?
+        {{ dialogData.message }}
     </p>
     }@else if (dialogData.type === 'model'){
     <form [formGroup]="modelForm" class="flex flex-col gap-4">

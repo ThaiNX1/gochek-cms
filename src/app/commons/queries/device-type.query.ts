@@ -110,3 +110,10 @@ export const CREATE_MODEL = gql`
   }
 `;
  
+
+export const REMOVE_MODEL = gql`
+  mutation DeleteModel($id: ID!) {
+    deleteModel(id: $id)
+  }
+`;
+ 
