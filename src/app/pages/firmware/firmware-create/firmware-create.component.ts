@@ -154,7 +154,7 @@ export class FirmwareCreateComponent extends BaseClass {
     const checked = this.models.controls.find((model: any) => model.value.id === event.id);
     console.log(checked);
     console.log(event);
-    
+
     if (checked) {
       return;
     }
@@ -173,6 +173,10 @@ export class FirmwareCreateComponent extends BaseClass {
   onSelectFirmwareFile(event: any) {
     const file = event.target.files[0];
     this.firmwareForm.get('firmwareFile')?.setValue(file);
+    const [type, model, version, env, md5] = file.name.split('.')?.[0]?.split('_');
+    this.firmwareForm.get('md5')?.setValue(md5);
+    this.firmwareForm.get('type')?.setValue(type);
+    this.firmwareForm.get('version')?.setValue(version);
   }
 
   async onSave() {
@@ -191,7 +195,7 @@ export class FirmwareCreateComponent extends BaseClass {
       modelIds: this.models.getRawValue()?.map((model: any) => model.id) || [],
     }
     if (this.firmwareForm.get('firmwareFile')?.value) {
-      if(!this.firmwareForm.get('md5')?.value){
+      if (!this.firmwareForm.get('md5')?.value) {
         this.commonService.openSnackBarError('Vui lòng nhập mã md5');
         return;
       }
@@ -208,9 +212,9 @@ export class FirmwareCreateComponent extends BaseClass {
           ...input,
           filePath: response.uploadFile?.basePath,
           fileName: this.firmwareForm.get('firmwareFile')?.value?.name,
-          md5: response.uploadFile?.md5,
+          md5: response.uploadFile?.md5 || this.firmwareForm.get('md5')?.value,
         }
-      } else{
+      } else {
         this.commonService.openSnackBarError('Lỗi khi upload file. Kiểm tra file hoặc md5');
         return;
       }

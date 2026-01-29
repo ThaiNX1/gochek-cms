@@ -109,6 +109,7 @@ export class DeviceComponent extends BaseClass {
     this.editDeviceForm.get('deviceTypeId')?.valueChanges.subscribe((value) => {
       const deviceType = this.deviceTypeList.find((item) => item.id === value);
       this.modelEditList = deviceType?.models ?? [];
+      this.editDeviceForm.get('modelId')?.reset();
     })
   }
 
@@ -185,16 +186,17 @@ export class DeviceComponent extends BaseClass {
   }
 
   async onEditDevice(item: any) {
+    this.deviceTypeEditList = this.deviceTypeList;
+    const deviceType = this.deviceTypeList.find((_item) => _item.id === item.deviceTypeId);
+    this.modelEditList = deviceType?.models ?? [];
     this.editDeviceForm.patchValue({
       id: item.id,
       name: item.name,
       serialNumber: item.serialNumber,
       deviceTypeId: item.deviceTypeId,
+      modelId: item.model?.id,
       note: item.note,
     });
-    this.deviceTypeEditList = item.deviceType ? [item.deviceType] : this.deviceTypeList;
-    const deviceType = this.deviceTypeList.find((_item) => _item.id === item.deviceTypeId);
-    this.modelEditList = deviceType?.models ?? [];
     const dialogRef = this.injector.get(MatDialog).open(DialogComponent, {
       data: {
         title: 'Sửa thiết bị',

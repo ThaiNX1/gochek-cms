@@ -110,6 +110,7 @@ export const UPDATE_DEVICE = gql`
       isActive
       createdAt
       updatedAt
+      modelId
       deviceType {
         id
         name

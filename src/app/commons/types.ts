@@ -459,6 +459,7 @@ export type Mutation = {
   login: LoginResponse;
   logout: Scalars['String']['output'];
   refreshToken: RefreshTokenResponse;
+  removeModelInFirmware: Scalars['Boolean']['output'];
   removePermissionRole: Permission;
   removeUserRole: User;
   removeWebsiteBanner: Scalars['Boolean']['output'];
@@ -624,6 +625,12 @@ export type MutationLogoutArgs = {
 
 export type MutationRefreshTokenArgs = {
   refreshToken: Scalars['String']['input'];
+};
+
+
+export type MutationRemoveModelInFirmwareArgs = {
+  id: Scalars['ID']['input'];
+  modelId: Scalars['ID']['input'];
 };
 
 

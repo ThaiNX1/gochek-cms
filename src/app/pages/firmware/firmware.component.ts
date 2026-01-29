@@ -11,8 +11,8 @@ import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
-import { FirmwareTypeEnum, PaginatedFirmwareResponse } from '../../commons/types';
-import { DELETE_FIRMWARE, GET_FIRMWARES, UPDATE_FIRMWARE_STATUS } from '../../commons/queries/firmware.query';
+import { Firmware, FirmwareTypeEnum, Model, PaginatedFirmwareResponse } from '../../commons/types';
+import { DELETE_FIRMWARE, GET_FIRMWARES, REMOVE_MODEL_FIRMWARE, UPDATE_FIRMWARE_STATUS } from '../../commons/queries/firmware.query';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -144,12 +144,12 @@ export class FirmwareComponent extends BaseClass {
 
   async onDelete(item: any) {
     this.dialogData.type = 'error';
+    this.dialogData.message = `Bạn có chắc chắn muốn xóa firmware "${item.name}" không?`;
     const dialogRef = this.dialog.open(DialogComponent, {
       data: {
         ...this.dialogData,
-        title: 'Xóa loại thiết bị',
+        title: 'Xóa firmware',
         confirmText: 'Xóa',
-        message: 'Bạn có chắc chắn muốn xóa loại thiết bị này không?',
       },
       width: this.dialogData.width
     });
@@ -166,6 +166,36 @@ export class FirmwareComponent extends BaseClass {
           await this.onGetFirmwares(this.pagination.page + 1);
         } else {
           this.commonService.openSnackBarError('Xóa firmware thất bại');
+        }
+      }
+    });
+  }
+
+  onDeleteModel(item: Firmware, model: Model) {
+    this.dialogData.type = 'error';
+    this.dialogData.message = `Bạn có chắc chắn muốn xóa model "${model.name}" khỏi firmware "${item.name}" không?`;
+    const dialogRef = this.dialog.open(DialogComponent, {
+      data: {
+        ...this.dialogData,
+        title: 'Xóa model',
+        confirmText: 'Xóa',
+      },
+      width: this.dialogData.width
+    });
+
+    dialogRef.componentInstance.content = this.firmwareDialogContent;
+
+    dialogRef.afterClosed().pipe(takeUntil(this.destroyRef)).subscribe(async result => {
+      if (result) {
+        const response = await this.injector.get(ApiService).executeMutation(REMOVE_MODEL_FIRMWARE, {
+          id: item.id,
+          modelId: model.id,
+        });
+        if (response) {
+          this.commonService.openSnackBar('Xóa model thành công');
+          await this.onGetFirmwares(this.pagination.page + 1);
+        } else {
+          this.commonService.openSnackBarError('Xóa model thất bại');
         }
       }
     });
