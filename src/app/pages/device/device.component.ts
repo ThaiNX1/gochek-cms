@@ -70,7 +70,7 @@ export class DeviceComponent extends BaseClass {
       { name: 'Model', field: 'modelCode', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Serial number', field: 'serialNumber', className: 'min-w-[100px] max-w-[100px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
-      { name: 'Tổ chức', field: 'organizationName', className: 'min-w-[200px] max-w-[200px]' },
+      { name: 'Firmware version', field: 'firmwareVersion', className: 'min-w-[200px] max-w-[200px]', tdClassName:'!justify-start', templateCode: 'firmwareVersionColumnTemplate' },
       { name: 'Trạng thái', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
       { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
     ]
@@ -132,7 +132,7 @@ export class DeviceComponent extends BaseClass {
         modelName: item.model?.name,
         modelCode: item.model?.code,
         organizationName: item.organization?.name,
-        statusName: item.isActive ? 'Kích hoạt' : 'Chưa kích hoạt',
+        statusName: item.isActive ? 'Kích hoạt' : 'Chưa kích hoạt'
       });
       return acc;
     }, []) ?? [];
