@@ -179,10 +179,10 @@ export class FirmwareCreateComponent extends BaseClass {
   onSelectFirmwareFile(event: any) {
     const file = event.target.files[0];
     this.firmwareForm.get('firmwareFile')?.setValue(file);
-    const [type, model, version, env, md5] = file.name.split('.')?.[0]?.split('_');
-    this.firmwareForm.get('md5')?.setValue(md5);
-    this.firmwareForm.get('type')?.setValue(type);
-    this.firmwareForm.get('version')?.setValue(version);
+    // const [type, model, version, env, md5] = file.name.split('.')?.[0]?.split('_');
+    // this.firmwareForm.get('md5')?.setValue(md5);
+    // this.firmwareForm.get('type')?.setValue(type);
+    // this.firmwareForm.get('version')?.setValue(version);
   }
 
   async onSave() {

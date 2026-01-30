@@ -12,11 +12,11 @@
                     [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="deviceTypeSearchQuery"
                     [searchDataKey]="'deviceTypes'" placeholder="Loại thiết bị">
                 </app-select-search>
-                <app-select-search *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]"
+                <!-- <app-select-search *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]"
                     class="w-full md:w-[200px] bg-white" [options]="organizationList" formControlName="organizationId"
                     [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="orgSearchQuery"
                     [searchDataKey]="'organizations'" placeholder="Chọn tổ chức">
-                </app-select-search>
+                </app-select-search> -->
                 <button type="button"
                     class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
                     (click)="onGetDevice()">

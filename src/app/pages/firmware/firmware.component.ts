@@ -54,7 +54,7 @@ export class FirmwareComponent extends BaseClass {
       { name: 'Tên firmware', field: 'name', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'Phiên bản', field: 'version', className: 'min-w-[120px] max-w-[120px]' },
-      // { name: 'File firmware', field: 'fileName', className: 'min-w-[200px] max-w-[200px]' },
+      { name: 'File', field: 'fileName', className: 'min-w-[250px] max-w-[250px]' },
       { name: 'Loại', field: 'typeName', className: 'min-w-[100px] max-w-[100px]' },
       // { name: 'Mô tả', field: 'description', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Ghi chú release', field: 'releaseNotes', className: 'min-w-[150px] max-w-[150px]' },

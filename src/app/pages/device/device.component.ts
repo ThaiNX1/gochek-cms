@@ -92,10 +92,10 @@ export class DeviceComponent extends BaseClass {
     });
     this.editDeviceForm = new FormGroup({
       id: new FormControl(''),
-      name: new FormControl(''),
-      serialNumber: new FormControl(''),
-      deviceTypeId: new FormControl(''),
-      modelId: new FormControl(''),
+      name: new FormControl('', [Validators.required]),
+      serialNumber: new FormControl('', [Validators.required]),
+      deviceTypeId: new FormControl('', [Validators.required]),
+      modelId: new FormControl('', [Validators.required]),
       note: new FormControl(''),
     });
     this.onValueChange();
