@@ -59,14 +59,14 @@
                 </div>
                 @if(firmwareForm.get('filePath')?.value) {
                 <div class="flex flex-col items-stretch justify-start gap-1">
-                    <label class="text-sm font-semibold">Base path ESP:</label>
+                    <label class="text-sm font-semibold">Base path:</label>
                     <mat-form-field appearance="outline" floatLabel="auto" class="bg-gray-300" disabled>
                         <input matInput formControlName="filePath" placeholder="Nhập base path" readonly>
                     </mat-form-field>
                 </div>
                 }
                 <div class="flex flex-col items-stretch justify-start gap-1">
-                    <label class="text-sm font-semibold">File firmware ESP:</label>
+                    <label class="text-sm font-semibold">File firmware:</label>
                     <div class="flex items-center justify-start gap-3">
                         <button type="button" (click)="firmwareFileInput.click()"
                             class="flex items-center justify-center gap-2 p-2 rounded-md border-none bg-primary">
