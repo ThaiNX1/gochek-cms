@@ -41,12 +41,13 @@ export class ServiceInterceptor implements HttpInterceptor {
           next: async (event) => {
             this.commonService.setIncludeHttpHeader(true)
             if (event instanceof HttpResponse) {
-              if (event?.body?.errors?.[0]?.statusCode?.toString() === ResponseCode.Expired_Token.toString()) {
+              const statusCode = event?.body?.errors?.[0]?.statusCode?.toString() || event?.body?.errors?.[0]?.extensions?.statusCode?.toString()
+              if (statusCode === ResponseCode.Expired_Token.toString()) {
                 this.cancelRequests$.next()
                 // this.refreshTokenService.refreshToken()
                 localStorage.clear()
                 this.router.navigate(['/login'])
-              } else if (event?.body?.errors?.[0]?.statusCode?.toString() === ResponseCode.Confirm_OTP.toString()) {
+              } else if (statusCode === ResponseCode.Confirm_OTP.toString()) {
                 this.router.navigate(['/confirm-otp'])
               }
               else if (event?.body?.errors?.[0]) {
