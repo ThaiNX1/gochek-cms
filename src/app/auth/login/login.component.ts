@@ -182,6 +182,7 @@ export class LoginComponent implements OnInit, OnDestroy {
               path: '/website/banner',
               icon: 'panorama',
               name: 'Banner',
+              isChildren: true
             },
           ]
         }];
@@ -199,4 +200,5 @@ export type MenuItem = {
   name: string;
   permissions?: string[];
   children?: MenuItem[];
+  isChildren?: boolean;
 }

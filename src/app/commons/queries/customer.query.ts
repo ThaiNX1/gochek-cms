@@ -8,17 +8,14 @@ export const GET_CUSTOMERS = gql`
         fullName
         email
         phone
-        company
         source
         status
-        message
-        ipAddress
-        userAgent
         metadata
         formKeyId
         assignedToId
         createdAt
         updatedAt
+        description
       }
       pagination {
         page

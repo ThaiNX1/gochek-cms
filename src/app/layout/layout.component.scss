@@ -1,25 +1,29 @@
 .menu-item{
-    color: white !important;
+    height: 45px !important;
     padding: 0 10px !important;
+    mat-icon,
+    span {
+        color: var(--primary-color) !important;
+    }
     &:hover{
         cursor: pointer;
-        background-color: #FFFFFF !important;
-        mat-icon,span{
-            color: var(--primary-color) !important;
+        background-color: var(--gray-400) !important;
+        mat-icon,
+        span {
+            font-weight: 500 !important;
         }
     }
 }
-:host::ng-deep.mdc-list-item__primary-text{
-    color: #FFFFFF !important;
-}
+// :host::ng-deep.mdc-list-item__primary-text{
+//     color: #FFFFFF !important;
+// }
 .active{
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
-    background-color: #FFFFFF !important; 
+    // box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+    background-color: var(--gray-100) !important; 
+    border-radius: 8px !important;
     mat-icon,span{
         color: var(--primary-color) !important;
-    }
-    span{
-        font-weight: 500 !important;
+        font-weight: 700 !important;
     }
 }
 

@@ -191,4 +191,5 @@ export interface Menu {
   name?: string;
   status?: string;
   description?: string;// Dùng cho tìm kiếm
+  isChildren?: boolean;
 }
