@@ -31,6 +31,16 @@ query GetFirmwares($pagination: PaginationInput) {
                     name
                 }
             }
+            raModels {
+                id
+                name
+                code
+                isActive
+                deviceType {
+                    id
+                    name
+                }
+            }
         }
         lastItems {
             id

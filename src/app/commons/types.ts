@@ -154,24 +154,23 @@ export type CreateWebsiteBannerInput = {
 
 export type Customer = {
   assignedToId?: Maybe<Scalars['String']['output']>;
-  company?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
-  email: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
   formKeyId?: Maybe<Scalars['String']['output']>;
   fullName: Scalars['String']['output'];
   id: Scalars['ID']['output'];
-  ipAddress?: Maybe<Scalars['String']['output']>;
-  message?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['String']['output']>;
-  phone: Scalars['String']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  phone?: Maybe<Scalars['String']['output']>;
   source?: Maybe<Scalars['String']['output']>;
   status: CustomerStatus;
   updatedAt: Scalars['DateTime']['output'];
-  userAgent?: Maybe<Scalars['String']['output']>;
 };
 
 export type CustomerSearchInput = {
+  assignToId?: InputMaybe<Scalars['String']['input']>;
   dateFrom?: InputMaybe<Scalars['String']['input']>;
   dateTo?: InputMaybe<Scalars['String']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -354,6 +353,7 @@ export type Firmware = {
   md5?: Maybe<Scalars['String']['output']>;
   models?: Maybe<Array<Model>>;
   name: Scalars['String']['output'];
+  raModels?: Maybe<Array<Model>>;
   releaseNotes?: Maybe<Scalars['String']['output']>;
   type?: Maybe<FirmwareTypeEnum>;
   updatedAt: Scalars['DateTime']['output'];
@@ -468,6 +468,7 @@ export type Mutation = {
   subscribeNotification: User;
   updateBusinessRole: BusinessRole;
   updateCountry: Country;
+  updateCustomer: Customer;
   updateCustomerStatus: Customer;
   updateDevice: Device;
   updateDeviceType: DeviceType;
@@ -670,6 +671,11 @@ export type MutationUpdateBusinessRoleArgs = {
 export type MutationUpdateCountryArgs = {
   id: Scalars['ID']['input'];
   input: UpdateCountryInput;
+};
+
+
+export type MutationUpdateCustomerArgs = {
+  input: UpdateCustomerInput;
 };
 
 
@@ -1057,11 +1063,10 @@ export enum RoleCode {
 }
 
 export type SubmitConsultationFormInput = {
-  company?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
   email: Scalars['String']['input'];
   formKey: Scalars['String']['input'];
   fullName: Scalars['String']['input'];
-  message?: InputMaybe<Scalars['String']['input']>;
   metadata?: InputMaybe<Scalars['String']['input']>;
   phone: Scalars['String']['input'];
 };
@@ -1094,6 +1099,12 @@ export type UpdateCountryInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   postCode?: InputMaybe<Scalars['String']['input']>;
   zipCode?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateCustomerInput = {
+  customerId: Scalars['String']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<CustomerStatus>;
 };
 
 export type UpdateCustomerStatusInput = {
