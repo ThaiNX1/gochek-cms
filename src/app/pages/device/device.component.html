@@ -56,9 +56,28 @@
 <ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
     <div class="flex items-center justify-center px-4">
         @if(item.isActive) {
-        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Hoạt động</span>
+        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Đã kích hoạt</span>
         } @else {
-        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Không hoạt động</span>
+        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Chưa kích hoạt</span>
+        }
+    </div>
+</ng-template>
+
+<ng-template myTemplate tempCode="stateColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4">
+        @switch(item.state) {
+            @case(DeviceStateEnum.OFFLINE) {
+                <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Offline</span>
+            }
+            @case(DeviceStateEnum.ONLINE) {
+                <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Online</span>
+            }
+            @case(DeviceStateEnum.FACTORY) {
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium whitespace-nowrap">Factory</span>
+            }
+            @default {
+                <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Error</span>
+            }
         }
     </div>
 </ng-template>

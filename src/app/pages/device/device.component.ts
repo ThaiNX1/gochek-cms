@@ -1,27 +1,26 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { BaseClass } from '../../commons/base.class';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { TableComponent } from '../../shared/components/table/table.component';
-import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DirectiveModule } from '../../shared/directive.module';
-import { PermissionEnum, TableColumnType } from '../../core/constants/enum';
-import { ApiService } from '../../core/services/api.service';
-import { ASSIGN_DEVICE_TO_ORGANIZATION, GET_DEVICES, IMPORT_DEVICE, REMOVE_DEVICE_FROM_ORGANIZATION, UPDATE_DEVICE } from '../../commons/queries/device.query';
-import { Device, PaginatedDeviceResponse, PaginatedDeviceTypeResponse, PaginatedOrganizationResponse } from '../../commons/types';
-import { PageEvent } from '@angular/material/paginator';
-import { GET_ORGANIZATIONS } from '../../commons/queries/organization.query';
-import { SelectSearchComponent } from "../../shared/components/select-search/select-search.component";
-import { GET_DEVICE_TYPES, GET_MODELS } from '../../commons/queries/device-type.query';
-import { constant } from '../../core/constants/constant';
-import { MatMenuModule } from '@angular/material/menu';
-import * as _ from 'lodash';
-import { DialogComponent } from '../../shared/components/dialog/dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { PageEvent } from '@angular/material/paginator';
+import { RouterModule } from '@angular/router';
+import { BaseClass } from '../../commons/base.class';
+import { GET_DEVICE_TYPES, GET_MODELS } from '../../commons/queries/device-type.query';
+import { ASSIGN_DEVICE_TO_ORGANIZATION, GET_DEVICES, IMPORT_DEVICE, REMOVE_DEVICE_FROM_ORGANIZATION, UPDATE_DEVICE } from '../../commons/queries/device.query';
+import { GET_ORGANIZATIONS } from '../../commons/queries/organization.query';
+import { Device, DeviceStateEnum, PaginatedDeviceResponse, PaginatedDeviceTypeResponse, PaginatedOrganizationResponse } from '../../commons/types';
+import { constant } from '../../core/constants/constant';
+import { TableColumnType } from '../../core/constants/enum';
+import { ApiService } from '../../core/services/api.service';
 import { DialogNotificationComponent } from '../../shared/components/dialog-notification/dialog-notification.component';
+import { DialogComponent } from '../../shared/components/dialog/dialog.component';
+import { SelectSearchComponent } from "../../shared/components/select-search/select-search.component";
+import { TableComponent } from '../../shared/components/table/table.component';
+import { DirectiveModule } from '../../shared/directive.module';
 @Component({
   selector: 'app-device',
   standalone: true,
@@ -50,6 +49,7 @@ export class DeviceComponent extends BaseClass {
   deviceTypeSearchQuery = GET_DEVICE_TYPES;
   modelSearchQuery = GET_MODELS;
   importDeviceForm!: FormGroup;
+  DeviceStateEnum = DeviceStateEnum
 
   @ViewChild('assignOrganizationDialogContent') assignOrganizationDialogContent!: TemplateRef<any>;
   assignOrganizationForm!: FormGroup;
@@ -70,7 +70,8 @@ export class DeviceComponent extends BaseClass {
       { name: 'Model', field: 'modelCode', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Serial number', field: 'serialNumber', className: 'min-w-[100px] max-w-[100px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
-      { name: 'Firmware version', field: 'firmwareVersion', className: 'min-w-[200px] max-w-[200px]', tdClassName:'!justify-start', templateCode: 'firmwareVersionColumnTemplate' },
+      { name: 'Firmware version', field: 'firmwareVersion', className: 'min-w-[200px] max-w-[200px]', tdClassName: '!justify-start', templateCode: 'firmwareVersionColumnTemplate' },
+      { name: 'Tình trạng', field: 'stateName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'stateColumnTemplate' },
       { name: 'Trạng thái', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
       { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
     ]
@@ -221,27 +222,27 @@ export class DeviceComponent extends BaseClass {
           description: this.editDeviceForm.value.note,
         }
       })
-      if (response) {
-        this.commonService.openSnackBar('Sửa thiết bị thành công');
-        this.dialog?.closeAll();
-        const index = this.dataSource.findIndex((item) => item.id === this.editDeviceForm.value.id);
-        if (index > -1) {
-          this.dataSource[index] = {
-            ...this.dataSource[index],
-            name: response.updateDevice?.name,
-            serialNumber: response.updateDevice?.serialNumber,
-            deviceTypeId: response.updateDevice?.deviceTypeId,
-            modelId: response.updateDevice?.modelId,
-            note: response.updateDevice?.description,
-            model: response.updateDevice?.model,
-            deviceType: response.updateDevice?.deviceType,
-            modelCode: response.updateDevice?.model?.code,
-            deviceTypeCode: response.updateDevice?.deviceType?.code,
-          };
-        }
-      } else {
-        this.commonService.openSnackBarError('Sửa thiết bị thất bại');
+    if (response) {
+      this.commonService.openSnackBar('Sửa thiết bị thành công');
+      this.dialog?.closeAll();
+      const index = this.dataSource.findIndex((item) => item.id === this.editDeviceForm.value.id);
+      if (index > -1) {
+        this.dataSource[index] = {
+          ...this.dataSource[index],
+          name: response.updateDevice?.name,
+          serialNumber: response.updateDevice?.serialNumber,
+          deviceTypeId: response.updateDevice?.deviceTypeId,
+          modelId: response.updateDevice?.modelId,
+          note: response.updateDevice?.description,
+          model: response.updateDevice?.model,
+          deviceType: response.updateDevice?.deviceType,
+          modelCode: response.updateDevice?.model?.code,
+          deviceTypeCode: response.updateDevice?.deviceType?.code,
+        };
       }
+    } else {
+      this.commonService.openSnackBarError('Sửa thiết bị thất bại');
+    }
   }
 
   async onResetDevice(item: any) {
