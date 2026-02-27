@@ -75,9 +75,9 @@ export class CustomerComponent extends BaseClass {
       { name: 'Số điện thoại', field: 'phone', className: 'min-w-[150px] max-w-[150px]', templateCode: 'phoneColumnTemplate' },
       { name: 'Nguồn', field: 'source', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
-      { name: 'CSKH', field: 'assignedToId', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
-      { name: 'Trạng thái', field: 'status', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
-      { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
+      { name: 'CSKH', field: 'assignedToId', className: 'min-w-[150px] max-w-[150px]', type: TableColumnType.DATE },
+      { name: 'Trạng thái', field: 'status', className: 'min-w-[120px] max-w-[120px]', templateCode: 'statusColumnTemplate' },
+      { name: 'Hành động', field: 'action', className: 'min-w-[80px] max-w-[80px]', templateCode: 'actionColumnTemplate' },
     ];
   }
 
@@ -158,12 +158,12 @@ export class CustomerComponent extends BaseClass {
     this.selectedStatus = item.status;
     
     this.dialogData.type = 'error';
+    this.dialogData.message = `Thay đổi trạng thái cho khách hàng "${item.fullName}"`;
     const dialogRef = this.dialog.open(DialogComponent, {
       data: {
         ...this.dialogData,
         title: 'Thay đổi trạng thái khách hàng',
         confirmText: 'Xác nhận',
-        message: `Thay đổi trạng thái cho khách hàng "${item.fullName}"`,
         showActions: true,
       },
       width: this.dialogData.width
@@ -223,6 +223,32 @@ export class CustomerComponent extends BaseClass {
     } else {
       this.commonService.openSnackBarError(`Cập nhật trạng thái khách hàng thất bại`);
     }
+  }
+
+  onAssignCustomerCare(item: Customer) {
+    this.currentCustomer = item;
+    this.selectedStatus = item.status;
+    
+    this.dialogData.type = 'error';
+    const dialogRef = this.dialog.open(DialogComponent, {
+      data: {
+        ...this.dialogData,
+        title: 'Gán khách hàng cho CSKH',
+        confirmText: 'Xác nhận',
+        message: `Gán khách hàng "${item.fullName}" cho CSKH`,
+        showActions: true,
+      },
+      width: this.dialogData.width
+    });
+    dialogRef.componentInstance.content = this.customerDialogContent;
+
+    dialogRef.afterClosed().pipe(takeUntil(this.destroyRef)).subscribe(async result => {
+      if (result && this.selectedStatus && this.currentCustomer) {
+        await this.updateCustomerStatus(this.currentCustomer, this.selectedStatus);
+      }
+      this.currentCustomer = null;
+      this.selectedStatus = null;
+    });
   }
 
   onCall3cx(phone: string) {

@@ -1,26 +1,32 @@
 <div class="w-full h-full flex items-stretch justify-start">
   <mat-sidenav-container class="w-full h-full">
-    <mat-sidenav #sidenav [mode]="sidenavMode" [opened]="isSidenavOpen" class="!w-80 !bg-white">
+    <mat-sidenav #sidenav [mode]="sidenavMode" [opened]="isSidenavOpen" 
+                 [ngClass]="isSidenavCollapsed() ? '!w-[80px]' : '!w-80'" class="!bg-white transition-all duration-300 overflow-hidden" [fixedInViewport]="!commonService.smallScreen()">
       <div class="h-16 flex items-center justify-center bg-primary">
-        <img [src]="logoPath()" alt="logo" class="object-contain h-12">
+        @if (isSidenavCollapsed()) {
+          <img [src]="logoPathMobile()" alt="logo" class="object-contain h-8">
+        } @else {
+          <img [src]="logoPath()" alt="logo" class="object-contain h-12">
+        }
       </div>
-      <mat-nav-list class="flex-1 flex flex-col items-stretch justify-start overflow-y-auto">
+      <mat-nav-list class="flex-1 flex flex-col items-stretch justify-start overflow-y-auto overflow-x-hidden">
         @for (menu of menus; track menu.path) {
-        <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: menu }"></ng-container>
+        <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: menu, inMenu: false }"></ng-container>
         }
       </mat-nav-list>
-      <div class="flex items-center justify-center">
-        <button class="flex items-center justify-center border-none" (click)="sidenav.toggle()">
-          <mat-icon>keyboard_double_arrow_left</mat-icon>
+      <div class="flex items-center justify-center py-4 border-t border-gray-200">
+        <button class="flex items-center justify-center border-none bg-transparent hover:bg-gray-100 p-2 rounded-full cursor-pointer text-gray-600" (click)="toggleSidenav()">
+          <mat-icon>{{ isSidenavCollapsed() ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</mat-icon>
         </button>
       </div>
     </mat-sidenav>
 
-    <mat-sidenav-content class="flex flex-col items-stretch justify-start overflow-auto"
+    <mat-sidenav-content class="flex flex-col items-stretch justify-start overflow-auto transition-all duration-300"
+      [style.marginLeft]="commonService.smallScreen() ? '0' : (isSidenavCollapsed() ? '80px' : '20rem')"
       style="display:flex !important;">
       <mat-toolbar class="h-16 border-b border-gray-400 flex items-center justify-between px-4 !bg-white">
         <div class="flex items-center justify-start">
-          <button class="flex md:hidden items-center justify-center border-none" (click)="sidenav.toggle()">
+          <button class="flex md:hidden items-center justify-center border-none" (click)="toggleSidenav()">
             <mat-icon>menu</mat-icon>
           </button>
           @if(!commonService.smallScreen()) {
@@ -141,32 +147,76 @@
 </div>
 }
 
-<ng-template #menuItemTemplate let-menu="menu">
+<ng-template #menuItemTemplate let-menu="menu" let-inMenu="inMenu">
   @if (menu?.children?.length) {
-  <a mat-list-item (click)="menu.isExpanded = !menu.isExpanded" [title]="menu.name"
-    class="flex items-center justify-start gap-3 menu-item" [class.active]="isParentActive(menu)">
-    <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
-    <div matListItemTitle class="flex items-center justify-between">
-      <span>{{menu.name}}</span>
-      <mat-icon>{{menu.isExpanded ? 'expand_less' : 'expand_more'}}</mat-icon>
-    </div>
-  </a>
-  <div class="flex flex-col items-stretch justify-start" [@menuExpand]="menu.isExpanded ? 'expanded' : 'collapsed'">
-    @for (child of menu.children; track child.id) {
-    <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child }"></ng-container>
-    }
-  </div>
-  }
-  @else {
-  <a mat-list-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams" [title]="menu.name"
-    routerLinkActive="active" class="flex items-center justify-start gap-3 menu-item"
-    (click)="commonService.smallScreen() ? sidenav.close() : null; onUpdateHeaderInfo(menu)">
-    @if(!menu.isChildren) {
-    <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
+    @if (isSidenavCollapsed() && !inMenu) {
+      <a mat-list-item [matMenuTriggerFor]="subMenu" [title]="menu.name"
+         class="flex items-center justify-center menu-item !px-0" [class.active]="isParentActive(menu)">
+         <div class="flex flex-col items-center justify-center w-full">
+            <mat-icon class="!mr-0">{{menu.icon}}</mat-icon>
+         </div>
+      </a>
+      <mat-menu #subMenu="matMenu" xPosition="after">
+        @for (child of menu.children; track child.id) {
+          <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: true }"></ng-container>
+        }
+      </mat-menu>
     } @else {
-    <mat-icon matListItemIcon></mat-icon>
+      @if (inMenu) {
+        <button mat-menu-item [matMenuTriggerFor]="nestedSubMenu" class="menu-item flex items-center gap-2">
+          <mat-icon>{{menu.icon}}</mat-icon>
+          <span>{{menu.name}}</span>
+        </button>
+        <mat-menu #nestedSubMenu="matMenu" xPosition="after">
+          @for (child of menu.children; track child.id) {
+            <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: true }"></ng-container>
+          }
+        </mat-menu>
+      } @else {
+        <a mat-list-item (click)="menu.isExpanded = !menu.isExpanded" [title]="menu.name"
+           class="flex items-center justify-start gap-3 menu-item" [class.active]="isParentActive(menu)">
+          <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
+          <div matListItemTitle class="flex items-center justify-between">
+            <span>{{menu.name}}</span>
+            <mat-icon>{{menu.isExpanded ? 'expand_less' : 'expand_more'}}</mat-icon>
+          </div>
+        </a>
+        <div class="flex flex-col items-stretch justify-start overflow-hidden" [@menuExpand]="menu.isExpanded ? 'expanded' : 'collapsed'">
+          @for (child of menu.children; track child.id) {
+            <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: false }"></ng-container>
+          }
+        </div>
+      }
     }
-    <span matListItemTitle [ngClass]="menu.isChildren ? 'pl-6' : ''">{{menu.name}}</span>
-  </a>
+  } @else {
+    @if (isSidenavCollapsed() && !inMenu) {
+      <a mat-list-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams" [title]="menu.name"
+         routerLinkActive="active" class="flex items-center justify-center menu-item !px-0"
+         (click)="commonService.smallScreen() ? toggleSidenav() : null; onUpdateHeaderInfo(menu)">
+         <div class="flex flex-col items-center justify-center w-full">
+            <mat-icon class="!mr-0">{{menu.icon}}</mat-icon>
+         </div>
+      </a>
+    } @else {
+      @if (inMenu) {
+        <a mat-menu-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams"
+           routerLinkActive="active" class="menu-item flex items-center gap-2"
+           (click)="onUpdateHeaderInfo(menu)">
+          @if(menu.icon) { <mat-icon>{{menu.icon}}</mat-icon> }
+          <span>{{menu.name}}</span>
+        </a>
+      } @else {
+        <a mat-list-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams" [title]="menu.name"
+           routerLinkActive="active" class="flex items-center justify-start gap-3 menu-item"
+           (click)="commonService.smallScreen() ? toggleSidenav() : null; onUpdateHeaderInfo(menu)">
+          @if(!menu.isChildren) {
+            <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
+          } @else {
+            <mat-icon matListItemIcon></mat-icon>
+          }
+          <span matListItemTitle [ngClass]="menu.isChildren ? 'pl-6' : ''">{{menu.name}}</span>
+        </a>
+      }
+    }
   }
 </ng-template>

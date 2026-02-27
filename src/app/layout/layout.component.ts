@@ -54,6 +54,7 @@ export class LayoutComponent implements OnInit {
   brandingService = inject(BrandingService);
   private destroy$ = new Subject<void>();
   isSidenavOpen = true;
+  isSidenavCollapsed = signal(false);
   sidenavMode: 'side' | 'over' | 'push' = 'side';
   menus: RouterMenu[] = [];
   userInfo: any;
@@ -64,6 +65,7 @@ export class LayoutComponent implements OnInit {
       if (this.commonService.smallScreen()) {
         this.sidenavMode = 'over';
         this.isSidenavOpen = false;
+        this.isSidenavCollapsed.set(false);
       } else {
         this.sidenavMode = 'side';
         this.isSidenavOpen = true;
@@ -129,6 +131,14 @@ export class LayoutComponent implements OnInit {
         title: menu.name,
       }
     });
+  }
+
+  toggleSidenav() {
+    if (this.commonService.smallScreen()) {
+      this.isSidenavOpen = !this.isSidenavOpen;
+    } else {
+      this.isSidenavCollapsed.set(!this.isSidenavCollapsed());
+    }
   }
 
   getDownloadStatusText(status: DownloadItem['status']): string {

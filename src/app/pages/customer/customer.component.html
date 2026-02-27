@@ -40,6 +40,10 @@
             class="!min-h-0 !h-auto bg-transparent border-none p-0 rounded text-xs font-medium cursor-pointer">
             <mat-icon class="text-gray-500">change_circle</mat-icon>
         </button>
+        <button (click)="onAssignCustomerCare(item)"
+            class="!min-h-0 !h-auto bg-transparent border-none p-0 rounded text-xs font-medium cursor-pointer">
+            <mat-icon class="text-gray-500">account_circle</mat-icon>
+        </button>
     </div>
 </ng-template>
 
@@ -82,13 +86,20 @@
         <p class="w-full text-center">
             {{ dialogData.message }}
         </p>
-        <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
-            <mat-label>Trạng thái</mat-label>
-            <mat-select [(ngModel)]="selectedStatus">
-                @for (status of customerStatuses; track status.value) {
-                <mat-option [value]="status.value">{{ status.label }}</mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
+        @switch(dialogData.type) {
+            @case('error') {
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+                    <mat-label>Trạng thái</mat-label>
+                    <mat-select [(ngModel)]="selectedStatus">
+                        @for (status of customerStatuses; track status.value) {
+                            <mat-option [value]="status.value">{{ status.label }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            }
+            @case('default') {
+                
+            }
+        }
     </div>
 </ng-template>
