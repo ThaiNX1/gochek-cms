@@ -76,6 +76,12 @@ export const UPDATE_DEVICE_TYPE = gql`
   }
 `; 
 
+export const DELETE_DEVICE_TYPE = gql`
+  mutation DeleteDeviceType($id: ID!) {
+    deleteDeviceType(id: $id)
+  }
+`; 
+
 export const GET_MODELS = gql`
   query GetModels($pagination: PaginationInput) {
     models(pagination: $pagination) {

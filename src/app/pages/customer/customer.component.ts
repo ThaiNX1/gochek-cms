@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,7 +10,7 @@ import { RouterModule } from '@angular/router';
 import { takeUntil } from 'rxjs';
 import { BaseClass } from '../../commons/base.class';
 import { GET_CUSTOMERS, UPDATE_CUSTOMER_STATUS } from '../../commons/queries/customer.query';
-import { Customer, CustomerStatus, PaginatedCustomerResponse } from '../../commons/types';
+import { Customer, CustomerStatus, PaginatedCustomerResponse, UpdateCustomerStatusInput } from '../../commons/types';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -18,6 +18,7 @@ import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
+import * as _ from 'lodash';
 
 @Component({
   selector: 'app-customer',
@@ -26,8 +27,8 @@ import { FormsModule } from '@angular/forms';
     CommonModule,
     MatIconModule,
     MatInputModule,
-    MatFormFieldModule,
     MatSelectModule,
+    MatFormFieldModule,
     TableComponent,
     RouterModule,
     DirectiveModule,
@@ -64,16 +65,17 @@ export class CustomerComponent extends BaseClass {
   selectedStatus: CustomerStatus | null = null;
   currentCustomer: Customer | null = null;
 
+  customerForm!: FormGroup;
+
   constructor(private dialog: MatDialog) {
     super();
     this.columns = [
       { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER },
       { name: 'Họ và tên', field: 'fullName', className: 'min-w-[200px] max-w-[200px]' },
-      { name: 'Email', field: 'email', className: 'min-w-[200px] max-w-[200px]' },
       { name: 'Số điện thoại', field: 'phone', className: 'min-w-[150px] max-w-[150px]', templateCode: 'phoneColumnTemplate' },
-      { name: 'Công ty', field: 'company', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Nguồn', field: 'source', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
+      { name: 'CSKH', field: 'assignedToId', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'Trạng thái', field: 'status', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
       { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
     ];
@@ -83,6 +85,9 @@ export class CustomerComponent extends BaseClass {
     super.ngOnInit();
     this.filterForm = new FormGroup({
       keyword: new FormControl(''),
+    });
+    this.customerForm = new FormGroup({
+      note: new FormControl(''),
     });
     await this.onGetCustomers();
   }
@@ -99,6 +104,12 @@ export class CustomerComponent extends BaseClass {
     this.dataSource = response?.customers?.data?.map((item: any, index: number) => ({
       ...item,
       index: index + 1,
+      description: item.description?.replace(/;/g, '\n'),
+      noteForm: new FormGroup({
+        status: new FormControl(item.status, Validators.required),
+        note: new FormControl(item.note ?? '', Validators.required),
+      }),
+      isNoteSaving: false,
     })) ?? [];
     
     this.pagination = {
@@ -133,6 +144,15 @@ export class CustomerComponent extends BaseClass {
     }
   }
 
+  async onSaveNote(item: any) {
+    item.noteForm.markAllAsTouched();
+    if (item.noteForm.invalid) {
+      return;
+    }
+    item.isNoteSaving = true;
+    await this.updateCustomerStatus(item, item.noteForm.value.status, item.noteForm.value.note);
+  }
+
   onChangeStatus(item: Customer) {
     this.currentCustomer = item;
     this.selectedStatus = item.status;
@@ -159,20 +179,47 @@ export class CustomerComponent extends BaseClass {
     });
   }
 
-  async updateCustomerStatus(customer: Customer, newStatus: CustomerStatus) {
+  async updateCustomerStatus(customer: any, newStatus: CustomerStatus, note?: string) {
+    let input: UpdateCustomerStatusInput = {
+      customerId: customer.id,
+      status: newStatus,
+    };
+    if (note) {
+      input.note = note;
+    }
     const response = await this.injector.get(ApiService).executeMutation(
       UPDATE_CUSTOMER_STATUS,
       {
-        input: {
-          customerId: customer.id,
-          status: newStatus
-        }
+        input
       }
     );
 
     if (response) {
       this.commonService.openSnackBar(`Cập nhật trạng thái khách hàng thành công`);
-      await this.onGetCustomers(this.pagination.page + 1);
+      // await this.onGetCustomers(this.pagination.page + 1);
+      if(response?.updateCustomerStatus){
+        const index = this.dataSource.findIndex((item: any) => item.id === customer.id);
+        if(index !== -1){
+          const item = this.dataSource[index];
+          item.noteForm.patchValue({
+            status: response.updateCustomerStatus.status,
+            note: response.updateCustomerStatus.note
+          });
+          
+          const updatedItem = {
+            ...item,
+            status: response.updateCustomerStatus.status,
+            note: response.updateCustomerStatus.note,
+            isNoteSaving: false,
+          };
+          
+          this.dataSource = [
+            ...this.dataSource.slice(0, index),
+            updatedItem,
+            ...this.dataSource.slice(index + 1)
+          ];
+        }
+      }
     } else {
       this.commonService.openSnackBarError(`Cập nhật trạng thái khách hàng thất bại`);
     }

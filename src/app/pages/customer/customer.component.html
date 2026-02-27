@@ -12,6 +12,7 @@
     <app-table
         class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
         [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+        [expandable]="true" [expandTemplate]="expandTemplate"
         (pageChange)="onPageChange($event)">
     </app-table>
 </div>
@@ -28,21 +29,50 @@
 </ng-template>
 
 <ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
-    <div class="flex items-center justify-start px-4">
-        <button 
-            (click)="onChangeStatus(item)"
-            class="px-2 py-1 rounded text-xs font-medium cursor-pointer border-none"
-            [ngClass]="getStatusClass(item.status)">
-            {{ getStatusLabel(item.status) }}
-        </button>
+    <div class="flex items-center justify-start px-3 gap-3">
+        <span class="py-1 px-3 rounded" [ngClass]="getStatusClass(item.status)">{{ getStatusLabel(item.status) }}</span> 
     </div>
 </ng-template>
 
 <ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
     <div class="flex items-center justify-center px-4 gap-3">
-        <button class="flex items-center justify-center border-none bg-transparent" (click)="onChangeStatus(item)">
-            <mat-icon class="text-gray-500">edit</mat-icon>
+        <button (click)="onChangeStatus(item)"
+            class="!min-h-0 !h-auto bg-transparent border-none p-0 rounded text-xs font-medium cursor-pointer">
+            <mat-icon class="text-gray-500">change_circle</mat-icon>
         </button>
+    </div>
+</ng-template>
+
+<ng-template #expandTemplate let-item="item">
+    <div class="flex flex-col gap-4 w-full p-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Thông tin chi tiết</h3>
+        </div>
+        <p class="w-full text-left whitespace-pre-line pb-4">{{ item.description }}</p>
+        <form [formGroup]="item.noteForm" class="flex flex-col items-start gap-3">
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <mat-label>Trạng thái khách hàng</mat-label>
+                <mat-select formControlName="status">
+                    @for (status of customerStatuses; track status.value) {
+                    <mat-option [value]="status.value">{{ status.label }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+                <mat-label>Ghi chú (Note từ CSKH)</mat-label>
+                <textarea matInput formControlName="note" rows="4" placeholder="Nhập thông tin lắng nghe từ khách hàng..."></textarea>
+            </mat-form-field>
+            <div class="flex justify-start">
+                <button type="submit" 
+                    class="bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                    (click)="onSaveNote(item)">
+                    @if(item.isNoteSaving) {
+                        <mat-icon class="animate-spin text-sm h-5 w-5 leading-5 items-center justify-center text-white">autorenew</mat-icon>
+                    }
+                    Lưu ghi chú
+                </button>
+            </div>
+        </form>
     </div>
 </ng-template>
 

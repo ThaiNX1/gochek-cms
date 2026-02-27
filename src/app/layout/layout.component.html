@@ -9,6 +9,11 @@
         <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: menu }"></ng-container>
         }
       </mat-nav-list>
+      <div class="flex items-center justify-center">
+        <button class="flex items-center justify-center border-none" (click)="sidenav.toggle()">
+          <mat-icon>keyboard_double_arrow_left</mat-icon>
+        </button>
+      </div>
     </mat-sidenav>
 
     <mat-sidenav-content class="flex flex-col items-stretch justify-start overflow-auto"

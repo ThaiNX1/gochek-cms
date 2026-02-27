@@ -79,14 +79,14 @@ export class FirmwareComponent extends BaseClass {
         keyword: this.filterForm.value.keyword ?? '',
       },
     });
-    const latestESP = response?.firmwares?.lastItems?.find((item: any) => item.type === FirmwareTypeEnum.ESP_FIRMWARE);
-    const latestRA = response?.firmwares?.lastItems?.find((item: any) => item.type === FirmwareTypeEnum.RA_FIRMWARE);
+    const latestESP = response?.firmwares?.lastItems?.find((item: any) => item.type === FirmwareTypeEnum.ESP);
+    const latestRA = response?.firmwares?.lastItems?.find((item: any) => item.type === FirmwareTypeEnum.RA);
     this.dataSource = response?.firmwares?.data?.reduce((acc: any, item: any, index: number) => {
       acc.push({
         ...item,
         index: index + 1,
         status: item.isActive ? 'Hoạt động' : 'Không hoạt động',
-        typeName: item.type === FirmwareTypeEnum.ESP_FIRMWARE ? 'ESP' : 'RA',
+        typeName: item.type === FirmwareTypeEnum.ESP ? 'ESP' : 'RA',
         isLatest: item.id === latestESP?.id || item.id === latestRA?.id
       });
       return acc;

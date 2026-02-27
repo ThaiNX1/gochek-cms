@@ -9,7 +9,7 @@ import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormControl } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { PaginatedDeviceTypeResponse } from '../../commons/types';
-import { CREATE_DEVICE_TYPE, CREATE_MODEL, GET_DEVICE_TYPES, REMOVE_MODEL, UPDATE_DEVICE_TYPE } from '../../commons/queries/device-type.query';
+import { CREATE_DEVICE_TYPE, CREATE_MODEL, DELETE_DEVICE_TYPE, GET_DEVICE_TYPES, REMOVE_MODEL, UPDATE_DEVICE_TYPE } from '../../commons/queries/device-type.query';
 import { TableColumnType } from '../../core/constants/enum';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -106,7 +106,7 @@ export class DeviceTypeComponent extends BaseClass {
   }
 
   onPageChange(event: PageEvent) {
-    console.log(event);
+    this.onGetDeviceType(event.pageIndex + 1);
   }
 
   onAddEditDeviceType(item: any = null) {
@@ -169,14 +169,14 @@ export class DeviceTypeComponent extends BaseClass {
         input: {
           name: this.deviceTypeForm.get('name')?.value,
           code: this.deviceTypeForm.get('code')?.value,
-          warrantyMonth: this.deviceTypeForm.get('warrantyMonth')?.value,
+          warrantyMonth: Number(this.deviceTypeForm.get('warrantyMonth')?.value || 0),
         },
       })
       : await this.injector.get(ApiService).executeMutation(CREATE_DEVICE_TYPE, {
         input: {
           name: this.deviceTypeForm.get('name')?.value,
           code: this.deviceTypeForm.get('code')?.value,
-          warrantyMonth: this.deviceTypeForm.get('warrantyMonth')?.value,
+          warrantyMonth: Number(this.deviceTypeForm.get('warrantyMonth')?.value || 0),
         },
       });
     if (response) {
@@ -188,9 +188,17 @@ export class DeviceTypeComponent extends BaseClass {
     }
   }
 
-  onRemoveDeviceType(item: any) {
-    this.dataSource = this.dataSource.filter(d => d.id !== item.id);
-    // const response = await this.injector.get(ApiService).executeMutation(DELETE_DEVICE_TYPE, {
+  async onRemoveDeviceType(item: any) {
+    const response = await this.injector.get(ApiService).executeMutation(DELETE_DEVICE_TYPE, {
+      id: item.id,
+    });
+    if (response) {
+      this.commonService.openSnackBar('Xóa loại thiết bị thành công');
+      this.dialog.closeAll();
+      await this.onGetDeviceType();
+    } else {
+      this.commonService.openSnackBarError('Xóa loại thiết bị thất bại');
+    }
   }
 
   onCancel() {

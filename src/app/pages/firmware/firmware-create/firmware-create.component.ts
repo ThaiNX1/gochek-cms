@@ -43,8 +43,8 @@ export class FirmwareCreateComponent extends BaseClass {
   modelSearchQuery = GET_MODELS;
   modelList: any[] = [];
   firmwareTypeList = [
-    { name: 'ESP', value: FirmwareTypeEnum.ESP_FIRMWARE },
-    { name: 'RA', value: FirmwareTypeEnum.RA_FIRMWARE },
+    { name: 'ESP', value: FirmwareTypeEnum.ESP },
+    { name: 'RA', value: FirmwareTypeEnum.RA },
   ]
   constructor() {
     super();

@@ -5,18 +5,18 @@ import { MatPaginatorIntl } from "@angular/material/paginator";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { RouterModule } from '@angular/router';
 import { InMemoryCache, split } from "@apollo/client/core";
-import { getMainDefinition } from "@apollo/client/utilities";
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
-import { createClient } from 'graphql-ws';
+import { getMainDefinition } from "@apollo/client/utilities";
 import { TranslateLoader, TranslateModule } from "@ngx-translate/core";
 import { provideNamedApollo } from "apollo-angular";
 import { HttpLink } from "apollo-angular/http";
+import { createClient } from 'graphql-ws';
 import { environment } from "../environments/environment";
 import { routes } from './app.routes';
-import { CustomTranslateLoader } from "./core/services/custom-translate-loader";
+import { storageKey } from "./core/constants/storage-key";
 import { ServiceInterceptor } from "./core/services/service-interceptor";
 import { CustomMatPaginatorIntl } from "./core/utils/pagination-intl";
-import { storageKey } from "./core/constants/storage-key";
+import { CustomTranslateLoader } from "./core/services/custom-translate-loader";
 const { extractFiles } = require('extract-files');
 // export function HttpLoaderFactory(httpClient: HttpClient) {
 //   return new TranslateHttpLoader(httpClient, './assets/languages/', '.json');
@@ -54,7 +54,7 @@ export const _provideNamedApollo = provideNamedApollo(() => {
       },
     })
   );
-  const link = split(({query}) => {
+  const link = split(({ query }) => {
     const operationDefinitionNode = getMainDefinition(query);
     return operationDefinitionNode.kind === 'OperationDefinition' && operationDefinitionNode.operation === 'subscription';
   }, ws, http)
@@ -71,7 +71,7 @@ export const appConfig: ApplicationConfig = {
     // provideStore(),
     provideNativeDateAdapter(),
     importProvidersFrom([
-      RouterModule.forRoot(routes,{onSameUrlNavigation: 'reload'})
+      RouterModule.forRoot(routes, { onSameUrlNavigation: 'reload' })
     ]),
     provideAnimations(),
     provideHttpClient(
@@ -90,7 +90,7 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: 'API_CONFIG',
-      useValue: {baseUrl: environment.apiRestFull},
+      useValue: { baseUrl: environment.apiRestFull },
     },
     {
       provide: MatPaginatorIntl,

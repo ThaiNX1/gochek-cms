@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  apiGraphQL: 'http://localhost:3000/graphql',
-  socket: 'http://localhost:3000',
-  apiRestFull: 'http://localhost:3000',
+  apiGraphQL: 'https://stg-api.denden.vn/graphql',
+  socket: 'https://stg-api.denden.vn/graphql',
+  apiRestFull: 'https://stg-api.denden.vn',
   keymap: 'AIzaSyBXt-XpsrduzVKg1RSjuk5whVe9jfzALQQ',
 };

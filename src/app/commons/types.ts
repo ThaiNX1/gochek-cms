@@ -230,6 +230,7 @@ export type Device = {
   ownerId?: Maybe<Scalars['String']['output']>;
   prefix?: Maybe<Scalars['String']['output']>;
   privateKeyBasepath?: Maybe<Scalars['String']['output']>;
+  propertyValue?: Maybe<Scalars['JSON']['output']>;
   publicKeyBasepath?: Maybe<Scalars['String']['output']>;
   raFirmware?: Maybe<Firmware>;
   raFirmwareId?: Maybe<Scalars['String']['output']>;
@@ -340,6 +341,20 @@ export type ExportProgress = {
   userId?: Maybe<Scalars['String']['output']>;
 };
 
+/** Robot facial expressions (biểu cảm khuôn mặt robot) */
+export enum FacialExpressionRobot {
+  BOOTING = 'BOOTING',
+  CONFUSED = 'CONFUSED',
+  CURIOUS = 'CURIOUS',
+  DETERMINED = 'DETERMINED',
+  GOOFY = 'GOOFY',
+  HAPPY = 'HAPPY',
+  IMPRESSED = 'IMPRESSED',
+  STARRY_EYED = 'STARRY_EYED',
+  SULKING = 'SULKING',
+  THINKING = 'THINKING'
+}
+
 export type Firmware = {
   createdAt: Scalars['DateTime']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -362,8 +377,8 @@ export type Firmware = {
 
 /** The different types of firmware type */
 export enum FirmwareTypeEnum {
-  ESP_FIRMWARE = 'ESP_FIRMWARE',
-  RA_FIRMWARE = 'RA_FIRMWARE'
+  ESP = 'ESP',
+  RA = 'RA'
 }
 
 export type GenerateFormKeyResponse = {
@@ -450,9 +465,8 @@ export type Mutation = {
   deleteModel: Scalars['Boolean']['output'];
   deleteOrganization: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
-  generateFormKey: GenerateFormKeyResponse;
   generateSerialNumber: Scalars['String']['output'];
-  getAllBannerActivePublic: Array<WebsiteBanner>;
+  importDevice: Array<Device>;
   importPermissions: Array<Permission>;
   importProvince: Array<Province>;
   importWard: Array<Ward>;
@@ -464,6 +478,8 @@ export type Mutation = {
   removeUserRole: User;
   removeWebsiteBanner: Scalars['Boolean']['output'];
   resendOtp: Scalars['Boolean']['output'];
+  setRobotFacialExpression: Scalars['Boolean']['output'];
+  setRobotProperty: Scalars['Boolean']['output'];
   submitConsultationForm: SubmitConsultationFormResponse;
   subscribeNotification: User;
   updateBusinessRole: BusinessRole;
@@ -609,6 +625,11 @@ export type MutationGenerateSerialNumberArgs = {
 };
 
 
+export type MutationImportDeviceArgs = {
+  file: Scalars['Upload']['input'];
+};
+
+
 export type MutationImportPermissionsArgs = {
   file: Scalars['Upload']['input'];
 };
@@ -649,6 +670,19 @@ export type MutationRemoveUserRoleArgs = {
 
 export type MutationRemoveWebsiteBannerArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationSetRobotFacialExpressionArgs = {
+  expression: FacialExpressionRobot;
+  serialNumber: Scalars['String']['input'];
+};
+
+
+export type MutationSetRobotPropertyArgs = {
+  property: PropertyRobot;
+  serialNumber: Scalars['String']['input'];
+  value: Scalars['String']['input'];
 };
 
 
@@ -845,6 +879,13 @@ export enum PermissionTypeEnum {
   ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN'
 }
 
+/** Robot properties (thuộc tính robot: volume, brightness, language) */
+export enum PropertyRobot {
+  BRIGHTNESS = 'BRIGHTNESS',
+  LANGUAGE = 'LANGUAGE',
+  VOLUME = 'VOLUME'
+}
+
 export type Province = {
   code: Scalars['String']['output'];
   country: Country;
@@ -876,7 +917,9 @@ export type Query = {
   firmware: Firmware;
   firmwares: PaginatedFirmwareResponse;
   firmwaresByDeviceType: Array<Firmware>;
+  generateFormKey: GenerateFormKeyResponse;
   generateHistories: PaginatedGenerateHistoryResponse;
+  getAllBannerActivePublic: Array<WebsiteBanner>;
   getDeviceBySerials: Array<Device>;
   model: Model;
   models: PaginatedModelResponse;
@@ -1064,11 +1107,11 @@ export enum RoleCode {
 
 export type SubmitConsultationFormInput = {
   description?: InputMaybe<Scalars['String']['input']>;
-  email: Scalars['String']['input'];
+  email?: InputMaybe<Scalars['String']['input']>;
   formKey: Scalars['String']['input'];
   fullName: Scalars['String']['input'];
   metadata?: InputMaybe<Scalars['String']['input']>;
-  phone: Scalars['String']['input'];
+  phone?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type SubmitConsultationFormResponse = {
@@ -1109,6 +1152,7 @@ export type UpdateCustomerInput = {
 
 export type UpdateCustomerStatusInput = {
   customerId: Scalars['String']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
   status: CustomerStatus;
 };
 

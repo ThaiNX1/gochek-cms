@@ -16,6 +16,7 @@ export const GET_CUSTOMERS = gql`
         createdAt
         updatedAt
         description
+        note
       }
       pagination {
         page
@@ -53,14 +54,8 @@ export const UPDATE_CUSTOMER_STATUS = gql`
   mutation UpdateCustomerStatus($input: UpdateCustomerStatusInput!) {
     updateCustomerStatus(input: $input) {
       id
-      fullName
-      email
-      phone
-      company
-      source
       status
-      createdAt
-      updatedAt
+      note
     }
   }
 `;

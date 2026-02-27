@@ -1,7 +1,7 @@
 module.exports = {
     overwrite: true,
     schema: {
-        'http://localhost:3000/graphql': {
+        'http://localhost:30001/graphql': {
             headers: {
                 'Content-Type': 'application/json',
             }

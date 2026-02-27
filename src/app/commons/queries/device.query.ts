@@ -22,6 +22,8 @@ export const GET_DEVICES = gql`
           serialNumber
           deviceInfo
           state
+          activeAt
+          expiredAt
           deviceType {
               id
               name
