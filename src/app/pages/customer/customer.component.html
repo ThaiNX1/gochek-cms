@@ -18,14 +18,14 @@
 </div>
 
 <ng-template myTemplate tempCode="phoneColumnTemplate" let-item="item">
-    <div class="flex items-center justify-start px-4 gap-2">
+    <a href="tel:{{ item.phone }}" class="flex items-center justify-start px-4 gap-2 no-underline">
         <span>{{ item.phone }}</span>
         @if(item.phone) {
-        <button class="flex items-center justify-center border-none bg-transparent" (click)="onCall3cx(item.phone)">
-            <mat-icon class="text-green-600">phone</mat-icon>
-        </button>
+            <button class="flex items-center justify-center border-none bg-transparent" (click)="onCall3cx(item.phone)">
+                <mat-icon class="text-green-600">phone</mat-icon>
+            </button>
         }
-    </div>
+    </a>
 </ng-template>
 
 <ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">

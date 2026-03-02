@@ -177,4 +177,18 @@ export enum PermissionEnum {
   DEPARTMENTS_UPDATE = 'departments:update', // Cập nhật phòng ban
   DEPARTMENTS_DELETE = 'departments:delete', // Xóa phòng ban
   DEPARTMENTS_MANAGE = 'departments:manage', // Quản lý phòng ban
+
+  // Customer permissions
+  CUSTOMERS_READ = 'customers:read', // Xem khách hàng
+  CUSTOMERS_CREATE = 'customers:create', // Tạo khách hàng
+  CUSTOMERS_UPDATE = 'customers:update', // Cập nhật khách hàng
+  CUSTOMERS_DELETE = 'customers:delete', // Xóa khách hàng
+  CUSTOMERS_MANAGE = 'customers:manage', // Quản lý khách hàng
+
+  // Image convert permissions
+  IMAGE_CONVERT_READ = 'image_convert:read', // Xem image convert
+  IMAGE_CONVERT_CREATE = 'image_convert:create', // Tạo image convert
+  IMAGE_CONVERT_UPDATE = 'image_convert:update', // Cập nhật image convert
+  IMAGE_CONVERT_DELETE = 'image_convert:delete', // Xóa image convert
+  IMAGE_CONVERT_MANAGE = 'image_convert:manage', // Quản lý image convert
 }

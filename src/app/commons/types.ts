@@ -410,6 +410,37 @@ export type GenerateHistorySearchInput = {
   startDate?: InputMaybe<Scalars['Float']['input']>;
 };
 
+export type ImageConvertBatchInput = {
+  height?: InputMaybe<Scalars['Int']['input']>;
+  images: Array<Scalars['Upload']['input']>;
+  prompt: Scalars['String']['input'];
+  width?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type ImageConvertHistoryData = {
+  aiToken: Scalars['Int']['output'];
+  convertedImages?: Maybe<Array<Scalars['String']['output']>>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  imageCount: Scalars['Int']['output'];
+  userId?: Maybe<Scalars['String']['output']>;
+  userName?: Maybe<Scalars['String']['output']>;
+};
+
+export type ImageConvertProgress = {
+  jobId: Scalars['String']['output'];
+  message: Scalars['String']['output'];
+  progress: Scalars['Float']['output'];
+  results?: Maybe<Array<ImageConvertResult>>;
+  status: Scalars['String']['output'];
+};
+
+export type ImageConvertResult = {
+  error?: Maybe<Scalars['String']['output']>;
+  filename: Scalars['String']['output'];
+  url?: Maybe<Scalars['String']['output']>;
+};
+
 export type LoginInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -448,6 +479,7 @@ export type Mutation = {
   changePassword: User;
   completeOnboarding: Array<Device>;
   confirmOtp: Scalars['Boolean']['output'];
+  convertBatch: ImageConvertProgress;
   createBusinessRole: BusinessRole;
   createCountry: Country;
   createDevice: Device;
@@ -532,6 +564,11 @@ export type MutationCompleteOnboardingArgs = {
 
 export type MutationConfirmOtpArgs = {
   otp: Scalars['String']['input'];
+};
+
+
+export type MutationConvertBatchArgs = {
+  input: ImageConvertBatchInput;
 };
 
 
@@ -817,6 +854,11 @@ export type PaginatedGenerateHistoryResponse = {
   pagination: PaginationResponse;
 };
 
+export type PaginatedImageConvertHistoryResponse = {
+  data: Array<ImageConvertHistoryData>;
+  pagination: PaginationResponse;
+};
+
 export type PaginatedModelResponse = {
   data: Array<Model>;
   pagination: PaginationResponse;
@@ -921,6 +963,7 @@ export type Query = {
   generateHistories: PaginatedGenerateHistoryResponse;
   getAllBannerActivePublic: Array<WebsiteBanner>;
   getDeviceBySerials: Array<Device>;
+  getImageConvertHistory: PaginatedImageConvertHistoryResponse;
   model: Model;
   models: PaginatedModelResponse;
   organization: Organization;
@@ -1016,6 +1059,12 @@ export type QueryGenerateHistoriesArgs = {
 
 export type QueryGetDeviceBySerialsArgs = {
   serials: Array<Scalars['String']['input']>;
+};
+
+
+export type QueryGetImageConvertHistoryArgs = {
+  limit?: Scalars['Float']['input'];
+  page?: Scalars['Float']['input'];
 };
 
 
@@ -1122,11 +1171,17 @@ export type SubmitConsultationFormResponse = {
 
 export type Subscription = {
   generateSerialNumberProgress: ExportProgress;
+  imageConvertProgress: ImageConvertProgress;
 };
 
 
 export type SubscriptionGenerateSerialNumberProgressArgs = {
   exportId?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type SubscriptionImageConvertProgressArgs = {
+  jobId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateBusinessRoleInput = {

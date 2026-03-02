@@ -170,6 +170,14 @@ export class LoginComponent implements OnInit, OnDestroy {
           permissions: actions
         }];
         break;
+      case 'image_convert':
+        result = [{
+          path: '/image_convert',
+          icon: 'swap_horizontal_circle',
+          name: 'Image convert',
+          permissions: actions
+        }];
+        break;
       case 'website':
         result = [{
           path: '/website',

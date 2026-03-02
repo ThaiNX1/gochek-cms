@@ -1,23 +1,24 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { OrganizationComponent } from '../pages/organization/organization.component';
-import { DeviceComponent } from '../pages/device/device.component';
-import { UserComponent } from '../pages/user/user.component';
-import { RoleComponent } from '../pages/role/role.component';
-import { OrganizationCreateComponent } from '../pages/organization/organization-create/organization-create.component';
-import { UserCreateComponent } from '../pages/user/user-create/user-create.component';
 import { ForbidenComponent } from '../auth/forbiden/forbiden.component';
-import { PageGuard } from '../core/guards/page.guard';
 import { PermissionAction } from '../core/constants/enum';
+import { PageGuard } from '../core/guards/page.guard';
+import { CustomerComponent } from '../pages/customer/customer.component';
 import { DeviceTypeComponent } from '../pages/device-type/device-type.component';
-import { PermissionComponent } from '../pages/permission/permission.component';
-import { FirmwareComponent } from '../pages/firmware/firmware.component';
+import { DeviceComponent } from '../pages/device/device.component';
 import { FirmwareCreateComponent } from '../pages/firmware/firmware-create/firmware-create.component';
+import { FirmwareComponent } from '../pages/firmware/firmware.component';
 import { GenerateSerialHistoryComponent } from '../pages/generate-serial-history/generate-serial-history.component';
 import { HomeComponent } from '../pages/home/home.component';
-import { CustomerComponent } from '../pages/customer/customer.component';
-import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
+import { ImageConvertComponent } from '../pages/image-convert/image-convert.component';
+import { OrganizationCreateComponent } from '../pages/organization/organization-create/organization-create.component';
+import { OrganizationComponent } from '../pages/organization/organization.component';
+import { PermissionComponent } from '../pages/permission/permission.component';
+import { RoleComponent } from '../pages/role/role.component';
+import { UserCreateComponent } from '../pages/user/user-create/user-create.component';
+import { UserComponent } from '../pages/user/user.component';
 import { WebsiteBannerCreateComponent } from '../pages/website/website-banner/website-banner-create/website-banner-create.component';
+import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
 const routes: Routes = [
   {
     path: '',
@@ -107,6 +108,14 @@ const routes: Routes = [
   {
     path: 'website/banner/:id',
     component: WebsiteBannerCreateComponent,
+  },
+  {
+    path: 'image_convert',
+    component: ImageConvertComponent,
+  },
+  {
+    path: 'image_convert/create',
+    loadComponent: () => import('../pages/image-convert/image-convert-create/image-convert-create.component').then(m => m.ImageConvertCreateComponent),
   },
   // {
   //   path: 'guest',

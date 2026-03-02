@@ -58,12 +58,11 @@ export class DownloadService {
     // Simulate preparation time
     switch (queryType) {
       case 'subscription':
-        this.injector.get(ApiService).executeSubscription(query, queryVariable).pipe(
+        const sub = this.injector.get(ApiService).executeSubscription(query, queryVariable).pipe(
           map(response => ({ ...response, downloadItemId: downloadItem.id })),
           take(1)
         ).subscribe({
           next: (response) => {
-            console.log('======response', response)
             this.isDownloadingSubject.next(false)
             const _currentList = this.downloadListSubject.value;
             for (let index = 0; index < _currentList.length; index++) {
@@ -78,11 +77,14 @@ export class DownloadService {
             }
           },
           error: (error) => {
-            console.log('======error', error)
             this.isDownloadingSubject.next(false)
             this.removeDownloadItem(downloadItem.id);
+          },
+          complete: () => {
+            // Stream kết thúc mà không có data (server đóng kết nối sớm)
+            this.isDownloadingSubject.next(false);
           }
-        })
+        });
         break;
     }
   }

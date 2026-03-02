@@ -10,13 +10,14 @@ import { getMainDefinition } from "@apollo/client/utilities";
 import { TranslateLoader, TranslateModule } from "@ngx-translate/core";
 import { provideNamedApollo } from "apollo-angular";
 import { HttpLink } from "apollo-angular/http";
-import { createClient } from 'graphql-ws';
 import { environment } from "../environments/environment";
 import { routes } from './app.routes';
 import { storageKey } from "./core/constants/storage-key";
 import { ServiceInterceptor } from "./core/services/service-interceptor";
 import { CustomMatPaginatorIntl } from "./core/utils/pagination-intl";
 import { CustomTranslateLoader } from "./core/services/custom-translate-loader";
+import { createClient } from "graphql-ws";
+import { Kind, OperationTypeNode } from "graphql";
 const { extractFiles } = require('extract-files');
 // export function HttpLoaderFactory(httpClient: HttpClient) {
 //   return new TranslateHttpLoader(httpClient, './assets/languages/', '.json');
@@ -50,13 +51,14 @@ export const _provideNamedApollo = provideNamedApollo(() => {
       },
       on: {
         connected: () => console.log('WebSocket connected'),
+        closed: (event: any) => console.warn('WebSocket closed', event?.code, event?.reason),
         error: (error) => console.error('WebSocket error:', error),
       },
     })
   );
   const link = split(({ query }) => {
     const operationDefinitionNode = getMainDefinition(query);
-    return operationDefinitionNode.kind === 'OperationDefinition' && operationDefinitionNode.operation === 'subscription';
+    return operationDefinitionNode.kind === Kind.OPERATION_DEFINITION && operationDefinitionNode.operation === OperationTypeNode.SUBSCRIPTION;
   }, ws, http)
   return {
     default: {

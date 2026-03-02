@@ -1,0 +1,94 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-4">
+    <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+      <h1 class="text-2xl font-bold">Thêm mới Convert Ảnh</h1>
+    </div>
+    <a [routerLink]="['/image_convert']"
+       class="p-3 flex items-center justify-center gap-2 px-3 bg-white text-gray-700 rounded border border-gray-400 hover:bg-gray-50 transition-colors">
+      <mat-icon>arrow_back</mat-icon>
+      Quay lại
+    </a>
+  </div>
+
+  <div class="px-4 pb-4">
+    <!-- Form Upload Section -->
+    <mat-card class="shadow-sm border border-gray-200 p-4">
+      <form [formGroup]="uploadForm" class="flex flex-col gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Prompt</mat-label>
+          <textarea matInput formControlName="prompt" placeholder="Nhập prompt để ứng dụng vào việc chỉnh sửa..." rows="4"></textarea>
+        </mat-form-field>
+
+        <div class="flex gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Chiều rộng (Width)</mat-label>
+            <input matInput formControlName="width" placeholder="VD: 1024" type="text" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Chiều cao (Height)</mat-label>
+            <input matInput formControlName="height" placeholder="VD: 1024" type="text" />
+          </mat-form-field>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="font-medium text-gray-700">Chọn ảnh (Tối đa 100 ảnh)</label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+               (click)="fileInput.click()">
+            <mat-icon class="text-gray-400 text-4xl mb-2">cloud_upload</mat-icon>
+            <p class="text-sm text-gray-600 mb-1">Click để chọn ảnh tải lên</p>
+            <p class="text-xs text-gray-500">Giới hạn tổng dung lượng: 200MB</p>
+            <input type="file" multiple accept="image/*" class="hidden" #fileInput (change)="onFileSelected($event)">
+          </div>
+        </div>
+
+        <div *ngIf="selectedFiles.length > 0" class="mt-2">
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-sm font-medium">Đã chọn: {{ selectedFiles.length }}/{{ maxFiles }} ảnh</p>
+            <p class="text-sm font-medium" [class.text-red-500]="getTotalSize() > maxSizeBytes">
+              Tổng kích thước: {{ formatBytes(getTotalSize()) }} / 200 MB
+            </p>
+          </div>
+          
+          <div class="max-h-40 overflow-y-auto border border-gray-200 rounded p-2">
+            <div *ngFor="let file of selectedFiles; let i = index" class="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+              <span class="text-xs truncate w-3/4">{{ file.name }}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">{{ formatBytes(file.size) }}</span>
+                <button mat-icon-button type="button" class="text-red-500 w-6 h-6 leading-none self-center p-0 flex items-center justify-center" (click)="removeFile(i)">
+                  <mat-icon style="font-size: 16px; width: 16px; height: 16px;">close</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-4">
+          <button [disabled]="selectedFiles.length === 0 || isUploading" (click)="onUpload()" 
+            class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border">
+            <div class="flex items-center gap-2">
+              <mat-icon *ngIf="!isUploading" class="text-white">cloud_upload</mat-icon>
+              <mat-icon *ngIf="isUploading" class="animate-spin text-white">autorenew</mat-icon>
+              <span class="text-white">{{ isUploading ? 'Đang tải lên...' : 'Bắt đầu Convert' }}</span>
+            </div>
+          </button>
+        </div>
+        
+        <!-- Progress display -->
+        <div *ngIf="currentProgress" class="mt-4 p-4 border rounded-lg"
+             [ngClass]="{'border-blue-200 bg-blue-50': currentProgress.status === 'PROCESSING' || currentProgress.status === 'PENDING', 
+                         'border-green-200 bg-green-50': currentProgress.status === 'COMPLETED',
+                         'border-red-200 bg-red-50': currentProgress.status === 'FAILED'}">
+          <div class="flex justify-between mb-2">
+            <span class="font-medium text-sm">{{ currentProgress.message || 'Đang xử lý...' }}</span>
+            <span class="font-bold text-sm">{{ (currentProgress.progress || 0).toFixed(1) }}%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div class="bg-blue-600 h-2.5 rounded-full" [style.width]="(currentProgress.progress || 0) + '%'"></div>
+          </div>
+        </div>
+      </form>
+    </mat-card>
+  </div>
+</div>

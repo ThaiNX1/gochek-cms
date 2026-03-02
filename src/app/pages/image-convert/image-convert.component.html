@@ -1,0 +1,34 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-2xl font-bold">Lịch sử Convert Ảnh</h1>
+        </div>
+        <div class="flex items-stretch gap-3">
+            <a [routerLink]="['/image_convert/create']"
+                class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400">
+                <mat-icon class="text-white">swap_horizontal_circle</mat-icon>
+                Convert ảnh
+            </a>
+        </div>
+    </div>
+
+    <!-- History Table Section -->
+    <div class="pb-4 flex-1 flex flex-col items-stretch justify-start overflow-hidden">
+        <app-table
+            class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+            [columns]="columns" [dataSource]="dataSource" [pagination]="pagination"
+            (pageChange)="onPageChange($event)">
+        </app-table>
+    </div>
+</div>
+
+<!-- Action Column -->
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4 gap-3">
+        <button class="flex items-center justify-center border-none bg-transparent" title="Xem chi tiết/Tải xuống"
+            [disabled]="item.status !== 'COMPLETED'" (click)="downloadResult(item)">
+            <mat-icon [class]="item.status === 'COMPLETED' ? 'text-primary' : 'text-gray-400'">download</mat-icon>
+        </button>
+    </div>
+</ng-template>
