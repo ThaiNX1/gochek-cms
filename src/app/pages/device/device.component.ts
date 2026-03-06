@@ -10,7 +10,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { RouterModule } from '@angular/router';
 import { BaseClass } from '../../commons/base.class';
 import { GET_DEVICE_TYPES, GET_MODELS } from '../../commons/queries/device-type.query';
-import { ASSIGN_DEVICE_TO_ORGANIZATION, GET_DEVICES, IMPORT_DEVICE, REMOVE_DEVICE_FROM_ORGANIZATION, UPDATE_DEVICE } from '../../commons/queries/device.query';
+import { ASSIGN_DEVICE_TO_ORGANIZATION, GET_DEVICES, IMPORT_DEVICE, REMOVE_DEVICE_FROM_ORGANIZATION, SUBSCRIBE_IMPORT_DEVICE_PROGRESS, UPDATE_DEVICE } from '../../commons/queries/device.query';
 import { GET_ORGANIZATIONS } from '../../commons/queries/organization.query';
 import { Device, DeviceStateEnum, PaginatedDeviceResponse, PaginatedDeviceTypeResponse, PaginatedOrganizationResponse } from '../../commons/types';
 import { constant } from '../../core/constants/constant';
@@ -21,6 +21,7 @@ import { DialogComponent } from '../../shared/components/dialog/dialog.component
 import { SelectSearchComponent } from "../../shared/components/select-search/select-search.component";
 import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
+import { format } from 'date-fns';
 @Component({
   selector: 'app-device',
   standalone: true,
@@ -173,17 +174,21 @@ export class DeviceComponent extends BaseClass {
   async onImportDevice(event: any) {
     const file = event.target.files?.[0];
     if (file) {
-      this.injector.get(ApiService).executeMutation<Device>(IMPORT_DEVICE,
-        {
-          file
-        }).then(async () => {
-          this.importDeviceForm.reset();
-          this.commonService.openSnackBar('Thêm thiết bị thành công');
-          await this.onGetDevice();
-        }).catch(error => {
-          this.commonService.openSnackBarError('Thêm thiết bị thất bại');
-          this.importDeviceForm.reset();
-        });
+      const importId = `import_${new Date().getTime()}`;
+      this.downloadService.triggerDownload(
+        '',
+        `Import thiết bị ${format(new Date(), 'ddMMyyy_HHmm')}`,
+        SUBSCRIBE_IMPORT_DEVICE_PROGRESS,
+        { exportId: importId },
+        'importDeviceProgress'
+      );
+      setTimeout(() => {
+        this.injector.get(ApiService).executeMutation<Device>(IMPORT_DEVICE,
+          {
+            file,
+            importId
+          }, true)
+      }, 3000);
     }
   }
 

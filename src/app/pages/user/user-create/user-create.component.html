@@ -41,14 +41,14 @@
                         [searchDataKey]="'businessRoles'" [multiple]="true">
                     </app-select-search>
                 </div>
-                <div *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]"
+                <!-- <div *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]"
                     class="flex flex-col items-stretch justify-start gap-1">
                     <label class="text-sm font-semibold required">Tổ chức</label>
                     <app-select-search [options]="organizations" formControlName="organizationId"
                         [placeholder]="'Chọn tổ chức'" [valueKey]="'id'" [labelKey]="'name'" [searchable]="true"
                         [searchQuery]="orgSearchQuery" [searchDataKey]="'organizations'">
                     </app-select-search>
-                </div>
+                </div> -->
             </div>
         </form>
         <div class="flex items-center justify-center gap-3">

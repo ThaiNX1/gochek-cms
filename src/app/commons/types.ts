@@ -216,7 +216,7 @@ export type Device = {
   firmwareVersion?: Maybe<Scalars['String']['output']>;
   hardwareVersion?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  isActive: Scalars['Boolean']['output'];
+  isActive?: Maybe<Scalars['Boolean']['output']>;
   latitude?: Maybe<Scalars['Float']['output']>;
   longitude?: Maybe<Scalars['Float']['output']>;
   model?: Maybe<Model>;
@@ -237,7 +237,7 @@ export type Device = {
   raFirmwareVersion?: Maybe<Scalars['String']['output']>;
   raHardwareVersion?: Maybe<Scalars['String']['output']>;
   secretKey?: Maybe<Scalars['String']['output']>;
-  serialNumber: Scalars['String']['output'];
+  serialNumber?: Maybe<Scalars['String']['output']>;
   signature?: Maybe<Scalars['String']['output']>;
   sourceId?: Maybe<Scalars['Float']['output']>;
   state?: Maybe<DeviceStateEnum>;
@@ -267,14 +267,6 @@ export type DeviceGenerateSerialNumberInput = {
   descriptor?: InputMaybe<Scalars['String']['input']>;
   exportId?: InputMaybe<Scalars['String']['input']>;
   prefix?: InputMaybe<Scalars['String']['input']>;
-};
-
-export type DeviceOnboardInput = {
-  ids: Array<Scalars['String']['input']>;
-  latitude?: InputMaybe<Scalars['Float']['input']>;
-  longitude?: InputMaybe<Scalars['Float']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
-  ownerId: Scalars['String']['input'];
 };
 
 export type DeviceSearchInput = {
@@ -421,10 +413,13 @@ export type ImageConvertHistoryData = {
   aiToken: Scalars['Int']['output'];
   convertedImages?: Maybe<Array<Scalars['String']['output']>>;
   createdAt: Scalars['DateTime']['output'];
+  height?: Maybe<Scalars['Int']['output']>;
   id: Scalars['String']['output'];
   imageCount: Scalars['Int']['output'];
+  prompt?: Maybe<Scalars['String']['output']>;
   userId?: Maybe<Scalars['String']['output']>;
   userName?: Maybe<Scalars['String']['output']>;
+  width?: Maybe<Scalars['Int']['output']>;
 };
 
 export type ImageConvertProgress = {
@@ -477,7 +472,6 @@ export type Mutation = {
   assignPermissionRole: Permission;
   assignUserRole: User;
   changePassword: User;
-  completeOnboarding: Array<Device>;
   confirmOtp: Scalars['Boolean']['output'];
   convertBatch: ImageConvertProgress;
   createBusinessRole: BusinessRole;
@@ -498,7 +492,7 @@ export type Mutation = {
   deleteOrganization: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
   generateSerialNumber: Scalars['String']['output'];
-  importDevice: Array<Device>;
+  importDevice: Scalars['String']['output'];
   importPermissions: Array<Permission>;
   importProvince: Array<Province>;
   importWard: Array<Ward>;
@@ -554,11 +548,6 @@ export type MutationAssignUserRoleArgs = {
 
 export type MutationChangePasswordArgs = {
   input: ChangePasswordInput;
-};
-
-
-export type MutationCompleteOnboardingArgs = {
-  input: DeviceOnboardInput;
 };
 
 
@@ -962,7 +951,6 @@ export type Query = {
   generateFormKey: GenerateFormKeyResponse;
   generateHistories: PaginatedGenerateHistoryResponse;
   getAllBannerActivePublic: Array<WebsiteBanner>;
-  getDeviceBySerials: Array<Device>;
   getImageConvertHistory: PaginatedImageConvertHistoryResponse;
   model: Model;
   models: PaginatedModelResponse;
@@ -1054,11 +1042,6 @@ export type QueryFirmwaresByDeviceTypeArgs = {
 
 export type QueryGenerateHistoriesArgs = {
   pagination?: InputMaybe<GenerateHistorySearchInput>;
-};
-
-
-export type QueryGetDeviceBySerialsArgs = {
-  serials: Array<Scalars['String']['input']>;
 };
 
 
@@ -1172,6 +1155,7 @@ export type SubmitConsultationFormResponse = {
 export type Subscription = {
   generateSerialNumberProgress: ExportProgress;
   imageConvertProgress: ImageConvertProgress;
+  importDeviceProgress: ExportProgress;
 };
 
 
@@ -1181,7 +1165,12 @@ export type SubscriptionGenerateSerialNumberProgressArgs = {
 
 
 export type SubscriptionImageConvertProgressArgs = {
-  jobId?: InputMaybe<Scalars['String']['input']>;
+  jobId: Scalars['String']['input'];
+};
+
+
+export type SubscriptionImportDeviceProgressArgs = {
+  exportId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateBusinessRoleInput = {

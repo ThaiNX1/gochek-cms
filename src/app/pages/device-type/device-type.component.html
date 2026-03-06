@@ -3,12 +3,12 @@
         <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
             <h1 class="text-2xl font-bold">Danh sách loại thiết bị</h1>
             <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-center justify-start gap-3">
-                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px]">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
                     <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
                 </mat-form-field>
             </form>
         </div>
-        <button
+        <button *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]"
             class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400"
             (click)="onAddEditDeviceType()">
             <mat-icon class="text-white">add</mat-icon>
@@ -23,7 +23,7 @@
 </div>
 
 <ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
-    <div class="flex items-center justify-center px-4 gap-3">
+    <div *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]" class="flex items-center justify-center px-4 gap-3">
         <button class="flex items-center justify-center border-none bg-transparent" (click)="onAddEditDeviceType(item)"
             title="Sửa">
             <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
@@ -70,7 +70,7 @@
                         </span>
                     </td>
                     <td class="border border-gray-400 px-4 py-2">
-                        <div class="flex items-center justify-center gap-2">
+                        <div *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]" class="flex items-center justify-center gap-2">
                             <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
                                 (click)="onDeleteModel(item, model)">
                                 <mat-icon class="text-red-500">delete</mat-icon>

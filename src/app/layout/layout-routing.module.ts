@@ -66,7 +66,7 @@ const routes: Routes = [
     component: DeviceTypeComponent,
     canActivate: [PageGuard],
     data: {
-      permissions: [PermissionAction.MANAGE],
+      permissions: [PermissionAction.MANAGE, PermissionAction.READ],
     },
   },
   {

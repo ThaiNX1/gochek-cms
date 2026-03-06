@@ -142,12 +142,23 @@ export const DELETE_DEVICE = gql`
 `;
 
 export const IMPORT_DEVICE = gql`
-  mutation ImportDevice($file: Upload!) {
-    importDevice(file: $file){
-      serialNumber
-      name
-    }
+  mutation ImportDevice($file: Upload!, $importId: String!) {
+    importDevice(file: $file, importId: $importId)
   }
+`;
+
+export const SUBSCRIBE_IMPORT_DEVICE_PROGRESS = gql`
+subscription ImportDeviceProgress($exportId: String) {
+    importDeviceProgress(exportId: $exportId) {
+        error
+        exportId
+        message
+        progress
+        status
+        url
+        userId
+    }
+}
 `;
 
 export const ASSIGN_DEVICE_TO_ORGANIZATION = gql`

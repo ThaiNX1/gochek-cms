@@ -1,8 +1,7 @@
 import { Injectable, Injector } from '@angular/core';
-import { BehaviorSubject, of, Subject } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { filter, map, take } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { forEach, forIn } from 'lodash';
 
 export interface DownloadRequest {
   url: string;
@@ -60,6 +59,11 @@ export class DownloadService {
       case 'subscription':
         const sub = this.injector.get(ApiService).executeSubscription(query, queryVariable).pipe(
           map(response => ({ ...response, downloadItemId: downloadItem.id })),
+          filter(response => {
+            const data = response[queryResultKey];
+            if (!data) return false;
+            return !!data.url || !!data.error || ['COMPLETED', 'DONE', 'FAILED', 'ERROR'].includes(data.status?.toUpperCase());
+          }),
           take(1)
         ).subscribe({
           next: (response) => {

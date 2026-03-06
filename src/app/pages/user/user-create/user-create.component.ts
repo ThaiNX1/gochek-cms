@@ -55,7 +55,7 @@ export class UserCreateComponent extends BaseClass {
       name: new FormControl('', [Validators.required]),
       email: new FormControl('', [Validators.required]),
       roleIds: new FormControl(null, [Validators.required]),
-      organizationId: new FormControl(''),
+      // organizationId: new FormControl(''),
       isActive: new FormControl(true)
     });
     this.injector.get(ActivatedRoute).params.subscribe(async (params: any) => {
@@ -66,7 +66,7 @@ export class UserCreateComponent extends BaseClass {
     });
     await Promise.all([
       this.getRoles(),
-      this.hasPermission([this.PermissionEnum.ORGANIZATIONS_MANAGE]) && this.getOrganizations(),
+      // this.hasPermission([this.PermissionEnum.ORGANIZATIONS_MANAGE]) && this.getOrganizations(),
       this.hasPermission([this.PermissionEnum.USERS_MANAGE]) && this.getUsers(),
     ]);
   }
