@@ -21,7 +21,7 @@ import { DialogComponent } from '../../shared/components/dialog/dialog.component
 import { SelectSearchComponent } from "../../shared/components/select-search/select-search.component";
 import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
-import { format } from 'date-fns';
+import { format, formatDate } from 'date-fns';
 @Component({
   selector: 'app-device',
   standalone: true,
@@ -127,6 +127,15 @@ export class DeviceComponent extends BaseClass {
       },
     });
     this.dataSource = response?.devices?.data?.reduce((acc: any, item: any, index: number) => {
+      const otaMessageSplits: String[] = item?.otaMessage?.split(':') ?? [];
+      let otaMessageText;
+      if (otaMessageSplits?.length > 1) {
+        otaMessageText = isNaN(Number(otaMessageSplits[0]))
+          ? formatDate(Number(otaMessageSplits[0]), 'dd/MM/yyyy HH:mm') + otaMessageSplits.splice(0).join(':')
+          : item?.otaMessage
+      } else {
+        otaMessageText = item?.otaMessage
+      }
       acc.push({
         ...item,
         index: index + 1,
@@ -135,7 +144,8 @@ export class DeviceComponent extends BaseClass {
         modelName: item.model?.name,
         modelCode: item.model?.code,
         organizationName: item.organization?.name,
-        statusName: item.isActive ? 'Kích hoạt' : 'Chưa kích hoạt'
+        statusName: item.isActive ? 'Kích hoạt' : 'Chưa kích hoạt',
+        otaMessageText
       });
       return acc;
     }, []) ?? [];

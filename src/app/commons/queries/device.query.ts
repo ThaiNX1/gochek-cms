@@ -24,6 +24,7 @@ export const GET_DEVICES = gql`
           state
           activeAt
           expiredAt
+          otaMessage
           deviceType {
               id
               name

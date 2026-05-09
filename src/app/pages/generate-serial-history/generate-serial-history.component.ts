@@ -19,6 +19,8 @@ import { DirectiveModule } from '../../shared/directive.module';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { DownloadService } from '../../core/services/download.service';
 import { GENERATE_SERIAL_NUMBER, SUBSCRIBE_GENERATE_SERIAL_NUMBER_PROGRESS } from '../../commons/queries/device.query';
+import { GET_MODELS } from '../../commons/queries/device-type.query';
+import { SelectSearchComponent } from '../../shared/components/select-search/select-search.component';
 import { format } from 'date-fns';
 @Component({
   selector: 'app-device',
@@ -33,7 +35,8 @@ import { format } from 'date-fns';
     DirectiveModule,
     ReactiveFormsModule,
     MatMenuModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    SelectSearchComponent,
   ],
   templateUrl: './generate-serial-history.component.html',
   styleUrl: './generate-serial-history.component.scss'
@@ -53,6 +56,8 @@ export class GenerateSerialHistoryComponent extends BaseClass {
   }
   prefixList: GenerateHistory[] = [];
   prefixStrList: string[] = [];
+  modelList: any[] = [];
+  modelSearchQuery = GET_MODELS;
   constructor(private dialog: MatDialog) {
     super();
     this.columns = [
@@ -75,6 +80,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     this.generateSerialForm = new FormGroup({
       prefix: new FormControl('', [Validators.required]),
       count: new FormControl(1, [Validators.required, Validators.min(1)]),
+      modelId: new FormControl('', [Validators.required]),
       descriptor: new FormControl(''),
     });
     await Promise.all([
@@ -151,6 +157,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       input: {
         prefix: this.generateSerialForm.value.prefix,
         count: this.generateSerialForm.value.count,
+        modelId: this.generateSerialForm.value.modelId,
         descriptor: this.generateSerialForm.value.descriptor,
       }
     });

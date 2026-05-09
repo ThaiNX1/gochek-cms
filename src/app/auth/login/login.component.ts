@@ -93,6 +93,11 @@ export class LoginComponent implements OnInit, OnDestroy {
           icon: 'home',
           name: 'Trang chủ',
         },
+        {
+          path: '/model-ai',
+          icon: 'smart_toy',
+          name: 'AI',
+        },
         ...menus
       ]));
       if (isAdminstrator)

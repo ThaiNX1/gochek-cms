@@ -19,6 +19,7 @@ import { UserCreateComponent } from '../pages/user/user-create/user-create.compo
 import { UserComponent } from '../pages/user/user.component';
 import { WebsiteBannerCreateComponent } from '../pages/website/website-banner/website-banner-create/website-banner-create.component';
 import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
+import { ModelAiComponent } from '../pages/model-ai/model-ai.component';
 const routes: Routes = [
   {
     path: '',
@@ -117,6 +118,10 @@ const routes: Routes = [
     path: 'image_convert/create',
     loadComponent: () => import('../pages/image-convert/image-convert-create/image-convert-create.component').then(m => m.ImageConvertCreateComponent),
   },
+  // {
+  //   path: 'model-ai',
+  //   component: ModelAiComponent,
+  // },
   // {
   //   path: 'guest',
   //   component: GuestLayoutComponent,

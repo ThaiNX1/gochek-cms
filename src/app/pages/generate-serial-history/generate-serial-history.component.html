@@ -68,6 +68,13 @@
             </mat-form-field>
         </div>
         <div class="flex flex-col gap-1">
+            <label class="require">Model:</label>
+            <app-select-search class="w-full bg-white" [options]="modelList" formControlName="modelId"
+                [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="modelSearchQuery"
+                [searchDataKey]="'models'" placeholder="Chọn model">
+            </app-select-search>
+        </div>
+        <div class="flex flex-col gap-1">
             <label>Ghi chú</label>
             <mat-form-field appearance="outline" floatLabel="auto">
                 <textarea matInput formControlName="descriptor" placeholder="Nhập ghi chú" rows="3"></textarea>
