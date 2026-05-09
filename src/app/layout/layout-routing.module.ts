@@ -19,7 +19,6 @@ import { UserCreateComponent } from '../pages/user/user-create/user-create.compo
 import { UserComponent } from '../pages/user/user.component';
 import { WebsiteBannerCreateComponent } from '../pages/website/website-banner/website-banner-create/website-banner-create.component';
 import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
-import { ModelAiComponent } from '../pages/model-ai/model-ai.component';
 const routes: Routes = [
   {
     path: '',
