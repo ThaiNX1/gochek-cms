@@ -78,7 +78,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       keyword: new FormControl('')
     });
     this.generateSerialForm = new FormGroup({
-      prefix: new FormControl('', [Validators.required]),
+      prefix: new FormControl('', [Validators.required, Validators.minLength(2), Validators.maxLength(2)]),
       count: new FormControl(1, [Validators.required, Validators.min(1)]),
       modelId: new FormControl('', [Validators.required]),
       descriptor: new FormControl(''),

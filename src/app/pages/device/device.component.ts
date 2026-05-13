@@ -21,7 +21,7 @@ import { DialogComponent } from '../../shared/components/dialog/dialog.component
 import { SelectSearchComponent } from "../../shared/components/select-search/select-search.component";
 import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
-import { format, formatDate } from 'date-fns';
+import { format } from 'date-fns';
 @Component({
   selector: 'app-device',
   standalone: true,
@@ -128,14 +128,15 @@ export class DeviceComponent extends BaseClass {
       },
     });
     this.dataSource = response?.devices?.data?.reduce((acc: any, item: any, index: number) => {
-      const otaMessageSplits: String[] = item?.otaMessage?.split(':') ?? [];
+      const otaMessageSplits: string[] = item?.otaMessage?.split(':') ?? [];
       let otaMessageText;
       if (otaMessageSplits?.length > 1) {
-        otaMessageText = isNaN(Number(otaMessageSplits[0]))
-          ? formatDate(Number(otaMessageSplits[0]), 'dd/MM/yyyy HH:mm') + otaMessageSplits.splice(0).join(':')
-          : item?.otaMessage
+        const timestamp = Number(otaMessageSplits[0]);
+        otaMessageText = !isNaN(timestamp) && timestamp > 0
+          ? format(new Date(timestamp), 'dd/MM/yyyy HH:mm') + ' ' + otaMessageSplits.slice(1).join(':')
+          : item?.otaMessage;
       } else {
-        otaMessageText = item?.otaMessage
+        otaMessageText = item?.otaMessage;
       }
       acc.push({
         ...item,
