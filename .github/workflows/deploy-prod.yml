@@ -41,8 +41,15 @@ jobs:
         run: |
           aws s3 sync dist/shell/ s3://${{ secrets.S3_BUCKET_PROD }} --delete
 
-      - name: Invalidate CloudFront cache
+      - name: Assume role Account B and invalidate CloudFront
         run: |
+          CREDS=$(aws sts assume-role \
+            --role-arn ${{ secrets.CLOUDFRONT_ROLE_ARN }} \
+            --role-session-name github-cf-invalidate \
+            --output json)
+          export AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r '.Credentials.AccessKeyId')
+          export AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')
+          export AWS_SESSION_TOKEN=$(echo $CREDS | jq -r '.Credentials.SessionToken')
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PROD }} \
             --paths "/*"
