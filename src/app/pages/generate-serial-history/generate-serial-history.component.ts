@@ -86,6 +86,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     await Promise.all([
       this.getAllPrefix(),
       this.onGetHistory(),
+      this.onGetModels(),
     ]);
   }
 
@@ -123,6 +124,16 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     }, []) ?? [];
   }
 
+  async onGetModels() {
+    const response = await this.injector.get(ApiService).executeQuery<any>(GET_MODELS, {
+      pagination: {
+        page: 1,
+        size: 100,
+      },
+    });
+    this.modelList = response?.models?.data ?? [];
+  }
+
   async onPageChange(event: PageEvent) {
     await this.onGetHistory(event.pageIndex + 1);
   }
@@ -153,21 +164,26 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin');
       return;
     };
-    const response = await this.injector.get(ApiService).executeMutation<string>(GENERATE_SERIAL_NUMBER, {
+    const exportId = `export_${new Date().getTime()}`;
+
+    this.downloadService.triggerDownload(
+      '',
+      `Sinh mã sản phẩm ${format(new Date(), 'ddMMyyy_HHmm')}`,
+      SUBSCRIBE_GENERATE_SERIAL_NUMBER_PROGRESS,
+      { exportId },
+      'generateSerialNumberProgress'
+    );
+
+    await this.injector.get(ApiService).executeMutation<string>(GENERATE_SERIAL_NUMBER, {
       input: {
         prefix: this.generateSerialForm.value.prefix,
         count: this.generateSerialForm.value.count,
         modelId: this.generateSerialForm.value.modelId,
         descriptor: this.generateSerialForm.value.descriptor,
+        exportId,
       }
     });
-    this.downloadService.triggerDownload(
-      '',
-      `Sinh mã sản phẩm ${format(new Date(), 'ddMMyyy_HHmm')}`,
-      SUBSCRIBE_GENERATE_SERIAL_NUMBER_PROGRESS,
-      { exportId: response?.generateSerialNumber },
-      'generateSerialNumberProgress'
-    );
+
     this.dialog.closeAll();
   }
 
