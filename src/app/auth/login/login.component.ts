@@ -159,6 +159,14 @@ export class LoginComponent implements OnInit, OnDestroy {
           permissions: actions
         }];
         break;
+      case 'roles':
+        result = [{
+          path: '/role',
+          icon: 'approval',
+          name: 'Phân quyền',
+          permissions: actions
+        }];
+        break;
       case 'firmware':
         result = [{
           path: '/firmware',
