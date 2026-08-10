@@ -166,13 +166,13 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     };
     const exportId = `export_${new Date().getTime()}`;
 
-    this.downloadService.triggerDownload(
-      '',
-      `Sinh mã sản phẩm ${format(new Date(), 'ddMMyyy_HHmm')}`,
-      SUBSCRIBE_GENERATE_SERIAL_NUMBER_PROGRESS,
-      { exportId },
-      'generateSerialNumberProgress'
-    );
+    // this.downloadService.triggerDownload(
+    //   '',
+    //   `Sinh mã sản phẩm ${format(new Date(), 'ddMMyyy_HHmm')}`,
+    //   SUBSCRIBE_GENERATE_SERIAL_NUMBER_PROGRESS,
+    //   { exportId },
+    //   'generateSerialNumberProgress'
+    // );
 
     await this.injector.get(ApiService).executeMutation<string>(GENERATE_SERIAL_NUMBER, {
       input: {

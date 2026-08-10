@@ -25,24 +25,17 @@ export const GET_DEVICES = gql`
           activeAt
           expiredAt
           otaMessage
-          deviceType {
-              id
-              name
-              code
-              models {
-                id
-                code
-                name
-                description
-                isActive
-              }
-          }
           model {
             id
             code
             name
             description
             isActive
+            deviceType {
+              id
+              name
+              code
+            }
           }
           organization {
               id

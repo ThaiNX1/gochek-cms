@@ -74,8 +74,8 @@ export class DeviceComponent extends BaseClass {
       { name: 'Ota Message', field: 'otaMessage', className: 'min-w-[200px] max-w-[250px]', tdClassName: '!justify-start', templateCode: 'otaMessageColumnTemplate' },
       { name: 'Ngày kích hoạt', field: 'activeAt', className: 'min-w-[100px] max-w-[100px]', type: TableColumnType.DATE },
       { name: 'Ngày hết hạn', field: 'expiredAt', className: 'min-w-[100px] max-w-[100px]', type: TableColumnType.DATE },
-      { name: 'Tình trạng', field: 'stateName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'stateColumnTemplate' },
-      { name: 'Trạng thái', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
+      { name: 'Trạng thái', field: 'state', className: 'min-w-[150px] max-w-[150px]' },
+      { name: 'Kích hoạt', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
       { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
     ]
   }
@@ -141,8 +141,8 @@ export class DeviceComponent extends BaseClass {
       acc.push({
         ...item,
         index: index + 1,
-        deviceTypeName: item.deviceType?.name,
-        deviceTypeCode: item.deviceType?.code,
+        deviceTypeName: item.model?.deviceType?.name,
+        deviceTypeCode: item.model?.deviceType?.code,
         modelName: item.model?.name,
         modelCode: item.model?.code,
         organizationName: item.organization?.name,
