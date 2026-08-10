@@ -42,6 +42,30 @@ import { format } from 'date-fns';
 })
 export class DeviceComponent extends BaseClass {
   statusList: any[] = constant.deviceStatusList;
+  deviceStateLabelMap: Record<DeviceStateEnum, string> = {
+    [DeviceStateEnum.ERROR]: 'Error',
+    [DeviceStateEnum.FACTORY]: 'Factory',
+    [DeviceStateEnum.GENERATED]: 'Generated',
+    [DeviceStateEnum.OFFLINE]: 'Offline',
+    [DeviceStateEnum.ONBOARDING]: 'Onboarding',
+    [DeviceStateEnum.ONLINE]: 'Online',
+    [DeviceStateEnum.OQC]: 'OQC',
+    [DeviceStateEnum.QC_TEST]: 'QC Test',
+    [DeviceStateEnum.REWORK]: 'Rework',
+    [DeviceStateEnum.TIMEOUT]: 'Timeout',
+  };
+  deviceStateClassMap: Record<DeviceStateEnum, string> = {
+    [DeviceStateEnum.ERROR]: 'bg-red-100 text-red-800',
+    [DeviceStateEnum.FACTORY]: 'bg-violet-100 text-violet-800',
+    [DeviceStateEnum.GENERATED]: 'bg-sky-100 text-sky-800',
+    [DeviceStateEnum.OFFLINE]: 'bg-gray-100 text-gray-800',
+    [DeviceStateEnum.ONBOARDING]: 'bg-blue-100 text-blue-800',
+    [DeviceStateEnum.ONLINE]: 'bg-green-100 text-green-800',
+    [DeviceStateEnum.OQC]: 'bg-teal-100 text-teal-800',
+    [DeviceStateEnum.QC_TEST]: 'bg-indigo-100 text-indigo-800',
+    [DeviceStateEnum.REWORK]: 'bg-orange-100 text-orange-800',
+    [DeviceStateEnum.TIMEOUT]: 'bg-amber-100 text-amber-800',
+  };
   organizationList: any[] = [];
   deviceTypeList: any[] = [];
   deviceTypeEditList: any[] = [];
@@ -74,7 +98,7 @@ export class DeviceComponent extends BaseClass {
       { name: 'Ota Message', field: 'otaMessage', className: 'min-w-[200px] max-w-[250px]', tdClassName: '!justify-start', templateCode: 'otaMessageColumnTemplate' },
       { name: 'Ngày kích hoạt', field: 'activeAt', className: 'min-w-[100px] max-w-[100px]', type: TableColumnType.DATE },
       { name: 'Ngày hết hạn', field: 'expiredAt', className: 'min-w-[100px] max-w-[100px]', type: TableColumnType.DATE },
-      { name: 'Trạng thái', field: 'state', className: 'min-w-[150px] max-w-[150px]' },
+      { name: 'Trạng thái', field: 'state', className: 'min-w-[150px] max-w-[150px]', templateCode: 'stateColumnTemplate' },
       { name: 'Kích hoạt', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
       { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
     ]
@@ -115,6 +139,14 @@ export class DeviceComponent extends BaseClass {
       this.modelEditList = deviceType?.models ?? [];
       this.editDeviceForm.get('modelId')?.reset();
     })
+  }
+
+  getDeviceStateLabel(state?: DeviceStateEnum | null): string {
+    return state ? this.deviceStateLabelMap[state] ?? state : '--';
+  }
+
+  getDeviceStateClass(state?: DeviceStateEnum | null): string {
+    return state ? this.deviceStateClassMap[state] ?? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800';
   }
 
   async onGetDevice(page: number = 1) {

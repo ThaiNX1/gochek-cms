@@ -65,23 +65,10 @@
 
 <ng-template myTemplate tempCode="stateColumnTemplate" let-item="item">
     <div class="flex items-center justify-center px-4">
-        @switch(item.state) {
-            @case(DeviceStateEnum.OFFLINE) {
-                <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Offline</span>
-            }
-            @case(DeviceStateEnum.ONLINE) {
-                <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Online</span>
-            }
-            @case(DeviceStateEnum.FACTORY) {
-                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium whitespace-nowrap">Factory</span>
-            }
-            @case(DeviceStateEnum.ONBOARDING) {
-                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium whitespace-nowrap">Onboarding</span>
-            }
-            @default {
-                <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Error</span>
-            }
-        }
+        <span class="px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
+            [ngClass]="getDeviceStateClass(item.state)">
+            {{ getDeviceStateLabel(item.state) }}
+        </span>
     </div>
 </ng-template>
 
