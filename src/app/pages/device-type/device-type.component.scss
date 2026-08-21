@@ -1,0 +1,18 @@
+.model-description-editor ::ng-deep .NgxEditor__Content {
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.model-description-preview ::ng-deep {
+    p {
+      margin: 0;
+    }
+
+    ul,
+    ol {
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+}

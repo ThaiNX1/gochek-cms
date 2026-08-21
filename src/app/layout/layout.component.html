@@ -10,14 +10,36 @@
         }
       </div>
       <mat-nav-list class="flex-1 flex flex-col items-stretch justify-start overflow-y-auto overflow-x-hidden">
-        @for (menu of menus; track menu.path) {
-        <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: menu, inMenu: false }"></ng-container>
+        @for (menu of menus; track menu.id || menu.path || menu.name) {
+        <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: menu, inMenu: false, level: 0 }"></ng-container>
         }
       </mat-nav-list>
       <div class="flex items-center justify-center py-4 border-t border-gray-200">
         <button class="flex items-center justify-center border-none bg-transparent p-2 rounded-full cursor-pointer text-gray-600" (click)="toggleSidenav()">
           <mat-icon>{{ isSidenavCollapsed() ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</mat-icon>
         </button>
+      </div>
+    </mat-sidenav>
+
+    <mat-sidenav #rightSidenav position="end" mode="over"
+      class="layout-action-sidenav !bg-white"
+      [opened]="commonService.openSlideNav()"
+      [style.width]="commonService.slideNavConfig()?.width || '720px'"
+      (closed)="onRightSlideNavClosed()">
+      <div class="h-full min-h-0 flex flex-col bg-white">
+        <div class="h-[60px] shrink-0 flex items-center justify-between gap-4 px-5 border-b border-gray-400 bg-gray-50">
+          <h2 class="text-lg font-semibold">{{ commonService.slideNavConfig()?.title }}</h2>
+          <button type="button" title="Đóng"
+            class="!w-9 !h-9 !min-h-0 flex items-center justify-center border-none bg-transparent"
+            (click)="closeRightSlideNav()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="flex-1 min-h-0 overflow-auto gray-500-scroll p-5">
+          @if(commonService.slideNavConfig()?.content; as slideNavContent) {
+            <ng-container *ngTemplateOutlet="slideNavContent; context: commonService.slideNavConfig()?.context || {}"></ng-container>
+          }
+        </div>
       </div>
     </mat-sidenav>
 
@@ -147,7 +169,7 @@
 </div>
 }
 
-<ng-template #menuItemTemplate let-menu="menu" let-inMenu="inMenu">
+<ng-template #menuItemTemplate let-menu="menu" let-inMenu="inMenu" let-level="level">
   @if (menu?.children?.length) {
     @if (isSidenavCollapsed() && !inMenu) {
       <a mat-list-item [matMenuTriggerFor]="subMenu" [title]="menu.name"
@@ -157,33 +179,36 @@
          </div>
       </a>
       <mat-menu #subMenu="matMenu" xPosition="after">
-        @for (child of menu.children; track child.id) {
-          <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: true }"></ng-container>
+        @for (child of menu.children; track child.id || child.path || child.name) {
+          <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: true, level: (level || 0) + 1 }"></ng-container>
         }
       </mat-menu>
     } @else {
       @if (inMenu) {
         <button mat-menu-item [matMenuTriggerFor]="nestedSubMenu" class="menu-item flex items-center gap-2">
-          <mat-icon>{{menu.icon}}</mat-icon>
+          @if((level || 0) === 0 && menu.icon) { <mat-icon>{{menu.icon}}</mat-icon> }
           <span>{{menu.name}}</span>
         </button>
         <mat-menu #nestedSubMenu="matMenu" xPosition="after">
-          @for (child of menu.children; track child.id) {
-            <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: true }"></ng-container>
+          @for (child of menu.children; track child.id || child.path || child.name) {
+            <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: true, level: (level || 0) + 1 }"></ng-container>
           }
         </mat-menu>
       } @else {
         <a mat-list-item (click)="menu.isExpanded = !menu.isExpanded" [title]="menu.name"
+           [style.marginLeft.px]="getMenuItemIndent(level)"
            class="flex items-center justify-start gap-3 menu-item" [class.active]="isParentActive(menu)">
-          <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
+          @if((level || 0) === 0 && menu.icon) {
+            <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
+          }
           <div matListItemTitle class="flex items-center justify-between">
             <span>{{menu.name}}</span>
             <mat-icon>{{menu.isExpanded ? 'expand_less' : 'expand_more'}}</mat-icon>
           </div>
         </a>
         <div class="flex flex-col items-stretch justify-start overflow-hidden" [@menuExpand]="menu.isExpanded ? 'expanded' : 'collapsed'">
-          @for (child of menu.children; track child.id) {
-            <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: false }"></ng-container>
+          @for (child of menu.children; track child.id || child.path || child.name) {
+            <ng-container *ngTemplateOutlet="menuItemTemplate; context: { menu: child, inMenu: false, level: (level || 0) + 1 }"></ng-container>
           }
         </div>
       }
@@ -202,19 +227,18 @@
         <a mat-menu-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams"
            routerLinkActive="active" class="menu-item flex items-center gap-2"
            (click)="onUpdateHeaderInfo(menu)">
-          @if(menu.icon) { <mat-icon>{{menu.icon}}</mat-icon> }
+          @if((level || 0) === 0 && menu.icon) { <mat-icon>{{menu.icon}}</mat-icon> }
           <span>{{menu.name}}</span>
         </a>
       } @else {
         <a mat-list-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams" [title]="menu.name"
+           [style.marginLeft.px]="getMenuItemIndent(level)"
            routerLinkActive="active" class="flex items-center justify-start gap-3 menu-item"
            (click)="commonService.smallScreen() ? toggleSidenav() : null; onUpdateHeaderInfo(menu)">
-          @if(!menu.isChildren) {
+          @if((level || 0) === 0 && menu.icon) {
             <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
-          } @else {
-            <mat-icon matListItemIcon></mat-icon>
           }
-          <span matListItemTitle [ngClass]="menu.isChildren ? 'pl-6' : ''">{{menu.name}}</span>
+          <span matListItemTitle>{{menu.name}}</span>
         </a>
       }
     }

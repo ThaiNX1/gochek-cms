@@ -1,0 +1,119 @@
+<div class="h-full min-h-0 flex-1 flex flex-col items-stretch justify-start overflow-hidden gap-3">
+    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 px-4">
+        <div class="flex-1 flex flex-col md:flex-row md:items-center justify-start gap-3">
+            <h1 class="text-2xl font-bold">Kho</h1>
+            <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-3">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
+                    <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
+                </mat-form-field>
+                <button type="button"
+                    class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                    (click)="onGetWarehouses()">
+                    <mat-icon class="text-white">search</mat-icon>
+                    Tìm kiếm
+                </button>
+            </form>
+        </div>
+        <button *permission="[PermissionEnum.WAREHOUSE_MANAGE]"
+            class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400"
+            (click)="onAddEditWarehouse()">
+            <mat-icon class="text-white">add</mat-icon>
+            Thêm kho
+        </button>
+    </div>
+
+    <app-table
+        class="flex-1 min-h-0 flex flex-col items-stretch justify-start overflow-hidden bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+        (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+    @if (hasPermission([PermissionEnum.WAREHOUSE_MANAGE])) {
+        <button class="!h-auto inline-flex w-fit items-center justify-center whitespace-nowrap px-2.5 py-1 rounded text-xs border-none"
+            [ngClass]="item.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+            (click)="onToggleStatus(item)">
+            {{ item.isActive ? 'Hoạt động' : 'Ngưng hoạt động' }}
+        </button>
+    } @else {
+        <span class="inline-flex w-fit items-center justify-center whitespace-nowrap px-2.5 py-1 rounded text-xs"
+            [ngClass]="item.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+            {{ item.isActive ? 'Hoạt động' : 'Ngưng hoạt động' }}
+        </span>
+    }
+</ng-template>
+
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div *permission="[PermissionEnum.WAREHOUSE_MANAGE]" class="flex items-center justify-center px-4 gap-3">
+        <button class="flex items-center justify-center border-none bg-transparent" (click)="onAddEditWarehouse(item)"
+            title="Sửa">
+            <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+        </button>
+        <button class="flex items-center justify-center border-none bg-transparent" (click)="onDeleteWarehouse(item)"
+            title="Xóa">
+            <mat-icon class="text-red-500">delete</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<ng-template #warehouseDialogContent>
+    <form [formGroup]="warehouseForm" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="require">Tên kho</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="name" placeholder="Nhập tên kho">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="require">Mã kho</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="code" placeholder="Nhập mã kho">
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label>Người quản lý</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="managerName" placeholder="Nhập người quản lý">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label>Số điện thoại</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="phone" placeholder="Nhập số điện thoại">
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Địa chỉ</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="address" placeholder="Nhập địa chỉ">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Mô tả</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="description" placeholder="Nhập mô tả" rows="3"></textarea>
+            </mat-form-field>
+        </div>
+        <label class="flex items-center gap-2">
+            <input type="checkbox" formControlName="isActive">
+            Hoạt động
+        </label>
+    </form>
+
+    <div class="flex items-center justify-center gap-4 pt-3">
+        <button class="flex items-center justify-center bg-white border border-gray-400 rounded px-3 py-2"
+            (click)="onCancel()">
+            Hủy
+        </button>
+        <button
+            class="flex items-center justify-center border border-transparent rounded text-white px-3 py-2 bg-primary"
+            (click)="saveWarehouse()">
+            Lưu
+        </button>
+    </div>
+</ng-template>

@@ -79,8 +79,39 @@ export class LayoutComponent implements OnInit {
   async ngOnInit() {
     this.userInfo = JSON.parse(localStorage.getItem(storageKey.user) || '{}');
     this.menus = JSON.parse(localStorage.getItem(storageKey.menus) || '[]');
+    this.ensureDefaultSettingsMenu();
     this.getActiveMenu();
     this.subscribeToDownloads();
+  }
+
+  private ensureDefaultSettingsMenu() {
+    const hasSettingsMenu = this.findMenuByPath(this.menus, '/settings');
+    if (hasSettingsMenu) {
+      return;
+    }
+
+    this.menus.push({
+      id: 'settings',
+      path: '/settings',
+      icon: 'settings',
+      name: 'Cấu hình',
+    });
+    localStorage.setItem(storageKey.menus, JSON.stringify(this.menus));
+  }
+
+  private findMenuByPath(menus: RouterMenu[], path: string): RouterMenu | null {
+    for (const menu of menus) {
+      if (menu.path === path) {
+        return menu;
+      }
+
+      const child = menu.children?.length ? this.findMenuByPath(menu.children, path) : null;
+      if (child) {
+        return child;
+      }
+    }
+
+    return null;
   }
 
   subscribeToDownloads() {
@@ -104,23 +135,48 @@ export class LayoutComponent implements OnInit {
       return false;
     }
     const currentUrl = this.injector.get(Router).url;
-    return menu.children.some(child => {
-      if (child.path && currentUrl.includes(child.path)) {
-        return true;
-      }
-      // Recursive check for nested children
-      if (child.children && child.children.length > 0) {
-        return this.isParentActive(child);
-      }
-      return false;
-    });
+    return !!this.findActiveMenu(menu.children, currentUrl);
   }
 
   getActiveMenu() {
-    const menuActive = this.menus.find(menu => this.injector.get(Router).url?.includes(menu?.path || 'undefined'));
+    const menuActive = this.findActiveMenu(this.menus, this.injector.get(Router).url);
     if (menuActive) {
       this.onUpdateHeaderInfo(menuActive);
     }
+  }
+
+  findActiveMenu(menus: RouterMenu[], url: string): RouterMenu | null {
+    const currentPath = url.split(/[?#]/)[0];
+    let activeMenu: RouterMenu | null = null;
+
+    for (const menu of menus) {
+      const activeChild = menu.children?.length ? this.findActiveMenu(menu.children, url) : null;
+      if (activeChild) {
+        activeMenu = this.getLongerPathMenu(activeMenu, activeChild);
+      }
+
+      if (menu.path && this.isActiveMenuPath(currentPath, menu.path)) {
+        activeMenu = this.getLongerPathMenu(activeMenu, menu);
+      }
+    }
+
+    return activeMenu;
+  }
+
+  isActiveMenuPath(currentPath: string, menuPath: string): boolean {
+    return currentPath === menuPath || currentPath.startsWith(`${menuPath}/`);
+  }
+
+  getLongerPathMenu(first: RouterMenu | null, second: RouterMenu): RouterMenu {
+    if (!first) {
+      return second;
+    }
+
+    return (second.path?.length ?? 0) > (first.path?.length ?? 0) ? second : first;
+  }
+
+  getMenuItemIndent(level: number = 0): number {
+    return Math.min(Math.max(level, 0), 3) * 35;
   }
 
   onUpdateHeaderInfo(menu: RouterMenu) {
@@ -139,6 +195,17 @@ export class LayoutComponent implements OnInit {
     } else {
       this.isSidenavCollapsed.set(!this.isSidenavCollapsed());
     }
+  }
+
+  closeRightSlideNav() {
+    this.commonService.closeRightSlideNav();
+  }
+
+  onRightSlideNavClosed() {
+    const config = this.commonService.slideNavConfig();
+    this.commonService.openSlideNav.set(false);
+    this.commonService.slideNavConfig.set(null);
+    config?.onClose?.();
   }
 
   getDownloadStatusText(status: DownloadItem['status']): string {
@@ -183,6 +250,7 @@ export class LayoutComponent implements OnInit {
   }
 
   ngOnDestroy() {
+    this.commonService.closeRightSlideNav();
     this.destroy$.next();
     this.destroy$.complete();
   }

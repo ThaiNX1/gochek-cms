@@ -39,6 +39,17 @@
     </div>
 </ng-template>
 
+<ng-template myTemplate tempCode="deviceTypeImageColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center">
+        @if(item.imageUrlCallback) {
+            <img [src]="item.imageUrlCallback" [alt]="item.name"
+                class="w-14 h-14 object-contain rounded border border-gray-300 bg-white">
+        } @else {
+            <span class="text-gray-500">-</span>
+        }
+    </div>
+</ng-template>
+
 <ng-template #expandTemplate let-item="item">
     <div class="flex flex-col gap-4 w-full p-4">
         <div class="flex items-center justify-between">
@@ -49,6 +60,7 @@
             <thead>
                 <tr class="bg-gray-200">
                     <th class="border border-gray-300 px-4 py-2 text-left">STT</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left">Hình ảnh</th>
                     <th class="border border-gray-300 px-4 py-2 text-left">Tên model</th>
                     <th class="border border-gray-300 px-4 py-2 text-left">Code</th>
                     <th class="border border-gray-300 px-4 py-2 text-left">Mô tả</th>
@@ -60,9 +72,19 @@
                 @for(model of item.models; track model.id; let i = $index) {
                 <tr class="bg-white">
                     <td class="border border-gray-400 px-4 py-2">{{ i + 1 }}</td>
+                    <td class="border border-gray-400 px-4 py-2">
+                        @if(model.imageUrlCallback) {
+                            <img [src]="model.imageUrlCallback" [alt]="model.name"
+                                class="w-14 h-14 object-contain rounded border border-gray-300 bg-white">
+                        } @else {
+                            <span class="text-gray-500">-</span>
+                        }
+                    </td>
                     <td class="border border-gray-400 px-4 py-2">{{ model.name }}</td>
                     <td class="border border-gray-400 px-4 py-2">{{ model.code }}</td>
-                    <td class="border border-gray-400 px-4 py-2">{{ model.description || '-' }}</td>
+                    <td class="border border-gray-400 px-4 py-2">
+                        <div class="model-description-preview" [innerHTML]="model.description || '-'"></div>
+                    </td>
                     <td class="border border-gray-400 px-4 py-2">
                         <span class="px-2 py-1 rounded text-xs"
                             [ngClass]="model.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
@@ -71,6 +93,10 @@
                     </td>
                     <td class="border border-gray-400 px-4 py-2">
                         <div *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]" class="flex items-center justify-center gap-2">
+                            <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
+                                title="Sửa model" (click)="onEditModel(item, model)">
+                                <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+                            </button>
                             <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
                                 (click)="onDeleteModel(item, model)">
                                 <mat-icon class="text-red-500">delete</mat-icon>
@@ -106,6 +132,34 @@
             </mat-form-field>
         </div>
         <div class="flex flex-col gap-1">
+            <label>Mô tả ngắn</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="shortDescription" placeholder="Nhập mô tả ngắn" rows="3"></textarea>
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-2">
+            <label>Hình ảnh</label>
+            <div class="flex flex-wrap items-center gap-3">
+                @if(deviceTypeImagePreview) {
+                    <div class="relative w-28 h-28 border border-gray-300 rounded bg-white overflow-hidden">
+                        <img [src]="deviceTypeImagePreview" alt="Ảnh loại thiết bị"
+                            class="w-full h-full object-contain">
+                        <button type="button" title="Xóa ảnh"
+                            class="absolute !w-7 !h-7 !min-h-0 top-1 right-1 bg-red-500 text-white rounded-full flex items-center justify-center border-none"
+                            (click)="removeDeviceTypeImage()">
+                            <mat-icon class="text-sm text-white">close</mat-icon>
+                        </button>
+                    </div>
+                }
+                <label class="h-10 px-3 flex items-center justify-center gap-2 border border-gray-400 rounded cursor-pointer bg-white">
+                    <mat-icon>add_photo_alternate</mat-icon>
+                    {{ deviceTypeImagePreview ? 'Đổi ảnh' : 'Chọn ảnh' }}
+                    <input type="file" class="hidden" accept="image/*" (change)="onDeviceTypeImageChange($event)">
+                </label>
+            </div>
+            <span class="text-xs text-gray-500">Ảnh tối đa 5MB</span>
+        </div>
+        <div class="flex flex-col gap-1">
             <label>Thời gian bảo hành (tháng)</label>
             <mat-form-field appearance="outline" floatLabel="auto">
                 <input matInput formControlName="warrantyMonth" placeholder="Nhập thời gian bảo hành (tháng)">
@@ -128,7 +182,10 @@
     <p class="w-full text-center">
         {{ dialogData.message }}
     </p>
-    }@else if (dialogData.type === 'model'){
+    }
+</ng-template>
+
+<ng-template #modelDrawerContent>
     <form [formGroup]="modelForm" class="flex flex-col gap-4">
         <div class="flex flex-col gap-1">
             <label class="require">Loại thiết bị</label>
@@ -150,8 +207,66 @@
         </div>
         <div class="flex flex-col gap-1">
             <label>Mô tả</label>
+            <div class="NgxEditor__Wrapper model-description-editor">
+                <ngx-editor-menu
+                    [editor]="modelDescriptionEditor"
+                    [toolbar]="modelDescriptionToolbar">
+                </ngx-editor-menu>
+                <ngx-editor
+                    [editor]="modelDescriptionEditor"
+                    formControlName="description"
+                    [placeholder]="'Nhập mô tả model'">
+                </ngx-editor>
+            </div>
+        </div>
+        <div class="flex flex-col gap-2">
+            <label>Hình ảnh</label>
+            <div class="flex flex-wrap items-center gap-3">
+                @if(modelImagePreview) {
+                    <div class="relative w-32 h-32 border border-gray-300 rounded bg-white overflow-hidden">
+                        <img [src]="modelImagePreview" alt="Ảnh model" class="w-full h-full object-contain">
+                        <button type="button" title="Xóa ảnh"
+                            class="absolute !w-7 !h-7 !min-h-0 top-1 right-1 bg-red-500 text-white rounded-full flex items-center justify-center border-none"
+                            (click)="removeModelImage()">
+                            <mat-icon class="text-sm text-white">close</mat-icon>
+                        </button>
+                    </div>
+                }
+                <label class="h-10 px-3 flex items-center justify-center gap-2 border border-gray-400 rounded cursor-pointer bg-white">
+                    <mat-icon>add_photo_alternate</mat-icon>
+                    {{ modelImagePreview ? 'Đổi ảnh' : 'Chọn ảnh' }}
+                    <input type="file" class="hidden" accept="image/*" (change)="onModelImageChange($event)">
+                </label>
+            </div>
+            <span class="text-xs text-gray-500">Ảnh tối đa 5MB</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label>Giá bán</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput type="number" min="0" formControlName="price" placeholder="Nhập giá bán">
+                    @if(modelForm.get('price')?.hasError('min')) {
+                        <mat-error>Giá bán không được nhỏ hơn 0</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label>Giá khuyến mại</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput type="number" min="0" formControlName="discountPrice" placeholder="Nhập giá khuyến mại">
+                    @if(modelForm.get('discountPrice')?.hasError('min')) {
+                        <mat-error>Giá khuyến mại không được nhỏ hơn 0</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Thuộc tính (JSON)</label>
             <mat-form-field appearance="outline" floatLabel="auto">
-                <textarea matInput formControlName="description" placeholder="Nhập mô tả" rows="3"></textarea>
+                <textarea matInput formControlName="attributes" placeholder='{"color":"black"}' rows="2"></textarea>
+                @if(modelForm.get('attributes')?.hasError('invalidJson')) {
+                    <mat-error>JSON không hợp lệ</mat-error>
+                }
             </mat-form-field>
         </div>
         <div class="flex flex-col gap-1">
@@ -162,16 +277,15 @@
         </div>
     </form>
 
-    <div class="flex items-center justify-center gap-4 pt-3">
+    <div class="flex items-center justify-end gap-4 pt-5">
         <button class="flex items-center justify-center bg-white border border-gray-400 rounded px-3 py-2"
-            (click)="onCancel()">
+            (click)="onCancelModel()">
             Hủy
         </button>
         <button
             class="flex items-center justify-center border border-transparent rounded text-white px-3 py-2 bg-primary"
             (click)="saveModel()">
-            Lưu
+            {{ modelForm.get('id')?.value ? 'Cập nhật' : 'Thêm' }}
         </button>
     </div>
-    }
 </ng-template>

@@ -1,14 +1,79 @@
 :host {
   display: flex;
   flex: 1;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 
-.no-underline {
-  text-decoration: none;
-  color: inherit;
+:host ::ng-deep {
+  .dashboard-toggle.mat-button-toggle-group {
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f3f4f6;
+    box-shadow: inset 0 1px 2px rgb(15 23 42 / 4%);
+  }
+
+  .dashboard-toggle .mat-button-toggle {
+    overflow: hidden;
+    border: 0 !important;
+    border-radius: 10px;
+    color: #64748b;
+    background: transparent;
+    transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .dashboard-toggle .mat-button-toggle:not(.mat-button-toggle-checked):not(.mat-button-toggle-disabled):hover {
+    color: #334155;
+    background: rgb(255 255 255 / 65%);
+  }
+
+  .dashboard-toggle .mat-button-toggle-checked {
+    color: #1d4ed8;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 10%), 0 3px 10px rgb(59 130 246 / 9%);
+  }
+
+  .dashboard-toggle .mat-button-toggle-button {
+    border-radius: inherit;
+  }
+
+  .dashboard-toggle .mat-button-toggle-label-content {
+    padding: 0 16px;
+    line-height: 40px;
+  }
+
+  .dashboard-toggle .mat-button-toggle-disabled {
+    color: #94a3b8;
+    background: transparent;
+    opacity: 0.65;
+  }
 }
 
-a:hover {
-  text-decoration: none;
+.dashboard-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.dashboard-toggle-label mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .dashboard-toggle .mat-button-toggle-label-content {
+    padding: 0 12px;
+  }
+
+  .dashboard-toggle-label {
+    gap: 6px;
+    font-size: 14px;
+  }
 }

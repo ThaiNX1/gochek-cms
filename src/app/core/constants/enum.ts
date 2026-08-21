@@ -191,4 +191,56 @@ export enum PermissionEnum {
   IMAGE_CONVERT_UPDATE = 'image_convert:update', // Cập nhật image convert
   IMAGE_CONVERT_DELETE = 'image_convert:delete', // Xóa image convert
   IMAGE_CONVERT_MANAGE = 'image_convert:manage', // Quản lý image convert
+
+  // Website permissions
+  WEBSITE_READ = 'website:read', // Xem website
+  WEBSITE_CREATE = 'website:create', // Tạo website
+  WEBSITE_UPDATE = 'website:update', // Cập nhật website
+  WEBSITE_DELETE = 'website:delete', // Xóa website
+  WEBSITE_MANAGE = 'website:manage', // Quản lý website
+
+  // Component Type permissions
+  COMPONENT_TYPES_READ = 'component_types:read', // Xem loại linh kiện
+  COMPONENT_TYPES_CREATE = 'component_types:create', // Tạo loại linh kiện
+  COMPONENT_TYPES_UPDATE = 'component_types:update', // Cập nhật loại linh kiện
+  COMPONENT_TYPES_DELETE = 'component_types:delete', // Xóa loại linh kiện
+  COMPONENT_TYPES_MANAGE = 'component_types:manage', // Quản lý loại linh kiện
+
+  // Device Component permissions
+  COMPONENTS_READ = 'components:read', // Xem linh kiện
+  COMPONENTS_CREATE = 'components:create', // Tạo/sinh serial linh kiện
+  COMPONENTS_UPDATE = 'components:update', // Cập nhật linh kiện
+  COMPONENTS_DELETE = 'components:delete', // Xóa linh kiện
+  COMPONENTS_MANAGE = 'components:manage', // Quản lý linh kiện (assign, detach, swap)
+
+  // Warranty permissions
+  WARRANTY_READ = 'warranty:read', // Xem lịch sử bảo hành
+  WARRANTY_CREATE = 'warranty:create', // Tạo yêu cầu bảo hành
+  WARRANTY_UPDATE = 'warranty:update', // Cập nhật bảo hành
+  WARRANTY_MANAGE = 'warranty:manage', // Quản lý bảo hành (đổi, trả, gia hạn, sửa có phí)
+
+  // Stock permissions
+  STOCK_READ = 'stock:read', // Xem tồn kho, lịch sử kho
+  STOCK_MANAGE = 'stock:manage', // Nhập/xuất kho, in tem, ship
+
+  // Warehouse permissions
+  WAREHOUSE_READ = 'warehouse:read', // View warehouses
+  WAREHOUSE_CREATE = 'warehouse:create', // Create warehouses
+  WAREHOUSE_UPDATE = 'warehouse:update', // Update warehouses
+  WAREHOUSE_DELETE = 'warehouse:delete', // Delete warehouses
+  WAREHOUSE_MANAGE = 'warehouse:manage', // Full warehouse management
+
+  // Viettel Post permissions
+  VIETTEL_POST_READ = 'viettel_post:read', // View Viettel Post credentials and orders
+  VIETTEL_POST_CREDENTIAL_MANAGE = 'viettel_post:credential_manage', // Manage Viettel Post credentials/tokens
+  VIETTEL_POST_CREATE_ORDER = 'viettel_post:create_order', // Create Viettel Post orders
+  VIETTEL_POST_UPDATE_ORDER = 'viettel_post:update_order', // Edit/update Viettel Post orders
+  VIETTEL_POST_PRINT_ORDER = 'viettel_post:print_order', // Print Viettel Post shipping labels
+  VIETTEL_POST_MANAGE = 'viettel_post:manage', // Full Viettel Post management
+
+  // Nhanh.vn permissions
+  NHANH_READ = 'nhanh:read', // View Nhanh credentials, products, depots and purchase documents
+  NHANH_SYNC = 'nhanh:sync', // Sync Nhanh products, depots and purchase documents
+  NHANH_CREDENTIAL_MANAGE = 'nhanh:credential_manage', // Manage Nhanh credentials and tokens
+  NHANH_MANAGE = 'nhanh:manage', // Full Nhanh integration management
 }

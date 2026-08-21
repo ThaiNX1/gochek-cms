@@ -27,5 +27,7 @@ export const constant = {
   fileFolder: {
     firmwares: 'firmwares',
     audios: 'audios',
+    deviceTypeImages: 'device-types',
+    modelImages: 'models',
   }
 };

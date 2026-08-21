@@ -15,8 +15,13 @@ import { OrganizationCreateComponent } from '../pages/organization/organization-
 import { OrganizationComponent } from '../pages/organization/organization.component';
 import { PermissionComponent } from '../pages/permission/permission.component';
 import { RoleComponent } from '../pages/role/role.component';
+import { SettingsComponent } from '../pages/settings/settings.component';
+import { StockHistoryComponent } from '../pages/stock-history/stock-history.component';
+import { StockComponent } from '../pages/stock/stock.component';
 import { UserCreateComponent } from '../pages/user/user-create/user-create.component';
 import { UserComponent } from '../pages/user/user.component';
+import { ViettelPostComponent } from '../pages/viettel-post/viettel-post.component';
+import { WarehouseComponent } from '../pages/warehouse/warehouse.component';
 import { WebsiteBannerCreateComponent } from '../pages/website/website-banner/website-banner-create/website-banner-create.component';
 import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
 const routes: Routes = [
@@ -100,6 +105,42 @@ const routes: Routes = [
   {
     path: 'customer',
     component: CustomerComponent,
+  },
+  {
+    path: 'warehouse',
+    component: WarehouseComponent,
+    canActivate: [PageGuard],
+    data: {
+      permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+    },
+  },
+  {
+    path: 'stock',
+    component: StockComponent,
+    canActivate: [PageGuard],
+    data: {
+      permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+    },
+  },
+  {
+    path: 'stock/history',
+    component: StockHistoryComponent,
+    canActivate: [PageGuard],
+    data: {
+      permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+    },
+  },
+  {
+    path: 'viettel-post',
+    component: ViettelPostComponent,
+    canActivate: [PageGuard],
+    data: {
+      permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+    },
+  },
+  {
+    path: 'settings',
+    component: SettingsComponent,
   },
   {
     path: 'website/banner',

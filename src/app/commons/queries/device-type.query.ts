@@ -14,17 +14,25 @@ query GetDeviceTypes($pagination: PaginationInput) {
             createdAt
             deletedAt
             description
+            shortDescription
             id
             isActive
             name
             updatedAt
             warrantyMonth
+            imageUrl
+            imageUrlCallback
             models {
                 id
                 code
                 name
                 description
+                price
+                discountPrice
+                attributes
                 isActive
+                imageUrl
+                imageUrlCallback
             }
         }
     }
@@ -38,10 +46,13 @@ export const GET_DEVICE_TYPE = gql`
       name
       code
       description
+      shortDescription
       isActive
       createdAt
       updatedAt
       warrantyMonth
+      imageUrl
+      imageUrlCallback
     }
   }
 `;
@@ -53,10 +64,13 @@ export const CREATE_DEVICE_TYPE = gql`
       name
       code
       description
+      shortDescription
       isActive
       createdAt
       updatedAt
       warrantyMonth
+      imageUrl
+      imageUrlCallback
     }
   }
 `;
@@ -68,10 +82,13 @@ export const UPDATE_DEVICE_TYPE = gql`
       name
       code
       description
+      shortDescription
       isActive
       createdAt
       updatedAt
       warrantyMonth
+      imageUrl
+      imageUrlCallback
     }
   }
 `; 
@@ -96,8 +113,13 @@ export const GET_MODELS = gql`
         name
         code
         description
+        price
+        discountPrice
+        attributes
         isActive
         deviceTypeId
+        imageUrl
+        imageUrlCallback
       }
     }
   }
@@ -110,8 +132,31 @@ export const CREATE_MODEL = gql`
       name
       code
       description
+      price
+      discountPrice
+      attributes
       isActive
       deviceTypeId
+      imageUrl
+      imageUrlCallback
+    }
+  }
+`;
+
+export const UPDATE_MODEL = gql`
+  mutation UpdateModel($id: ID!, $input: UpdateModelInput!) {
+    updateModel(id: $id, input: $input) {
+      id
+      name
+      code
+      description
+      price
+      discountPrice
+      attributes
+      isActive
+      deviceTypeId
+      imageUrl
+      imageUrlCallback
     }
   }
 `;
@@ -122,4 +167,3 @@ export const REMOVE_MODEL = gql`
     deleteModel(id: $id)
   }
 `;
- 

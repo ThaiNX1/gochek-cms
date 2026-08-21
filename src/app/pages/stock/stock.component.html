@@ -1,0 +1,484 @@
+<div class="h-full min-h-0 flex-1 flex flex-col items-stretch justify-start overflow-hidden gap-4">
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 px-4">
+                <div class="flex flex-col gap-1">
+                    <h1 class="text-xl font-bold">Xuất/Nhập kho</h1>
+                    <span class="text-sm text-gray-500">Theo dõi tồn kho, nhập lô và xuất thiết bị theo serial</span>
+                </div>
+                <div *permission="[PermissionEnum.STOCK_MANAGE]" class="flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3">
+                    <button type="button"
+                        class="flex items-center justify-center gap-2 px-3 bg-green-600 text-white font-semibold"
+                        (click)="onOpenCreateBatchDialog()">
+                        <mat-icon class="text-white">inventory_2</mat-icon>
+                        Nhập kho
+                    </button>
+                    <button type="button"
+                        class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                        (click)="onOpenShipDeviceDialog()">
+                        <mat-icon class="text-white">local_shipping</mat-icon>
+                        Xuất kho
+                    </button>
+                    <button type="button"
+                        class="flex items-center justify-center gap-2 px-3 bg-amber-600 text-white font-semibold"
+                        (click)="onOpenTransferDeviceDialog()">
+                        <mat-icon class="text-white">sync_alt</mat-icon>
+                        Chuyển kho
+                    </button>
+                    <button type="button"
+                        class="flex items-center justify-center gap-2 px-3 bg-gray-500 text-white font-semibold"
+                        (click)="onReload()">
+                        <mat-icon class="text-white">refresh</mat-icon>
+                        Tải lại
+                    </button>
+                    <button type="button"
+                        class="flex items-center justify-center gap-2 px-3 bg-white border border-gray-400 text-gray-700 font-semibold"
+                        routerLink="/stock/history">
+                        <mat-icon>history</mat-icon>
+                        Lịch sử kho
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 px-4">
+                <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                    <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[280px] bg-white">
+                        <mat-select formControlName="warehouseId" placeholder="Tất cả kho">
+                            <mat-option value="">Tất cả kho</mat-option>
+                            @for(warehouse of warehouses; track warehouse.id) {
+                                <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    <button type="button"
+                        class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                        (click)="onReload()">
+                        <mat-icon class="text-white">filter_alt</mat-icon>
+                        Lọc
+                    </button>
+                </form>
+
+                <div class="flex flex-wrap items-center justify-start xl:justify-end gap-x-6 gap-y-2 text-sm font-semibold">
+                    <span class="text-green-700">
+                        Tổng tồn: <strong class="text-lg">{{ overview?.totalInStock || 0 | number }}</strong>
+                    </span>
+                    <span class="text-blue-700">
+                        Đã xuất: <strong class="text-lg">{{ overview?.totalShipped || 0 | number }}</strong>
+                    </span>
+                    <span class="text-orange-700">
+                        Lô sắp hết: <strong class="text-lg">{{ overview?.lowStockBatches?.length || 0 | number }}</strong>
+                    </span>
+                </div>
+            </div>
+
+            @if(overview?.byWarehouse?.length) {
+                <div class="flex flex-wrap gap-2 px-4">
+                    @for(warehouse of overview?.byWarehouse; track warehouse.warehouseId) {
+                        <div class="bg-white border border-gray-300 rounded-md px-3 py-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+                            <span class="font-semibold text-gray-700">{{ warehouse.warehouseName || warehouse.warehouseId }}</span>
+                            <span class="text-green-700">
+                                Tồn: <strong>{{ warehouse.inStock || 0 | number }}</strong>
+                            </span>
+                            <span class="text-blue-700">
+                                Xuất: <strong>{{ warehouse.shipped || 0 | number }}</strong>
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if(overview?.byModel?.length) {
+                <div class="flex flex-wrap gap-2 px-4">
+                    @for(model of overview?.byModel; track model.modelId) {
+                        <div class="bg-white border border-gray-300 rounded-md px-3 py-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+                            <span class="font-semibold text-gray-700">Model: {{ model.modelName || model.modelId }}</span>
+                            <span class="text-green-700">
+                                Tồn: <strong>{{ model.inStock || 0 | number }}</strong>
+                            </span>
+                            <span class="text-blue-700">
+                                Xuất: <strong>{{ model.shipped || 0 | number }}</strong>
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <section class="flex flex-col gap-3 px-4 flex-1 min-h-0">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Danh sách lô kho</h2>
+                </div>
+                <app-table
+                    class="flex flex-col items-stretch justify-start flex-1 min-h-0 overflow-hidden bg-white rounded-md border border-gray-400 p-4"
+                    [columns]="batchColumns" [dataSource]="batchDataSource" [pagination]="batchPagination">
+                </app-table>
+            </section>
+</div>
+
+<ng-template #createBatchDrawerContent>
+    <form [formGroup]="createBatchForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Kho</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <mat-select formControlName="warehouseId" placeholder="Chọn kho">
+                    @for(warehouse of warehouses; track warehouse.id) {
+                        <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="require">Mã lô</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="batchCode" placeholder="Nhập mã lô">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="require">Tiền tố:</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input type="text" placeholder="Chọn tiền tố (2 ký tự)" matInput formControlName="prefix"
+                        minlength="2" maxlength="2" [matAutocomplete]="prefixAutocomplete">
+                    <mat-autocomplete autoActiveFirstOption #prefixAutocomplete="matAutocomplete">
+                        @for (option of prefixStrList; track option) {
+                            <mat-option [value]="option">{{ option }}</mat-option>
+                        }
+                    </mat-autocomplete>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="require">Số lượng dự kiến</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput type="number" formControlName="expectedQuantity" placeholder="Nhập số lượng dự kiến">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="require">Số lượng nhập</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput type="number" formControlName="actualQuantity" placeholder="Nhập số lượng thực tế">
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label>Mã nhà cung cấp</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="supplier" placeholder="Nhập mã nhà cung cấp">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label>Model:</label>
+                <app-select-search class="w-full bg-white" [options]="modelList" formControlName="modelId"
+                    [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="modelSearchQuery"
+                    [searchDataKey]="'models'" placeholder="Chọn model">
+                </app-select-search>
+            </div>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Ghi chú</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="note" placeholder="Nhập ghi chú" rows="3"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+    <div class="flex items-center justify-end gap-3 pt-5">
+        <button type="button" class="flex items-center justify-center bg-white px-4" (click)="onCancel()">Hủy</button>
+        <button type="button" class="flex items-center justify-center text-white px-4 bg-primary"
+            (click)="onCreateBatchSave()">Lưu</button>
+    </div>
+</ng-template>
+
+<ng-template #transferDeviceDrawerContent>
+    <form [formGroup]="transferDeviceForm" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="require">Kho nguồn</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <mat-select formControlName="fromWarehouseId" placeholder="Chọn kho nguồn">
+                        @for(warehouse of warehouses; track warehouse.id) {
+                            <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="require">Kho đích</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <mat-select formControlName="toWarehouseId" placeholder="Chọn kho đích">
+                        @for(warehouse of warehouses; track warehouse.id) {
+                            <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="require">Serial cần chuyển</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="serialNumbers"
+                    placeholder="Mỗi dòng một serial hoặc phân tách bằng dấu phẩy" rows="7"></textarea>
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Ghi chú</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="note" placeholder="Nhập ghi chú" rows="3"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+    <div class="flex items-center justify-end gap-3 pt-5">
+        <button type="button" class="flex items-center justify-center bg-white px-4" (click)="onCancel()">Hủy</button>
+        <button type="button" class="flex items-center justify-center text-white px-4 bg-primary"
+            (click)="onTransferDeviceSave()">Chuyển kho</button>
+    </div>
+</ng-template>
+
+<ng-template #shipDeviceDrawerContent>
+    <mat-stepper [linear]="true" [selectedIndex]="shipStepIndex" class="stock-shipping-stepper">
+        <mat-step [stepControl]="shipDeviceForm" [completed]="shipStepCompleted" [editable]="!shipStepCompleted">
+            <ng-template matStepLabel>Xuất kho</ng-template>
+            <form [formGroup]="shipDeviceForm" class="flex flex-col gap-4 pt-5">
+                <div class="flex flex-col gap-1">
+                    <label class="require">Kho xuất</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <mat-select formControlName="warehouseId" placeholder="Chọn kho xuất">
+                            @for(warehouse of warehouses; track warehouse.id) {
+                                <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="require">Serial cần xuất</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <textarea matInput formControlName="serialNumbers"
+                            placeholder="Mỗi dòng một serial hoặc phân tách bằng dấu phẩy" rows="6"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label>Ghi chú</label>
+                    <mat-form-field appearance="outline" floatLabel="auto">
+                        <textarea matInput formControlName="note" placeholder="Nhập ghi chú" rows="3"></textarea>
+                    </mat-form-field>
+                </div>
+            </form>
+            <div class="flex items-center justify-end gap-3 pt-5">
+                <button type="button" class="flex items-center justify-center bg-white px-4" (click)="onCancel()">Hủy</button>
+                <button type="button" class="flex items-center justify-center gap-2 text-white px-4 bg-primary"
+                    [disabled]="isShippingStock" (click)="onShipDeviceSave()">
+                    @if(isShippingStock) {
+                        <mat-spinner diameter="18"></mat-spinner>
+                    } @else {
+                        <mat-icon class="text-white">inventory</mat-icon>
+                    }
+                    Xuất kho
+                </button>
+            </div>
+        </mat-step>
+
+        <mat-step [stepControl]="shippingOrderForm" [completed]="shippingStepCompleted" [editable]="!shippingStepCompleted">
+            <ng-template matStepLabel>Lên đơn vận chuyển</ng-template>
+            <div class="flex flex-col gap-5 pt-5">
+                @if(!canCreateShippingOrder) {
+                    <div class="min-h-[240px] flex flex-col items-center justify-center gap-3 text-center">
+                        <mat-icon class="text-gray-500 text-4xl">lock</mat-icon>
+                        <span class="font-semibold">Bạn không có quyền tạo đơn Viettel Post</span>
+                        <button type="button" class="px-4 bg-white" (click)="onCancel()">Đóng</button>
+                    </div>
+                } @else {
+                    @if(partnerCredentials.length === 0) {
+                        <div class="flex items-start gap-3 p-3 border border-amber-500 bg-amber-50 text-amber-800">
+                            <mat-icon>warning</mat-icon>
+                            <div class="flex-1 flex flex-col gap-1">
+                                <span class="font-semibold">Chưa có tài khoản Viettel Post đang hoạt động</span>
+                                <a routerLink="/settings" class="text-blue-600 no-underline hover:underline">Mở trang Cấu hình</a>
+                            </div>
+                        </div>
+                    }
+
+                    <form [formGroup]="shippingOrderForm" class="flex flex-col gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Tài khoản Viettel Post</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <mat-select formControlName="partnerCredentialId" placeholder="Chọn tài khoản"
+                                        (selectionChange)="onPartnerCredentialSelected($event.value)">
+                                        @for(credential of partnerCredentials; track credential.id) {
+                                            <mat-option [value]="credential.id">
+                                                {{ credential.username }} - {{ credential.environment }}
+                                            </mat-option>
+                                        }
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Dịch vụ</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput formControlName="orderService" placeholder="Ví dụ: VCN">
+                                </mat-form-field>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Người nhận</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput formControlName="receiverFullName" placeholder="Họ tên người nhận">
+                                </mat-form-field>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Số điện thoại</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput formControlName="receiverPhone" placeholder="Số điện thoại người nhận">
+                                </mat-form-field>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="require">Địa chỉ nhận</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <textarea matInput formControlName="receiverAddress" placeholder="Địa chỉ giao hàng" rows="3"></textarea>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Tên hàng hóa</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput formControlName="productName" placeholder="Tên hàng hóa">
+                                </mat-form-field>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Khối lượng mỗi thiết bị (gram)</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput type="number" formControlName="productWeight">
+                                </mat-form-field>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Giá trị hàng hóa</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput type="number" formControlName="productPrice">
+                                </mat-form-field>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="require">Thanh toán cước</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput type="number" formControlName="orderPayment">
+                                </mat-form-field>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label>Tiền thu hộ</label>
+                                <mat-form-field appearance="outline" floatLabel="auto">
+                                    <input matInput type="number" formControlName="moneyCollection">
+                                </mat-form-field>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label>Ghi chú vận chuyển</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <textarea matInput formControlName="orderNote" placeholder="Nhập ghi chú" rows="3"></textarea>
+                            </mat-form-field>
+                        </div>
+                    </form>
+
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="button" class="flex items-center justify-center gap-2 text-white px-4 bg-primary"
+                            [disabled]="isCreatingShippingOrder || partnerCredentials.length === 0"
+                            (click)="onCreateShippingOrders()">
+                            @if(isCreatingShippingOrder) {
+                                <mat-spinner diameter="18"></mat-spinner>
+                            } @else {
+                                <mat-icon class="text-white">local_shipping</mat-icon>
+                            }
+                            Lên {{ shippedSerialNumbers.length }} đơn vận chuyển
+                        </button>
+                    </div>
+                }
+            </div>
+        </mat-step>
+
+        <mat-step [completed]="shippingStepCompleted" [editable]="false">
+            <ng-template matStepLabel>In tem và đơn</ng-template>
+            <div class="flex flex-col gap-4 pt-5">
+                <div class="flex items-center justify-between gap-3 pb-3 border-b border-gray-400">
+                    <div class="flex flex-col gap-1">
+                        <span class="font-semibold">Tem bảo hành và đơn vận chuyển</span>
+                        <span class="text-sm text-gray-500">{{ createdShippingOrders.length }} thiết bị</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col border border-gray-400">
+                    @for(order of createdShippingOrders; track order.id) {
+                        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-3 p-4 border-b last:border-b-0 border-gray-400">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2 text-sm min-w-0">
+                                <div class="flex flex-col gap-1 min-w-0">
+                                    <span class="text-gray-500">Serial</span>
+                                    <span class="font-semibold break-words">{{ order.serialNumber || '-' }}</span>
+                                </div>
+                                <div class="flex flex-col gap-1 min-w-0">
+                                    <span class="text-gray-500">Mã vận đơn</span>
+                                    <span class="font-semibold break-words">{{ order.trackingNumber || order.orderNumber || '-' }}</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-2">
+                                <button type="button" title="In tem serial"
+                                    class="flex items-center justify-center gap-2 px-3 bg-white whitespace-nowrap"
+                                    [disabled]="printingSerialLabel === order.serialNumber"
+                                    (click)="onPrintSerialLabel(order.serialNumber!)">
+                                    @if(printingSerialLabel === order.serialNumber) {
+                                        <mat-spinner diameter="18"></mat-spinner>
+                                    } @else {
+                                        <mat-icon>label</mat-icon>
+                                    }
+                                    Tem serial
+                                </button>
+                                <button type="button" title="In tem active code"
+                                    class="flex items-center justify-center gap-2 px-3 bg-white whitespace-nowrap"
+                                    [disabled]="printingActiveCodeLabel === order.serialNumber"
+                                    (click)="onPrintActiveCodeLabel(order.serialNumber!)">
+                                    @if(printingActiveCodeLabel === order.serialNumber) {
+                                        <mat-spinner diameter="18"></mat-spinner>
+                                    } @else {
+                                        <mat-icon>key</mat-icon>
+                                    }
+                                    Tem active code
+                                </button>
+                                @if(canPrintShippingOrder) {
+                                    <button type="button" title="In đơn vận chuyển"
+                                        class="flex items-center justify-center gap-2 px-3 bg-white whitespace-nowrap"
+                                        [disabled]="printingOrderId === order.id"
+                                        (click)="onPrintShippingOrder(order)">
+                                        @if(printingOrderId === order.id) {
+                                            <mat-spinner diameter="18"></mat-spinner>
+                                        } @else {
+                                            <mat-icon>local_shipping</mat-icon>
+                                        }
+                                        Đơn vận chuyển
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if(!canPrintShippingOrder) {
+                    <div class="flex items-center gap-2 p-3 border border-gray-400 bg-gray-50 text-gray-600">
+                        <mat-icon>lock</mat-icon>
+                        <span>Bạn không có quyền in mã đơn Viettel Post</span>
+                    </div>
+                }
+
+                <div class="flex items-center justify-end pt-3">
+                    <button type="button" class="flex items-center justify-center gap-2 px-4 bg-primary text-white"
+                        (click)="onFinishShipping()">
+                        <mat-icon class="text-white">done</mat-icon>
+                        Hoàn tất
+                    </button>
+                </div>
+            </div>
+        </mat-step>
+    </mat-stepper>
+</ng-template>

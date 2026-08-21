@@ -1,0 +1,32 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:host ::ng-deep {
+  .settings-tabs > .mat-mdc-tab-body-wrapper {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .settings-tabs .mat-mdc-tab-body-content {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  button .mat-mdc-progress-spinner circle {
+    stroke: currentColor;
+  }
+}
+
+.credential-item:hover {
+  background-color: var(--gray-50) !important;
+}
+
+.credential-item-active {
+  background-color: var(--blue-50) !important;
+  box-shadow: inset 3px 0 0 var(--blue-300);
+}

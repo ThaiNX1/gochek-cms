@@ -63,8 +63,11 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     this.columns = [
       { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER, },
       { name: 'Ngày thực hiện', field: 'createdAt', className: 'min-w-[150px] max-w-[150px]', type: TableColumnType.DATE },
+      { name: 'Mã lô', field: 'batchCode', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Prefix', field: 'prefix', className: 'min-w-[100px] max-w-[100px]' },
       { name: 'Số lượng', field: 'serialCount', className: 'min-w-[80px] max-w-[80px]' },
+      { name: 'SL dự kiến', field: 'expectedQuantity', className: 'min-w-[100px] max-w-[100px]', type: TableColumnType.NUMBER },
+      { name: 'Nhà cung cấp', field: 'supplier', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Serial đầu', field: 'startSerialNumber', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Serial cuối', field: 'endSerialNumber', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Người thực hiện', field: 'createdByName', className: 'min-w-[150px] max-w-[150px]' },
@@ -80,6 +83,9 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     this.generateSerialForm = new FormGroup({
       prefix: new FormControl('', [Validators.required, Validators.minLength(2), Validators.maxLength(2)]),
       count: new FormControl(1, [Validators.required, Validators.min(1)]),
+      batchCode: new FormControl(''),
+      expectedQuantity: new FormControl(null, [Validators.min(1)]),
+      supplier: new FormControl(''),
       modelId: new FormControl('', [Validators.required]),
       descriptor: new FormControl(''),
     });
@@ -178,6 +184,9 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       input: {
         prefix: this.generateSerialForm.value.prefix,
         count: this.generateSerialForm.value.count,
+        batchCode: this.generateSerialForm.value.batchCode,
+        expectedQuantity: this.generateSerialForm.value.expectedQuantity,
+        supplier: this.generateSerialForm.value.supplier,
         modelId: this.generateSerialForm.value.modelId,
         descriptor: this.generateSerialForm.value.descriptor,
         exportId,

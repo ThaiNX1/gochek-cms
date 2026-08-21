@@ -1,4 +1,4 @@
-import {Injectable, Injector, signal} from "@angular/core";
+import {Injectable, Injector, signal, TemplateRef} from "@angular/core";
 import {BehaviorSubject} from "rxjs";
 import {MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition} from "@angular/material/snack-bar";
 import {TranslateService} from "@ngx-translate/core";
@@ -17,7 +17,7 @@ export class CommonService {
   smallScreen = signal(false)
   fullScreen = signal(false)
   openSlideNav = signal(false)
-  slideNavConfig = signal<any>(null)
+  slideNavConfig = signal<SlideNavConfig | null>(null)
   menuSelected = signal<any>(null)
   headerInfo = signal<any>(null)
 
@@ -45,6 +45,15 @@ export class CommonService {
 
   setShowErrorResponse(error: any) {
     this.showErrorResponse.next({...error})
+  }
+
+  openRightSlideNav(config: SlideNavConfig) {
+    this.slideNavConfig.set(config)
+    this.openSlideNav.set(true)
+  }
+
+  closeRightSlideNav() {
+    this.openSlideNav.set(false)
   }
 
   /**
@@ -110,4 +119,12 @@ export class CommonService {
     else
       return color.toString()
   }
+}
+
+export type SlideNavConfig = {
+  title: string;
+  content: TemplateRef<any>;
+  width?: string;
+  context?: Record<string, unknown>;
+  onClose?: () => void;
 }

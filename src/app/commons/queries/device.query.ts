@@ -1,5 +1,15 @@
 import { gql } from 'apollo-angular';
 
+export const GET_DEVICE_ACTIVE_CODE = gql`
+  query DeviceActiveCode($serialNumber: String!) {
+    deviceActiveCode(serialNumber: $serialNumber) {
+      activeCode
+      qrData
+      serialNumber
+    }
+  }
+`;
+
 export const GET_DEVICES = gql`
   query GetDevices($pagination: DeviceSearchInput) {
     devices(pagination: $pagination) {

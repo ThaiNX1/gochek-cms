@@ -1,0 +1,38 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+:host ::ng-deep {
+  .date-range-field.mat-mdc-form-field-type-mat-date-range-input .mat-mdc-form-field-infix {
+    width: 260px;
+  }
+
+  .date-range-field .mat-date-range-input-wrapper {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+.timeline-column {
+  min-width: 68px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  border-bottom: 1px solid var(--gray-300);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.dashboard-table th {
+  background: var(--gray-50);
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}

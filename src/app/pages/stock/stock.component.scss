@@ -1,0 +1,36 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:host ::ng-deep {
+  .stock-shipping-stepper .mat-horizontal-content-container {
+    padding: 0;
+  }
+
+  .stock-shipping-stepper .mat-horizontal-stepper-header-container {
+    border-bottom: 1px solid var(--gray-400);
+  }
+
+  .stock-shipping-stepper .mat-horizontal-stepper-header {
+    min-width: 0;
+    padding: 0 12px;
+  }
+
+  .stock-shipping-stepper .mat-step-label {
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  button .mat-mdc-progress-spinner circle {
+    stroke: currentColor;
+  }
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

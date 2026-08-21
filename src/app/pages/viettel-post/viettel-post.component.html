@@ -1,0 +1,185 @@
+<div class="h-full min-h-0 flex-1 flex flex-col items-stretch justify-start overflow-hidden gap-4">
+    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 px-4">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-xl font-bold">Vận chuyển</h1>
+            <span class="text-sm text-gray-500">Theo dõi đơn vận chuyển và cập nhật hoàn hàng về kho</span>
+        </div>
+    </div>
+
+    <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 items-stretch gap-3 px-4">
+        <mat-form-field appearance="outline" floatLabel="auto" class="w-full bg-white">
+            <input matInput formControlName="keyword" placeholder="Tìm kiếm">
+        </mat-form-field>
+        <mat-form-field appearance="outline" floatLabel="auto" class="w-full bg-white">
+            <input matInput formControlName="trackingNumber" placeholder="Mã vận đơn">
+        </mat-form-field>
+        <mat-form-field appearance="outline" floatLabel="auto" class="w-full bg-white">
+            <input matInput formControlName="serialNumber" placeholder="Serial">
+        </mat-form-field>
+        <mat-form-field appearance="outline" floatLabel="auto" class="w-full bg-white">
+            <mat-select formControlName="shippingStatus" placeholder="Trạng thái">
+                <mat-option value="">Tất cả trạng thái</mat-option>
+                @for(status of statusOptions; track status.value) {
+                    <mat-option [value]="status.value">{{ status.name }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+        <button type="button"
+            class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+            (click)="onGetShippingOrders()">
+            <mat-icon class="text-white">search</mat-icon>
+            Tìm kiếm
+        </button>
+    </form>
+
+    <section class="flex flex-col gap-3 px-4 pb-4 flex-1 min-h-0">
+        <app-table
+            class="flex flex-col items-stretch justify-start flex-1 min-h-0 overflow-hidden bg-white rounded-md border border-gray-400 p-4"
+            [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination"
+            [expandable]="true" [expandTemplate]="expandTemplate"
+            (pageChange)="onPageChange($event)">
+        </app-table>
+    </section>
+</div>
+
+<ng-template #expandTemplate let-item="item">
+    <div class="w-full px-2 py-1">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-x-10 gap-y-6">
+            <section class="flex flex-col gap-3">
+                <h3 class="text-base font-semibold text-gray-800">Thông tin người nhận</h3>
+                <dl class="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-x-4 gap-y-3 text-sm">
+                    <dt class="font-medium text-gray-500">Người nhận</dt>
+                    <dd class="text-gray-900 break-words">{{ item.receiverName || '-' }}</dd>
+
+                    <dt class="font-medium text-gray-500">Số điện thoại</dt>
+                    <dd class="text-gray-900 break-words">
+                        @if(item.receiverPhone) {
+                            <a [href]="'tel:' + item.receiverPhone" class="text-blue-600 no-underline hover:underline">
+                                {{ item.receiverPhone }}
+                            </a>
+                        } @else {
+                            -
+                        }
+                    </dd>
+
+                    <dt class="font-medium text-gray-500">Địa chỉ nhận</dt>
+                    <dd class="text-gray-900 whitespace-pre-line break-words">{{ item.receiverAddress || '-' }}</dd>
+                </dl>
+            </section>
+
+            <section class="flex flex-col gap-3">
+                <h3 class="text-base font-semibold text-gray-800">Thông tin vận chuyển</h3>
+                <dl class="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-4 gap-y-3 text-sm">
+                    <dt class="font-medium text-gray-500">Đơn vị vận chuyển</dt>
+                    <dd class="text-gray-900 break-words">{{ item.carrier || '-' }}</dd>
+
+                    <dt class="font-medium text-gray-500">Đối tác</dt>
+                    <dd class="text-gray-900 break-words">{{ item.partnerKey || '-' }}</dd>
+
+                    <dt class="font-medium text-gray-500">Mã trạng thái đối tác</dt>
+                    <dd class="text-gray-900 break-words">{{ item.partnerStatusCode || '-' }}</dd>
+
+                    <dt class="font-medium text-gray-500">Mã lô</dt>
+                    <dd class="text-gray-900 break-words">{{ item.batchCode || '-' }}</dd>
+
+                    <dt class="font-medium text-gray-500">Cập nhật lần cuối</dt>
+                    <dd class="text-gray-900">{{ item.updatedAt ? (item.updatedAt | date:'dd/MM/yyyy HH:mm:ss') : '-' }}</dd>
+
+                    <dt class="font-medium text-gray-500">Lỗi gần nhất</dt>
+                    <dd class="break-words" [ngClass]="item.lastError ? 'text-red-600' : 'text-gray-900'">
+                        {{ item.lastError || '-' }}
+                    </dd>
+
+                    <dt class="font-medium text-gray-500">Phiếu vận chuyển</dt>
+                    <dd>
+                        @if(item.printUrl) {
+                            <button type="button"
+                                class="inline-flex items-center gap-2 border-none bg-transparent p-0 text-blue-600 hover:underline"
+                                (click)="onOpenPrintUrl(item)">
+                                <mat-icon class="text-base !w-5 !h-5 !leading-5">open_in_new</mat-icon>
+                                Mở phiếu
+                            </button>
+                        } @else {
+                            <span class="text-gray-900">-</span>
+                        }
+                    </dd>
+                </dl>
+            </section>
+        </div>
+    </div>
+</ng-template>
+
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4 gap-3">
+        <button *permission="[PermissionEnum.VIETTEL_POST_UPDATE_ORDER]"
+            class="flex items-center justify-center border-none bg-transparent"
+            (click)="onOpenUpdateStatusDialog(item)"
+            title="Cập nhật trạng thái">
+            <mat-icon class="text-blue-500">published_with_changes</mat-icon>
+        </button>
+        <button *permission="[PermissionEnum.VIETTEL_POST_PRINT_ORDER]"
+            class="flex items-center justify-center border-none bg-transparent"
+            (click)="onOpenPrintUrl(item)"
+            title="In vận đơn">
+            <mat-icon class="text-gray-600">print</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<ng-template #shippingStatusDialogContent>
+    <form [formGroup]="shippingStatusForm" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label>Mã vận đơn</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="trackingNumber" placeholder="Mã vận đơn">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="require">Trạng thái</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <mat-select formControlName="newStatus" placeholder="Chọn trạng thái">
+                        @for(status of statusOptions; track status.value) {
+                            <mat-option [value]="status.value">{{ status.name }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+        @if(isReturnedStatus) {
+        <div class="flex flex-col gap-1">
+            <label>Kho nhận hoàn</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <mat-select formControlName="returnWarehouseId" placeholder="Chọn kho nhận hoàn">
+                    <mat-option value="">Tự động theo kho xuất</mat-option>
+                    @for(warehouse of warehouses; track warehouse.id) {
+                        <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+        }
+        <div class="flex flex-col gap-1">
+            <label>Vị trí</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="location" placeholder="Nhập vị trí hiện tại">
+            </mat-form-field>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Ghi chú</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="note" placeholder="Nhập ghi chú" rows="3"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+    <div class="flex items-center justify-center gap-4 pt-3">
+        <button class="flex items-center justify-center bg-white border border-gray-400 rounded px-3 py-2"
+            (click)="onCancel()">
+            Hủy
+        </button>
+        <button class="flex items-center justify-center border border-transparent rounded text-white px-3 py-2 bg-primary"
+            (click)="onUpdateShippingStatusSave()">
+            Lưu
+        </button>
+    </div>
+</ng-template>

@@ -16,15 +16,16 @@
               *matHeaderCellDef
               style="background-color: #f1f5f9 !important; width: 60px;"
             >
-              <div class="h-[52px] w-full flex items-center justify-center break-words border-t border-[#c0c7d0]">
+              <div class="h-[40px] w-full flex items-center justify-center break-words border-t border-[#c0c7d0]">
                 
               </div>
             </th>
           }
           <td mat-cell *matCellDef="let element" style="width: 60px;">
-            <div class="h-[52px] w-full flex items-center justify-center">
+            <div class="h-[40px] w-full flex items-center justify-center">
               <button
                 mat-icon-button
+                class="!w-9 !h-9 !p-1.5"
                 (click)="toggleRow(element); $event.stopPropagation()"
                 aria-label="expand row"
               >
@@ -50,7 +51,7 @@
             [ngClass]="column.className"
             style="background-color: #f1f5f9 !important;"
           >
-            <div class="h-[52px] w-full flex items-center justify-center break-words border-t border-[#c0c7d0]">
+            <div class="h-[40px] w-full flex items-center justify-center break-words border-t border-[#c0c7d0]">
               {{ column.name }}
             </div>
           </th>
@@ -60,7 +61,7 @@
           *matCellDef="let element"
           [ngClass]="column.tdClassName"
         >
-        <div class="h-[52px] w-full flex items-center justify-center break-words" [ngClass]="column.tdClassName">
+        <div class="h-[40px] w-full flex items-center justify-center break-words" [ngClass]="column.tdClassName">
             @if(!column?.template) {
               @switch(column.type) {
                   @case(TableColumnType.NUMBER) {
@@ -116,12 +117,13 @@
         <tr
           mat-header-row
           *matHeaderRowDef="expandable ? displayedColumnsWithExpand : displayedStringColumns; sticky: true"
+          class="!h-[40px]"
         ></tr>
       }
       <tr
         mat-row
         *matRowDef="let element; columns: expandable ? displayedColumnsWithExpand : displayedStringColumns"
-        class="element-row hover:bg-gray-300"
+        class="element-row !h-[40px] hover:bg-gray-300"
         [class.expanded-row]="expandedElement === element"
       ></tr>
       @if(expandable && expandTemplate) {

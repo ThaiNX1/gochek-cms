@@ -1,0 +1,369 @@
+<div class="h-full min-h-0 flex-1 flex flex-col overflow-hidden gap-4 px-4 pb-4">
+    <div class="flex flex-col gap-1">
+        <h1 class="text-xl font-bold">Cấu hình</h1>
+        <span class="text-sm text-gray-500">Quản lý kết nối đối tác và cấu hình thanh toán</span>
+    </div>
+
+    <mat-tab-group class="settings-tabs flex-1 min-h-0 overflow-hidden" animationDuration="200ms"
+        [mat-stretch-tabs]="false" mat-align-tabs="start">
+        <mat-tab label="Đối tác vận chuyển">
+            <div class="h-full min-h-0 overflow-auto gray-500-scroll py-4">
+                @if(!canViewCredentials) {
+                    <div class="flex flex-col items-center justify-center min-h-[240px] gap-2 text-center">
+                        <mat-icon class="text-gray-500 text-4xl">lock</mat-icon>
+                        <span class="font-semibold">Bạn không có quyền xem cấu hình Viettel Post</span>
+                    </div>
+                } @else {
+                    <div class="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] border border-gray-400 bg-white min-h-[480px]">
+                        <aside class="flex flex-col min-h-0 border-b xl:border-b-0 xl:border-r border-gray-400">
+                            <div class="h-[58px] flex items-center justify-between gap-3 px-4 border-b border-gray-400 bg-gray-50">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <mat-icon class="text-gray-600">local_shipping</mat-icon>
+                                    <span class="font-semibold truncate">Viettel Post</span>
+                                </div>
+                                @if(canManageCredentials) {
+                                    <button type="button" title="Thêm tài khoản"
+                                        class="!w-9 !h-9 !min-h-0 flex items-center justify-center border border-gray-400 bg-white"
+                                        (click)="onCreateCredential()">
+                                        <mat-icon>add</mat-icon>
+                                    </button>
+                                }
+                            </div>
+
+                            <div class="flex flex-col overflow-auto gray-500-scroll">
+                                @if(isLoadingCredentials) {
+                                    <div class="flex items-center justify-center min-h-[160px]">
+                                        <mat-spinner diameter="32"></mat-spinner>
+                                    </div>
+                                } @else if(credentials.length === 0) {
+                                    <div class="flex flex-col items-center justify-center min-h-[160px] px-4 text-center gap-2 text-gray-500">
+                                        <mat-icon>key_off</mat-icon>
+                                        <span>Chưa có tài khoản Viettel Post</span>
+                                    </div>
+                                } @else {
+                                    @for(credential of credentials; track credential.id) {
+                                        <button type="button"
+                                            class="credential-item !h-auto !rounded-none flex flex-col items-stretch gap-2 px-4 py-3 border-0 border-b border-gray-400 bg-white text-left"
+                                            [class.credential-item-active]="selectedCredentialId === credential.id"
+                                            (click)="onSelectCredential(credential)">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="font-semibold truncate">{{ credential.username }}</span>
+                                                <span class="px-2 py-1 text-xs rounded whitespace-nowrap"
+                                                    [ngClass]="credential.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'">
+                                                    {{ credential.isActive ? 'Đang dùng' : 'Tạm tắt' }}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3 text-xs text-gray-500">
+                                                <span>{{ getEnvironmentName(credential.environment) }}</span>
+                                                <span [class.text-red-600]="isExpired(credential.tokenExpiresAt)">
+                                                    Token: {{ formatTimestamp(credential.tokenExpiresAt) }}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    }
+                                }
+                            </div>
+                        </aside>
+
+                        <section class="flex flex-col min-w-0">
+                            <div class="min-h-[58px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 border-b border-gray-400 bg-gray-50">
+                                <div class="flex flex-col gap-1">
+                                    <span class="font-semibold">
+                                        {{ selectedCredentialId ? 'Cập nhật tài khoản' : 'Thêm tài khoản' }}
+                                    </span>
+                                    <span class="text-xs text-gray-500">Viettel Post</span>
+                                </div>
+                                @if(selectedCredentialId && canManageCredentials) {
+                                    <button type="button"
+                                        class="flex items-center justify-center gap-2 px-3 border border-gray-400 bg-white"
+                                        [disabled]="refreshingCredentialId === selectedCredentialId"
+                                        (click)="onRefreshToken(selectedCredential!)">
+                                        @if(refreshingCredentialId === selectedCredentialId) {
+                                            <mat-spinner diameter="18"></mat-spinner>
+                                        } @else {
+                                            <mat-icon>refresh</mat-icon>
+                                        }
+                                        Làm mới token
+                                    </button>
+                                }
+                            </div>
+
+                            <form [formGroup]="credentialForm" class="flex flex-col gap-5 p-5 max-w-[760px]">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="require">Môi trường</label>
+                                        <mat-form-field appearance="outline" floatLabel="auto">
+                                            <mat-select formControlName="environment">
+                                                @for(environment of environments; track environment.value) {
+                                                    <mat-option [value]="environment.value">{{ environment.name }}</mat-option>
+                                                }
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1">
+                                        <label class="require">Tên đăng nhập</label>
+                                        <mat-form-field appearance="outline" floatLabel="auto">
+                                            <input matInput formControlName="username" autocomplete="off"
+                                                placeholder="Tên đăng nhập Viettel Post">
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col gap-1">
+                                    <label [class.require]="!selectedCredentialId">Mật khẩu</label>
+                                    <mat-form-field appearance="outline" floatLabel="auto">
+                                        <input matInput formControlName="password" [type]="showPassword ? 'text' : 'password'"
+                                            autocomplete="new-password"
+                                            [placeholder]="selectedCredentialId ? 'Để trống nếu không thay đổi mật khẩu' : 'Nhập mật khẩu Viettel Post'">
+                                        <button mat-icon-button matSuffix type="button" [title]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                                            class="border-0 pr-3"
+                                            (click)="showPassword = !showPassword">
+                                            <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                                        </button>
+                                    </mat-form-field>
+                                </div>
+
+                                <mat-checkbox formControlName="isActive">Kích hoạt cấu hình này</mat-checkbox>
+
+                                @if(selectedCredentialId) {
+                                    @for(credential of credentials; track credential.id) {
+                                        @if(credential.id === selectedCredentialId) {
+                                            <dl class="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-x-4 gap-y-3 py-4 border-y border-gray-400 text-sm">
+                                                <dt class="text-gray-500">Token hết hạn</dt>
+                                                <dd [class.text-red-600]="isExpired(credential.tokenExpiresAt)">
+                                                    {{ formatTimestamp(credential.tokenExpiresAt) }}
+                                                </dd>
+                                                <dt class="text-gray-500">Owner token hết hạn</dt>
+                                                <dd [class.text-red-600]="isExpired(credential.ownerTokenExpiresAt)">
+                                                    {{ formatTimestamp(credential.ownerTokenExpiresAt) }}
+                                                </dd>
+                                                <dt class="text-gray-500">Đăng nhập gần nhất</dt>
+                                                <dd>{{ formatTimestamp(credential.lastLoginAt) }}</dd>
+                                                <dt class="text-gray-500">Kết nối owner gần nhất</dt>
+                                                <dd>{{ formatTimestamp(credential.lastOwnerConnectAt) }}</dd>
+                                            </dl>
+                                        }
+                                    }
+                                }
+
+                                @if(canManageCredentials) {
+                                    <div class="flex items-center justify-end gap-3">
+                                        <button type="button" class="flex items-center justify-center gap-2 px-4 bg-primary text-white"
+                                            [disabled]="isSaving" (click)="onSaveCredential()">
+                                            @if(isSaving) {
+                                                <mat-spinner diameter="18"></mat-spinner>
+                                            } @else {
+                                                <mat-icon class="text-white">save</mat-icon>
+                                            }
+                                            Lưu cấu hình
+                                        </button>
+                                    </div>
+                                }
+                            </form>
+                        </section>
+                    </div>
+                }
+            </div>
+        </mat-tab>
+
+        <mat-tab label="Tài khoản Nhanh.vn">
+            <div class="h-full min-h-0 overflow-auto gray-500-scroll py-4">
+                @if(!canViewNhanhCredentials) {
+                    <div class="flex flex-col items-center justify-center min-h-[240px] gap-2 text-center">
+                        <mat-icon class="text-gray-500 text-4xl">lock</mat-icon>
+                        <span class="font-semibold">Bạn không có quyền xem cấu hình Nhanh.vn</span>
+                    </div>
+                } @else {
+                    <div class="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] border border-gray-400 bg-white min-h-[480px]">
+                        <aside class="flex flex-col min-h-0 border-b xl:border-b-0 xl:border-r border-gray-400">
+                            <div class="h-[58px] flex items-center justify-between gap-3 px-4 border-b border-gray-400 bg-gray-50">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <mat-icon class="text-gray-600">storefront</mat-icon>
+                                    <span class="font-semibold truncate">Nhanh.vn</span>
+                                </div>
+                                @if(canManageNhanhCredentials) {
+                                    <button type="button" title="Thêm tài khoản"
+                                        class="!w-9 !h-9 !min-h-0 flex items-center justify-center border border-gray-400 bg-white"
+                                        (click)="onCreateNhanhCredential()">
+                                        <mat-icon>add</mat-icon>
+                                    </button>
+                                }
+                            </div>
+
+                            <div class="flex flex-col overflow-auto gray-500-scroll">
+                                @if(isLoadingNhanhCredentials) {
+                                    <div class="flex items-center justify-center min-h-[160px]">
+                                        <mat-spinner diameter="32"></mat-spinner>
+                                    </div>
+                                } @else if(nhanhCredentials.length === 0) {
+                                    <div class="flex flex-col items-center justify-center min-h-[160px] px-4 text-center gap-2 text-gray-500">
+                                        <mat-icon>key_off</mat-icon>
+                                        <span>Chưa có tài khoản Nhanh.vn</span>
+                                    </div>
+                                } @else {
+                                    @for(credential of nhanhCredentials; track credential.id) {
+                                        <button type="button"
+                                            class="credential-item !h-auto !rounded-none flex flex-col items-stretch gap-2 px-4 py-3 border-0 border-b border-gray-400 bg-white text-left"
+                                            [class.credential-item-active]="selectedNhanhCredentialId === credential.id"
+                                            (click)="onSelectNhanhCredential(credential)">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="font-semibold truncate">Business ID: {{ credential.businessId }}</span>
+                                                <span class="px-2 py-1 text-xs rounded whitespace-nowrap"
+                                                    [ngClass]="credential.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'">
+                                                    {{ credential.isActive ? 'Đang dùng' : 'Tạm tắt' }}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3 text-xs text-gray-500">
+                                                <span>App ID: {{ credential.appId }}</span>
+                                                <span>{{ getEnvironmentName(credential.environment) }}</span>
+                                            </div>
+                                        </button>
+                                    }
+                                }
+                            </div>
+                        </aside>
+
+                        <section class="flex flex-col min-w-0">
+                            <div class="min-h-[58px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 border-b border-gray-400 bg-gray-50">
+                                <div class="flex flex-col gap-1">
+                                    <span class="font-semibold">
+                                        {{ selectedNhanhCredentialId ? 'Cập nhật tài khoản' : 'Thêm tài khoản' }}
+                                    </span>
+                                    <span class="text-xs text-gray-500">Nhanh.vn</span>
+                                </div>
+                                @if(selectedNhanhCredentialId && canManageNhanhCredentials) {
+                                    <button type="button"
+                                        class="flex items-center justify-center gap-2 px-3 border border-gray-400 bg-white"
+                                        [disabled]="verifyingNhanhCredentialId === selectedNhanhCredentialId"
+                                        (click)="onVerifyNhanhCredential(selectedNhanhCredential!)">
+                                        @if(verifyingNhanhCredentialId === selectedNhanhCredentialId) {
+                                            <mat-spinner diameter="18"></mat-spinner>
+                                        } @else {
+                                            <mat-icon>verified</mat-icon>
+                                        }
+                                        Kiểm tra kết nối
+                                    </button>
+                                }
+                            </div>
+
+                            <form [formGroup]="nhanhCredentialForm" class="flex flex-col gap-5 p-5 max-w-[860px]">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="require">Môi trường</label>
+                                        <mat-form-field appearance="outline" floatLabel="auto">
+                                            <mat-select formControlName="environment">
+                                                @for(environment of environments; track environment.value) {
+                                                    <mat-option [value]="environment.value">{{ environment.name }}</mat-option>
+                                                }
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1">
+                                        <label class="require">Business ID</label>
+                                        <mat-form-field appearance="outline" floatLabel="auto">
+                                            <input matInput formControlName="businessId" autocomplete="off"
+                                                placeholder="Business ID trên Nhanh.vn">
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1">
+                                        <label class="require">App ID</label>
+                                        <mat-form-field appearance="outline" floatLabel="auto">
+                                            <input matInput formControlName="appId" autocomplete="off"
+                                                placeholder="App ID trên Nhanh.vn">
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1">
+                                        <label [class.require]="!selectedNhanhCredentialId">Access token</label>
+                                        <mat-form-field appearance="outline" floatLabel="auto">
+                                            <input matInput formControlName="accessToken"
+                                                [type]="showNhanhAccessToken ? 'text' : 'password'"
+                                                autocomplete="new-password"
+                                                [placeholder]="selectedNhanhCredentialId ? 'Để trống nếu không thay đổi token' : 'Access token Nhanh.vn'">
+                                            <button mat-icon-button matSuffix type="button"
+                                                [title]="showNhanhAccessToken ? 'Ẩn token' : 'Hiện token'"
+                                                class="border-0 pr-3"
+                                                (click)="showNhanhAccessToken = !showNhanhAccessToken">
+                                                <mat-icon>{{ showNhanhAccessToken ? 'visibility_off' : 'visibility' }}</mat-icon>
+                                            </button>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col gap-1">
+                                    <label>Webhook verify token</label>
+                                    <mat-form-field appearance="outline" floatLabel="auto">
+                                        <input matInput formControlName="webhookVerifyToken"
+                                            [type]="showNhanhWebhookVerifyToken ? 'text' : 'password'"
+                                            autocomplete="new-password"
+                                            placeholder="Để trống nếu không thay đổi">
+                                        <button mat-icon-button matSuffix type="button"
+                                            [title]="showNhanhWebhookVerifyToken ? 'Ẩn token' : 'Hiện token'"
+                                            class="border-0 pr-3"
+                                            (click)="showNhanhWebhookVerifyToken = !showNhanhWebhookVerifyToken">
+                                            <mat-icon>{{ showNhanhWebhookVerifyToken ? 'visibility_off' : 'visibility' }}</mat-icon>
+                                        </button>
+                                    </mat-form-field>
+                                </div>
+
+                                <mat-checkbox formControlName="isActive">Kích hoạt cấu hình này</mat-checkbox>
+
+                                @if(selectedNhanhCredential) {
+                                    <dl class="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-x-4 gap-y-3 py-4 border-y border-gray-400 text-sm">
+                                        <dt class="text-gray-500">Kiểm tra gần nhất</dt>
+                                        <dd>{{ formatTimestamp(selectedNhanhCredential.lastVerifiedAt) }}</dd>
+                                        <dt class="text-gray-500">Depot được phép</dt>
+                                        <dd>{{ formatList(selectedNhanhCredential.allowedDepotIds) }}</dd>
+                                        <dt class="text-gray-500">Quyền Nhanh.vn</dt>
+                                        <dd>{{ formatList(selectedNhanhCredential.permissions) }}</dd>
+                                        @if(selectedNhanhCredential.lastError) {
+                                            <dt class="text-gray-500">Lỗi gần nhất</dt>
+                                            <dd class="text-red-600 break-words">{{ selectedNhanhCredential.lastError }}</dd>
+                                        }
+                                    </dl>
+                                }
+
+                                @if(verifiedNhanhDepots.length > 0) {
+                                    <div class="flex flex-col gap-2">
+                                        <span class="font-semibold text-sm">Kho trả về từ Nhanh.vn</span>
+                                        <div class="flex flex-wrap gap-2">
+                                            @for(depot of verifiedNhanhDepots; track depot.id) {
+                                                <span class="inline-flex w-fit px-2.5 py-1 rounded bg-blue-50 text-blue-800 text-sm">
+                                                    {{ depot.name }} ({{ depot.id }})
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                @if(canManageNhanhCredentials) {
+                                    <div class="flex items-center justify-end gap-3">
+                                        <button type="button" class="flex items-center justify-center gap-2 px-4 bg-primary text-white"
+                                            [disabled]="isSavingNhanhCredential" (click)="onSaveNhanhCredential()">
+                                            @if(isSavingNhanhCredential) {
+                                                <mat-spinner diameter="18"></mat-spinner>
+                                            } @else {
+                                                <mat-icon class="text-white">save</mat-icon>
+                                            }
+                                            Lưu cấu hình
+                                        </button>
+                                    </div>
+                                }
+                            </form>
+                        </section>
+                    </div>
+                }
+            </div>
+        </mat-tab>
+
+        <mat-tab label="Thanh toán">
+            <div class="h-full min-h-[300px] flex flex-col items-center justify-center gap-3 text-center text-gray-500">
+                <mat-icon class="text-4xl">payments</mat-icon>
+                <span class="font-semibold">Chưa có cấu hình thanh toán</span>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+</div>
