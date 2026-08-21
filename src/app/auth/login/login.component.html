@@ -1,5 +1,5 @@
-<div class="w-full h-full flex flex-col items-center justify-center gap-3">
-  @if (isLoading()) {
+<!-- Loading overlay -->
+@if (isLoading()) {
   <div class="w-full h-full fixed top-0 left-0 bg-gray-300 flex items-center justify-center opacity-60"
     [style.z-index]="1001"></div>
   <div class="w-full h-full fixed top-0 left-0 bg-transparent flex items-center justify-center" [style.z-index]="1002">
@@ -18,42 +18,124 @@
       <div></div>
     </div>
   </div>
-  }
-  <div class="flex flex-col items p-0 md:p-20 md:shadow-lg md:border-2 md:border-gray-200 md:rounded-lg gap-5">
-    <div class="flex flex-col items-center justify-center">
-      <img class="w-52 h-auto object-contain" src="assets/images/logo_neutral.svg" />
+}
+
+<!-- Main layout with adjusted ratio for better image display -->
+<div class="w-full h-full flex flex-row">
+  <!-- Left: Login form (35%) -->
+  <div class="w-full md:w-[40%] h-full flex flex-col justify-center items-start p-6 md:p-8 lg:p-10">
+    <div class="w-full max-w-md flex flex-col gap-10">
+      <!-- Logo - Cao hơn và căn trái -->
+      <div class="flex flex-col items-start justify-start gap-4">
+        <div class="logo-container">
+          <img class="w-40 h-auto object-contain" src="assets/images/logo_neutral.svg" alt="Gochek Logo" />
+        </div>
+        <!-- Title bên dưới logo -->
+        <div class="flex flex-col gap-2">
+          <h1 class="login-title text-2xl">Đăng nhập</h1>
+          <p class="login-subtitle text-base">Chào mừng quay trở lại Gochek</p>
+        </div>
+      </div>
+      
+      <!-- Login form -->
+      <form [formGroup]="loginFrom" (ngSubmit)="handleLogin()"
+        class="flex flex-col items-stretch justify-center gap-5">
+        <div class="w-full flex flex-col items-stretch justify-start gap-1">
+          <span class="font-semibold">Email:</span>
+          <mat-form-field floatLabel="auto" appearance="outline">
+            <input matInput formControlName="email" class="w-full" placeholder="Nhập email" />
+            <mat-icon matPrefix>person_outline</mat-icon>
+          </mat-form-field>
+        </div>
+        <div class="w-full flex flex-col items-stretch justify-start gap-1">
+          <span class="font-semibold">Mật khẩu:</span>
+          <mat-form-field floatLabel="auto" appearance="outline">
+            <input matInput formControlName="password" class="w-full" placeholder="Nhập mật khẩu"
+              [type]="loginFrom.value['showPassword'] ? 'text' : 'password'" />
+            <mat-icon matPrefix>vpn_key</mat-icon>
+            <mat-icon matSuffix class="cursor-pointer" (click)="
+                loginFrom.controls['showPassword'].setValue(
+                  !loginFrom.value['showPassword']
+                )
+              ">
+              {{
+              loginFrom.value["showPassword"] ? "visibility" : "visibility_off"
+              }}
+            </mat-icon>
+          </mat-form-field>
+        </div>
+        <div class="flex items-center justify-center py-3">
+          <button type="submit" class="w-full text-center bg-primary text-white border-none border-round">
+            Đăng nhập
+          </button>
+        </div>
+      </form>
     </div>
-    <form [formGroup]="loginFrom" (ngSubmit)="handleLogin()"
-      class="flex flex-col items-stretch justify-center gap-5 p-3">
-      <div class="w-full md:w-[350px] flex flex-col items-stretch justify-start gap-1">
-        <span class="font-semibold">Email:</span>
-        <mat-form-field floatLabel="auto" appearance="outline">
-          <input matInput formControlName="email" class="w-full" placeholder="Nhập email" />
-          <mat-icon matPrefix>person_outline</mat-icon>
-        </mat-form-field>
+  </div>
+
+  <!-- Right: Gochek showcase (65%) - Hidden on mobile -->
+  <div class="hidden md:flex md:w-[60%] h-full relative overflow-hidden banner-container">
+    
+    <!-- Gradient overlay for better text readability (lighter) -->
+    <div class="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/40 z-10"></div>
+    
+    <!-- Additional information in bottom left corner -->
+    <div class="absolute bottom-0 left-0 z-20 p-4 lg:p-6 text-white max-w-xs">
+      <div class="bottom-left-overlay info-box p-4 rounded-2xl space-y-3">
+        <!-- Mascot greeting -->
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center border border-blue-400/30 backdrop-blur-sm">
+            <mat-icon class="text-blue-400 text-lg">smart_toy</mat-icon>
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-white">Xin chào từ Den Den!</h4>
+            <p class="text-xs text-gray-200">Trợ lý AI của Gochek</p>
+          </div>
+        </div>
+
+        <!-- Key features -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-primary text-sm">check_circle</mat-icon>
+            <span class="text-xs text-gray-100">Đồng hành cùng bé</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-primary text-sm">check_circle</mat-icon>
+            <span class="text-xs text-gray-100">Theo dõi realtime 24/7</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-primary text-sm">check_circle</mat-icon>
+            <span class="text-xs text-gray-100">Báo cáo phân tích chi tiết</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-primary text-sm">check_circle</mat-icon>
+            <span class="text-xs text-gray-100">Hỗ trợ đa nền tảng</span>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 gap-3 pt-3 border-t border-white/20">
+          <div class="text-center">
+            <div class="text-lg font-bold text-white">1000+</div>
+            <div class="text-xs text-gray-300">Thiết bị kết nối</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-bold text-white">24/7</div>
+            <div class="text-xs text-gray-300">Hỗ trợ khách hàng</div>
+          </div>
+        </div>
+
+        <!-- Contact info -->
+        <div class="pt-2">
+          <div class="flex items-center gap-2 text-xs text-gray-200">
+            <mat-icon class="text-primary text-sm">language</mat-icon>
+            <a href="https://gochek.vn" target="_blank" rel="noopener noreferrer" 
+               class="font-medium text-primary hover:text-primary-light transition-colors cursor-pointer underline">
+              gochek.vn
+            </a>
+          </div>
+        </div>
       </div>
-      <div class="w-full md:w-[350px] flex flex-col items-stretch justify-start gap-1">
-        <span class="font-semibold">Mật khẩu:</span>
-        <mat-form-field floatLabel="auto" appearance="outline">
-          <input matInput formControlName="password" class="w-full" placeholder="Nhập mật khẩu"
-            [type]="loginFrom.value['showPassword'] ? 'text' : 'password'" />
-          <mat-icon matPrefix>vpn_key</mat-icon>
-          <mat-icon matSuffix class="cursor-pointer" (click)="
-              loginFrom.controls['showPassword'].setValue(
-                !loginFrom.value['showPassword']
-              )
-            ">
-            {{
-            loginFrom.value["showPassword"] ? "visibility" : "visibility_off"
-            }}
-          </mat-icon>
-        </mat-form-field>
-      </div>
-      <div class="flex items-center justify-center py-3">
-        <button type="submit" class="w-full text-center bg-primary text-white border-none border-round">
-          Đăng nhập
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>

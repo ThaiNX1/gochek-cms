@@ -1,1 +1,143 @@
+// Custom styling for login page
+.bg-gradient-gochek {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
 
+// Background image styling
+.login-banner-bg {
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  position: relative;
+}
+
+// Ensure image fills properly while maintaining aspect ratio
+.banner-container {
+  background-image: url('/assets/images/login_banner.png');
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+}
+
+// Full coverage background
+.banner-fill {
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+// Bottom left overlay styling
+.bottom-left-overlay {
+  backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+// Title and welcome text styling
+.login-title {
+  color: #1f2937;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.login-subtitle {
+  color: #6b7280;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+// Enhanced form styling
+mat-form-field {
+  .mat-mdc-form-field-focus-overlay {
+    background-color: transparent;
+  }
+  
+  .mat-mdc-text-field-wrapper {
+    border-radius: 8px;
+  }
+}
+
+// Button styling
+button[type="submit"] {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+  }
+}
+
+// Product icon animations
+.product-icon {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-4px) scale(1.05);
+  }
+}
+
+// Logo enhancement
+.logo-container img {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+}
+
+// Info box styling
+.info-box {
+  transition: all 0.3s ease;
+  max-width: 240px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// Link styling
+.website-link {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #3b82f6;
+    text-decoration: underline;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1rem;
+  }
+  
+  .logo-container img {
+    width: 120px;
+  }
+  
+  .login-title {
+    font-size: 1.5rem;
+  }
+  
+  .bottom-left-overlay {
+    padding: 0.75rem;
+    max-width: 200px;
+  }
+  
+  .info-box {
+    max-width: 200px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .info-box {
+    max-width: 260px;
+  }
+}
