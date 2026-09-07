@@ -955,6 +955,7 @@ export type Mutation = {
   repairDevicePaid: WarrantyHistory;
   replaceComponent: DeviceComponent;
   replaceDevice: WarrantyHistory;
+  resendFirmwareVersionWebhook: ResendFirmwareVersionWebhookResponse;
   resendOtp: Scalars['Boolean']['output'];
   resetPassword: User;
   returnDevice: WarrantyHistory;
@@ -1293,6 +1294,11 @@ export type MutationReplaceComponentArgs = {
 
 export type MutationReplaceDeviceArgs = {
   input: ReplaceDeviceInput;
+};
+
+
+export type MutationResendFirmwareVersionWebhookArgs = {
+  input: ResendFirmwareVersionWebhookInput;
 };
 
 
@@ -1708,6 +1714,7 @@ export enum PartnerEnvironment {
 }
 
 export enum PartnerKey {
+  ESMS = 'ESMS',
   NHANH = 'NHANH',
   SPHOTON = 'SPHOTON',
   VIETTEL_POST = 'VIETTEL_POST'
@@ -1775,6 +1782,13 @@ export type PublicDeviceInfoResponse = {
   state?: Maybe<DeviceStateEnum>;
 };
 
+export type PublicModelSearchInput = {
+  deviceTypeId?: InputMaybe<Scalars['ID']['input']>;
+  keyword?: InputMaybe<Scalars['String']['input']>;
+  page?: Scalars['Int']['input'];
+  size?: Scalars['Int']['input'];
+};
+
 export type Query = {
   activeWarehouses: Array<Warehouse>;
   allPrefix: Array<GenerateHistory>;
@@ -1825,6 +1839,10 @@ export type Query = {
   province: Province;
   provinces: Array<Province>;
   provincesByCountry: Array<Province>;
+  publicDeviceType: DeviceType;
+  publicDeviceTypes: PaginatedDeviceTypeResponse;
+  publicModel: Model;
+  publicModels: PaginatedModelResponse;
   roleHierarchy: Array<BusinessRole>;
   searchNhanhPurchaseDocuments: NhanhPurchaseDocumentSearchResponse;
   shippingOrder: ShippingOrder;
@@ -2059,6 +2077,26 @@ export type QueryProvincesByCountryArgs = {
 };
 
 
+export type QueryPublicDeviceTypeArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPublicDeviceTypesArgs = {
+  pagination?: InputMaybe<PaginationInput>;
+};
+
+
+export type QueryPublicModelArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPublicModelsArgs = {
+  pagination?: InputMaybe<PublicModelSearchInput>;
+};
+
+
 export type QuerySearchNhanhPurchaseDocumentsArgs = {
   input: SearchNhanhPurchaseDocumentsInput;
 };
@@ -2201,6 +2239,19 @@ export type ReplaceDeviceInput = {
   newSerial: Scalars['String']['input'];
   oldSerial: Scalars['String']['input'];
   reason: Scalars['String']['input'];
+};
+
+export type ResendFirmwareVersionWebhookInput = {
+  modelId?: InputMaybe<Scalars['ID']['input']>;
+  serialNumber?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ResendFirmwareVersionWebhookResponse = {
+  failedCount: Scalars['Int']['output'];
+  newEspVersionCount: Scalars['Int']['output'];
+  newRaVersionCount: Scalars['Int']['output'];
+  successCount: Scalars['Int']['output'];
+  totalDevices: Scalars['Int']['output'];
 };
 
 export type ReturnDeviceInput = {
@@ -2607,6 +2658,7 @@ export type UploadFileResponse = {
 export type UpsertNhanhCredentialInput = {
   accessToken?: InputMaybe<Scalars['String']['input']>;
   allowedDepotIds?: InputMaybe<Scalars['JSON']['input']>;
+  apiKey?: InputMaybe<Scalars['String']['input']>;
   appId?: InputMaybe<Scalars['String']['input']>;
   businessId?: InputMaybe<Scalars['String']['input']>;
   environment?: PartnerEnvironment;
@@ -2615,6 +2667,7 @@ export type UpsertNhanhCredentialInput = {
   metadata?: InputMaybe<Scalars['JSON']['input']>;
   password?: InputMaybe<Scalars['String']['input']>;
   permissions?: InputMaybe<Scalars['JSON']['input']>;
+  secretKey?: InputMaybe<Scalars['String']['input']>;
   username?: InputMaybe<Scalars['String']['input']>;
   webhookVerifyToken?: InputMaybe<Scalars['String']['input']>;
 };
@@ -2632,6 +2685,7 @@ export type UpsertNhanhProductMappingInput = {
 export type UpsertPartnerCredentialInput = {
   accessToken?: InputMaybe<Scalars['String']['input']>;
   allowedDepotIds?: InputMaybe<Scalars['JSON']['input']>;
+  apiKey?: InputMaybe<Scalars['String']['input']>;
   appId?: InputMaybe<Scalars['String']['input']>;
   businessId?: InputMaybe<Scalars['String']['input']>;
   environment?: PartnerEnvironment;
@@ -2641,6 +2695,7 @@ export type UpsertPartnerCredentialInput = {
   partnerKey: PartnerKey;
   password?: InputMaybe<Scalars['String']['input']>;
   permissions?: InputMaybe<Scalars['JSON']['input']>;
+  secretKey?: InputMaybe<Scalars['String']['input']>;
   username?: InputMaybe<Scalars['String']['input']>;
   webhookVerifyToken?: InputMaybe<Scalars['String']['input']>;
 };

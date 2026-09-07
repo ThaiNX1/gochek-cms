@@ -8,11 +8,19 @@
                 </mat-form-field>
             </form>
         </div>
-        <a [routerLink]="['/firmware/create']"
-            class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400">
-            <mat-icon class="text-white">add</mat-icon>
-            Thêm firmware
-        </a>
+        <div class="flex items-center gap-3">
+            <button 
+                class="h-12 flex items-center justify-center gap-2 px-3 bg-blue-500 text-white rounded border border-blue-600"
+                (click)="onOpenRefreshFirmwareDialog()">
+                <mat-icon class="text-white">refresh</mat-icon>
+                Refresh Firmware
+            </button>
+            <a [routerLink]="['/firmware/create']"
+                class="h-12 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400">
+                <mat-icon class="text-white">add</mat-icon>
+                Thêm firmware
+            </a>
+        </div>
     </div>
     <app-table
         class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
@@ -134,4 +142,48 @@
         {{dialogData.message}}
     </p>
     }
+</ng-template>
+
+<!-- Refresh Firmware Dialog Template -->
+<ng-template #refreshFirmwareDialogContent>
+    <form [formGroup]="refreshFirmwareForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label>Model:</label>
+            <app-select-search 
+                class="w-full bg-white" 
+                [options]="modelList" 
+                formControlName="modelId"
+                [valueKey]="'id'" 
+                [labelKey]="'name'" 
+                [searchQuery]="modelSearchQuery"
+                [searchDataKey]="'models'" 
+                placeholder="Chọn model">
+            </app-select-search>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label>Serial Number:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="serialNumber" placeholder="Nhập serial number">
+            </mat-form-field>
+        </div>
+        <div class="text-sm text-gray-500 italic">
+            * Lưu ý: Phải chọn ít nhất một trong hai (Model hoặc Serial Number)
+        </div>
+    </form>
+    <div class="flex items-stretch justify-center gap-3 pt-3">
+        <button 
+            class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
+            type="button" 
+            (click)="onCancelRefreshFirmware()">
+            <mat-icon class="text-white text-xl">cancel</mat-icon>
+            <span class="text-white font-semibold">Hủy</span>
+        </button>
+        <button 
+            class="w-full md:w-[100px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
+            type="button" 
+            (click)="onRefreshFirmware()">
+            <mat-icon class="text-white text-xl">send</mat-icon>
+            <span class="text-white font-semibold">Gửi</span>
+        </button>
+    </div>
 </ng-template>

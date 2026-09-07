@@ -139,3 +139,15 @@ mutation RemoveModelInFirmware($id: ID!, $modelId: ID!) {
     removeModelInFirmware(id: $id, modelId: $modelId)
 }
 `;
+
+export const RESEND_FIRMWARE_VERSION_WEBHOOK = gql`
+mutation ResendFirmwareVersionWebhook($input: ResendFirmwareVersionWebhookInput!) {
+    resendFirmwareVersionWebhook(input: $input) {
+        totalDevices
+        successCount
+        failedCount
+        newEspVersionCount
+        newRaVersionCount
+    }
+}
+`;

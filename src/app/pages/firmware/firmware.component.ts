@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -11,12 +11,14 @@ import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
-import { Firmware, FirmwareTypeEnum, Model, PaginatedFirmwareResponse } from '../../commons/types';
-import { DELETE_FIRMWARE, GET_FIRMWARES, REMOVE_MODEL_FIRMWARE, UPDATE_FIRMWARE_STATUS } from '../../commons/queries/firmware.query';
+import { Firmware, FirmwareTypeEnum, Model, PaginatedFirmwareResponse, PaginatedModelResponse, ResendFirmwareVersionWebhookResponse } from '../../commons/types';
+import { DELETE_FIRMWARE, GET_FIRMWARES, REMOVE_MODEL_FIRMWARE, RESEND_FIRMWARE_VERSION_WEBHOOK, UPDATE_FIRMWARE_STATUS } from '../../commons/queries/firmware.query';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { takeUntil } from 'rxjs/operators';
+import { SelectSearchComponent } from '../../shared/components/select-search/select-search.component';
+import { GET_MODELS } from '../../commons/queries/device-type.query';
 
 @Component({
   selector: 'app-firmware',
@@ -30,13 +32,20 @@ import { takeUntil } from 'rxjs/operators';
     RouterModule,
     DirectiveModule,
     ReactiveFormsModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    SelectSearchComponent
   ],
   templateUrl: './firmware.component.html',
   styleUrl: './firmware.component.scss'
 })
 export class FirmwareComponent extends BaseClass {
   @ViewChild('firmwareDialogContent') firmwareDialogContent!: TemplateRef<any>;
+  @ViewChild('refreshFirmwareDialogContent') refreshFirmwareDialogContent!: TemplateRef<any>;
+  
+  refreshFirmwareForm!: FormGroup;
+  modelSearchQuery = GET_MODELS;
+  modelList: any[] = [];
+  
   dialogData: DialogData = {
     title: 'Xóa firmware',
     showActions: true,
@@ -67,6 +76,10 @@ export class FirmwareComponent extends BaseClass {
     super.ngOnInit();
     this.filterForm = new FormGroup({
       keyword: new FormControl(''),
+    });
+    this.refreshFirmwareForm = new FormGroup({
+      modelId: new FormControl(''),
+      serialNumber: new FormControl(''),
     });
     await this.onGetFirmwares();
   }
@@ -202,5 +215,56 @@ export class FirmwareComponent extends BaseClass {
         }
       }
     });
+  }
+
+  async onOpenRefreshFirmwareDialog() {
+    this.refreshFirmwareForm.reset();
+    const dialogRef = this.dialog.open(DialogComponent, {
+      data: {
+        title: 'Refresh Firmware',
+        confirmText: 'Gửi',
+        showActions: false,
+      },
+      width: '600px'
+    });
+    dialogRef.componentInstance.content = this.refreshFirmwareDialogContent;
+  }
+
+  async onRefreshFirmware() {
+    const modelId = this.refreshFirmwareForm.value.modelId;
+    const serialNumber = this.refreshFirmwareForm.value.serialNumber?.trim();
+
+    // Kiểm tra: không được để trống cả 2
+    if (!modelId && !serialNumber) {
+      this.commonService.openSnackBarError('Vui lòng chọn Model hoặc nhập Serial Number');
+      return;
+    }
+
+    const input: any = {};
+    if (modelId) {
+      input.modelId = modelId;
+    }
+    if (serialNumber) {
+      input.serialNumber = serialNumber;
+    }
+
+    const response = await this.injector.get(ApiService).executeMutation<{ resendFirmwareVersionWebhook: ResendFirmwareVersionWebhookResponse }>(
+      RESEND_FIRMWARE_VERSION_WEBHOOK,
+      { input }
+    );
+
+    if (response?.resendFirmwareVersionWebhook) {
+      const result = response.resendFirmwareVersionWebhook;
+      this.commonService.openSnackBar(
+        `Refresh firmware thành công! Tổng: ${result.totalDevices}, Thành công: ${result.successCount}, Thất bại: ${result.failedCount}, ESP mới: ${result.newEspVersionCount}, RA mới: ${result.newRaVersionCount}`
+      );
+      this.dialog.closeAll();
+    } else {
+      this.commonService.openSnackBarError('Refresh firmware thất bại');
+    }
+  }
+
+  onCancelRefreshFirmware() {
+    this.dialog.closeAll();
   }
 }
