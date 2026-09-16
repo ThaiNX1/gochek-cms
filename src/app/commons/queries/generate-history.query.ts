@@ -18,7 +18,8 @@ query GenerateHistories($pagination: GenerateHistorySearchInput) {
             startSerialNumber
             supplierId
             supplierName
-            supplier {
+            supplier
+            supplierRelation {
                 id
                 code
                 name

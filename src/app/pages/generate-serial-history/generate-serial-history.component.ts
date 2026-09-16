@@ -110,7 +110,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
         index: index + 1,
         serialCount: item.endSerialNumber - item.startSerialNumber + 1,
         createdByName: item.createdBy?.name,
-        supplier: item.supplierName || item.supplier?.name || '',
+        supplier: item.supplierRelation?.name || item.supplierName || item.supplier || '',
       });
       return acc;
     }, []) ?? [];
