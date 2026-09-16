@@ -1,0 +1,19 @@
+::ng-deep {
+  .element-detail {
+    overflow: hidden;
+  }
+}
+
+.status-dashboard-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.status-dashboard-card {
+  height: 50px !important;
+  min-height: 50px;
+}
+
+.status-dashboard-card--selected {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 2px #1d4ed8;
+}

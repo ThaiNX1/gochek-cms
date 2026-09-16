@@ -197,7 +197,7 @@
       } @else {
         <a mat-list-item (click)="menu.isExpanded = !menu.isExpanded" [title]="menu.name"
            [style.marginLeft.px]="getMenuItemIndent(level)"
-           class="flex items-center justify-start gap-3 menu-item" [class.active]="isParentActive(menu)">
+           class="flex items-center justify-start menu-item" [class.active]="isParentActive(menu)">
           @if((level || 0) === 0 && menu.icon) {
             <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>
           }
@@ -233,7 +233,7 @@
       } @else {
         <a mat-list-item [routerLink]="[menu.path]" [queryParams]="menu.queryParams" [title]="menu.name"
            [style.marginLeft.px]="getMenuItemIndent(level)"
-           routerLinkActive="active" class="flex items-center justify-start gap-3 menu-item"
+           routerLinkActive="active" class="flex items-center justify-start menu-item"
            (click)="commonService.smallScreen() ? toggleSidenav() : null; onUpdateHeaderInfo(menu)">
           @if((level || 0) === 0 && menu.icon) {
             <mat-icon matListItemIcon>{{menu.icon}}</mat-icon>

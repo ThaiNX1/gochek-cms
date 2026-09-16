@@ -369,6 +369,28 @@ export class LoginComponent implements OnInit, OnDestroy {
           permissions: actions
         }];
         break;
+      case PermissionEnum.SUPPLIER_READ.split(':')[0]:
+        result = [{
+          id: 'supplier',
+          groupId: 'inventory-shipping',
+          order: 40,
+          path: '/supplier',
+          icon: 'store',
+          name: 'Nhà cung cấp',
+          permissions: actions
+        }];
+        break;
+      case PermissionEnum.PURCHASE_ORDERS_READ.split(':')[0]:
+        result = [{
+          id: 'purchase-order',
+          groupId: 'inventory-shipping',
+          order: 25,
+          path: '/purchase-order',
+          icon: 'receipt_long',
+          name: 'Đơn đặt hàng',
+          permissions: actions
+        }];
+        break;
       default:
         return [];
     }

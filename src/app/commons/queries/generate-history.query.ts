@@ -16,7 +16,13 @@ query GenerateHistories($pagination: GenerateHistorySearchInput) {
             linkDownloadPath
             prefix
             startSerialNumber
-            supplier
+            supplierId
+            supplierName
+            supplier {
+                id
+                code
+                name
+            }
             updatedAt
             createdBy {
                 name

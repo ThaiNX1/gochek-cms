@@ -230,6 +230,50 @@ export type CreateOrganizationInput = {
   shortName?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type CreatePurchaseOrderBatchInput = {
+  batchCode: Scalars['String']['input'];
+  firmwareVersion?: InputMaybe<Scalars['String']['input']>;
+  hardwareVersion?: InputMaybe<Scalars['String']['input']>;
+  itemId: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+  orderedQuantity: Scalars['Int']['input'];
+  packagingVersion?: InputMaybe<Scalars['String']['input']>;
+  plannedProductionDate?: InputMaybe<Scalars['String']['input']>;
+  purchaseOrderId: Scalars['ID']['input'];
+};
+
+export type CreatePurchaseOrderInput = {
+  currency?: Scalars['String']['input'];
+  factoryContact?: InputMaybe<Scalars['String']['input']>;
+  items: Array<CreatePurchaseOrderItemInput>;
+  orderDate: Scalars['String']['input'];
+  paymentTerms?: InputMaybe<Scalars['String']['input']>;
+  poNumber: Scalars['String']['input'];
+  projectNote?: InputMaybe<Scalars['String']['input']>;
+  requestedDeliveryDate?: InputMaybe<Scalars['String']['input']>;
+  supplierId: Scalars['ID']['input'];
+};
+
+export type CreatePurchaseOrderItemInput = {
+  batches?: InputMaybe<Array<PurchaseOrderBatchDetailsInput>>;
+  modelId: Scalars['ID']['input'];
+  quantity: Scalars['Int']['input'];
+  unitPrice?: InputMaybe<Scalars['Float']['input']>;
+  version?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreatePurchaseOrderShipmentInput = {
+  batchId?: InputMaybe<Scalars['ID']['input']>;
+  carrier?: InputMaybe<Scalars['String']['input']>;
+  expectedArrivalDate?: InputMaybe<Scalars['String']['input']>;
+  expectedShipDate?: InputMaybe<Scalars['String']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+  purchaseOrderId: Scalars['ID']['input'];
+  quantity: Scalars['Int']['input'];
+  shipmentCode: Scalars['String']['input'];
+  trackingNumber?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type CreateStockBatchInput = {
   actualQuantity: Scalars['Float']['input'];
   batchCode: Scalars['String']['input'];
@@ -238,7 +282,19 @@ export type CreateStockBatchInput = {
   note?: InputMaybe<Scalars['String']['input']>;
   prefix: Scalars['String']['input'];
   supplier?: InputMaybe<Scalars['String']['input']>;
+  supplierId?: InputMaybe<Scalars['ID']['input']>;
   warehouseId: Scalars['ID']['input'];
+};
+
+export type CreateSupplierInput = {
+  address?: InputMaybe<Scalars['String']['input']>;
+  code: Scalars['String']['input'];
+  contactPerson?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  phone?: InputMaybe<Scalars['String']['input']>;
+  taxCode?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateUserInput = {
@@ -673,19 +729,39 @@ export type GenerateHistory = {
   linkDownloadPath?: Maybe<Scalars['String']['output']>;
   model?: Maybe<Model>;
   modelId?: Maybe<Scalars['String']['output']>;
+  organizationId?: Maybe<Scalars['String']['output']>;
   prefix?: Maybe<Scalars['String']['output']>;
+  purchaseOrder?: Maybe<PurchaseOrder>;
+  purchaseOrderBatch?: Maybe<PurchaseOrderBatch>;
+  purchaseOrderBatchId?: Maybe<Scalars['String']['output']>;
+  purchaseOrderId?: Maybe<Scalars['String']['output']>;
   remainingQuantity?: Maybe<Scalars['Float']['output']>;
   startSerialNumber?: Maybe<Scalars['String']['output']>;
   supplier?: Maybe<Scalars['String']['output']>;
+  supplierId?: Maybe<Scalars['String']['output']>;
+  supplierName?: Maybe<Scalars['String']['output']>;
+  supplierRelation?: Maybe<Supplier>;
   updatedAt: Scalars['DateTime']['output'];
 };
 
 export type GenerateHistorySearchInput = {
+  batchCode?: InputMaybe<Scalars['String']['input']>;
   endDate?: InputMaybe<Scalars['Float']['input']>;
   keyword?: InputMaybe<Scalars['String']['input']>;
   page?: Scalars['Int']['input'];
+  purchaseOrderBatchId?: InputMaybe<Scalars['ID']['input']>;
+  purchaseOrderId?: InputMaybe<Scalars['ID']['input']>;
   size?: Scalars['Int']['input'];
   startDate?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type GeneratePurchaseOrderBatchSerialsInput = {
+  batchId: Scalars['ID']['input'];
+  count?: InputMaybe<Scalars['Int']['input']>;
+  descriptor?: InputMaybe<Scalars['String']['input']>;
+  exportId?: InputMaybe<Scalars['String']['input']>;
+  prefix: Scalars['String']['input'];
+  warehouseId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type ImageConvertBatchInput = {
@@ -897,6 +973,7 @@ export type Mutation = {
   appForgotPassword: Scalars['Boolean']['output'];
   appLogin: LoginResponse;
   appResendOtp: Scalars['Boolean']['output'];
+  approvePurchaseOrder: PurchaseOrder;
   assignComponent: DeviceComponent;
   assignCustomer: Customer;
   assignPermissionRole: Permission;
@@ -914,7 +991,11 @@ export type Mutation = {
   createLogManufacturing: LogManufacturing;
   createModel: Model;
   createOrganization: Organization;
+  createPurchaseOrder: PurchaseOrder;
+  createPurchaseOrderBatch: PurchaseOrderBatch;
+  createPurchaseOrderShipment: PurchaseOrderShipment;
   createStockBatch: StockBatchResponse;
+  createSupplier: Supplier;
   createUser: User;
   createViettelPostOrder: ShippingOrder;
   createWarehouse: Warehouse;
@@ -928,6 +1009,10 @@ export type Mutation = {
   deleteFirmware: Scalars['Boolean']['output'];
   deleteModel: Scalars['Boolean']['output'];
   deleteOrganization: Scalars['Boolean']['output'];
+  deletePurchaseOrder: Scalars['Boolean']['output'];
+  deletePurchaseOrderBatch: Scalars['Boolean']['output'];
+  deletePurchaseOrderShipment: Scalars['Boolean']['output'];
+  deleteSupplier: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
   deleteWarehouse: Scalars['Boolean']['output'];
   detachComponent: DeviceComponent;
@@ -935,6 +1020,7 @@ export type Mutation = {
   extendWarranty: WarrantyHistory;
   forgotPassword: Scalars['Boolean']['output'];
   generateComponents: Array<DeviceComponent>;
+  generatePurchaseOrderBatchSerials: Scalars['String']['output'];
   generateSerialNumber: Scalars['String']['output'];
   importDevice: Scalars['String']['output'];
   importPermissions: Array<Permission>;
@@ -943,10 +1029,11 @@ export type Mutation = {
   login: LoginResponse;
   logout: Scalars['String']['output'];
   orgAdminForgotPassword: Scalars['Boolean']['output'];
-  printBatchLabels: Array<BatchLabelItem>;
+  printBatchLabels: PrintBatchLabelsResponse;
   printViettelPostOrder: ShippingOrder;
   refreshToken: RefreshTokenResponse;
   refreshViettelPostToken: PartnerCredential;
+  rejectPurchaseOrder: PurchaseOrder;
   removeModelInFirmware: Scalars['Boolean']['output'];
   removePermissionRole: Permission;
   removeUserRole: User;
@@ -964,7 +1051,9 @@ export type Mutation = {
   setRobotProperty: Scalars['Boolean']['output'];
   shipDevice: Device;
   shipDeviceBatch: Array<Device>;
+  shipDevicesByBatch: ShipDevicesByBatchResponse;
   submitConsultationForm: SubmitConsultationFormResponse;
+  submitPurchaseOrderForApproval: PurchaseOrder;
   subscribeNotification: User;
   syncNhanhProductMappings: NhanhProductMappingSyncResponse;
   syncViettelPostProvinces: Array<Province>;
@@ -981,7 +1070,11 @@ export type Mutation = {
   updateFirmwareStatus: Scalars['Boolean']['output'];
   updateModel: Model;
   updateOrganization: Organization;
+  updatePurchaseOrder: PurchaseOrder;
+  updatePurchaseOrderBatch: PurchaseOrderBatch;
+  updatePurchaseOrderShipment: PurchaseOrderShipment;
   updateShippingStatus: StockHistory;
+  updateSupplier: Supplier;
   updateUser: User;
   updateViettelPostOrderStatus: ShippingOrder;
   updateWarehouse: Warehouse;
@@ -1008,6 +1101,11 @@ export type MutationAppForgotPasswordArgs = {
 
 export type MutationAppLoginArgs = {
   input: AppLoginInput;
+};
+
+
+export type MutationApprovePurchaseOrderArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -1098,8 +1196,28 @@ export type MutationCreateOrganizationArgs = {
 };
 
 
+export type MutationCreatePurchaseOrderArgs = {
+  input: CreatePurchaseOrderInput;
+};
+
+
+export type MutationCreatePurchaseOrderBatchArgs = {
+  input: CreatePurchaseOrderBatchInput;
+};
+
+
+export type MutationCreatePurchaseOrderShipmentArgs = {
+  input: CreatePurchaseOrderShipmentInput;
+};
+
+
 export type MutationCreateStockBatchArgs = {
   input: CreateStockBatchInput;
+};
+
+
+export type MutationCreateSupplierArgs = {
+  input: CreateSupplierInput;
 };
 
 
@@ -1168,6 +1286,26 @@ export type MutationDeleteOrganizationArgs = {
 };
 
 
+export type MutationDeletePurchaseOrderArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeletePurchaseOrderBatchArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeletePurchaseOrderShipmentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteSupplierArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteUserArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1200,6 +1338,11 @@ export type MutationForgotPasswordArgs = {
 
 export type MutationGenerateComponentsArgs = {
   input: GenerateComponentInput;
+};
+
+
+export type MutationGeneratePurchaseOrderBatchSerialsArgs = {
+  input: GeneratePurchaseOrderBatchSerialsInput;
 };
 
 
@@ -1236,6 +1379,8 @@ export type MutationOrgAdminForgotPasswordArgs = {
 
 export type MutationPrintBatchLabelsArgs = {
   batchCode: Scalars['String']['input'];
+  quantity?: InputMaybe<Scalars['Float']['input']>;
+  warehouseId: Scalars['String']['input'];
 };
 
 
@@ -1251,6 +1396,12 @@ export type MutationRefreshTokenArgs = {
 
 export type MutationRefreshViettelPostTokenArgs = {
   input: RefreshPartnerTokenInput;
+};
+
+
+export type MutationRejectPurchaseOrderArgs = {
+  id: Scalars['ID']['input'];
+  rejectionReason?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -1340,8 +1491,19 @@ export type MutationShipDeviceBatchArgs = {
 };
 
 
+export type MutationShipDevicesByBatchArgs = {
+  input: ShipDevicesByBatchInput;
+};
+
+
 export type MutationSubmitConsultationFormArgs = {
   input: SubmitConsultationFormInput;
+};
+
+
+export type MutationSubmitPurchaseOrderForApprovalArgs = {
+  approverId: Scalars['ID']['input'];
+  id: Scalars['ID']['input'];
 };
 
 
@@ -1429,8 +1591,32 @@ export type MutationUpdateOrganizationArgs = {
 };
 
 
+export type MutationUpdatePurchaseOrderArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdatePurchaseOrderInput;
+};
+
+
+export type MutationUpdatePurchaseOrderBatchArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdatePurchaseOrderBatchInput;
+};
+
+
+export type MutationUpdatePurchaseOrderShipmentArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdatePurchaseOrderShipmentInput;
+};
+
+
 export type MutationUpdateShippingStatusArgs = {
   input: UpdateShippingStatusInput;
+};
+
+
+export type MutationUpdateSupplierArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateSupplierInput;
 };
 
 
@@ -1628,6 +1814,12 @@ export type PaginatedOrganizationResponse = {
   pagination: PaginationResponse;
 };
 
+export type PaginatedPurchaseOrderResponse = {
+  data: Array<PurchaseOrder>;
+  pagination: PaginationResponse;
+  statusCounts: Array<PurchaseOrderStatusCount>;
+};
+
 export type PaginatedShippingOrderResponse = {
   data: Array<ShippingOrder>;
   pagination: PaginationResponse;
@@ -1635,6 +1827,11 @@ export type PaginatedShippingOrderResponse = {
 
 export type PaginatedStockHistoryResponse = {
   data: Array<StockHistory>;
+  pagination: PaginationResponse;
+};
+
+export type PaginatedSupplierResponse = {
+  data: Array<Supplier>;
   pagination: PaginationResponse;
 };
 
@@ -1742,6 +1939,13 @@ export enum PermissionTypeEnum {
   ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN'
 }
 
+export type PrintBatchLabelsResponse = {
+  labels: Array<BatchLabelItem>;
+  printedQuantity: Scalars['Float']['output'];
+  remainingQuantity: Scalars['Float']['output'];
+  requestedQuantity: Scalars['Float']['output'];
+};
+
 export type PrintViettelPostOrderInput = {
   environment?: PartnerEnvironment;
   expiryTime?: InputMaybe<Scalars['Float']['input']>;
@@ -1787,6 +1991,148 @@ export type PublicModelSearchInput = {
   keyword?: InputMaybe<Scalars['String']['input']>;
   page?: Scalars['Int']['input'];
   size?: Scalars['Int']['input'];
+};
+
+export type PurchaseOrder = {
+  approvedAt?: Maybe<Scalars['Float']['output']>;
+  approver?: Maybe<User>;
+  approverId?: Maybe<Scalars['String']['output']>;
+  batches?: Maybe<Array<PurchaseOrderBatch>>;
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<User>;
+  createdById?: Maybe<Scalars['String']['output']>;
+  currency: Scalars['String']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  factoryContact?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  items?: Maybe<Array<PurchaseOrderItem>>;
+  orderDate: Scalars['String']['output'];
+  organizationId?: Maybe<Scalars['String']['output']>;
+  paymentTerms?: Maybe<Scalars['String']['output']>;
+  poNumber: Scalars['String']['output'];
+  projectNote?: Maybe<Scalars['String']['output']>;
+  rejectionReason?: Maybe<Scalars['String']['output']>;
+  requestedDeliveryDate?: Maybe<Scalars['String']['output']>;
+  serialGenerationHistories?: Maybe<Array<GenerateHistory>>;
+  shipments?: Maybe<Array<PurchaseOrderShipment>>;
+  status: PurchaseOrderStatus;
+  supplier: Supplier;
+  supplierId: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  updatedById?: Maybe<Scalars['String']['output']>;
+};
+
+export type PurchaseOrderBatch = {
+  batchCode: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  firmwareVersion?: Maybe<Scalars['String']['output']>;
+  generatedQuantity: Scalars['Float']['output'];
+  hardwareVersion?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  item: PurchaseOrderItem;
+  itemId: Scalars['String']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  orderedQuantity: Scalars['Float']['output'];
+  organizationId?: Maybe<Scalars['String']['output']>;
+  packagingVersion?: Maybe<Scalars['String']['output']>;
+  plannedProductionDate?: Maybe<Scalars['String']['output']>;
+  purchaseOrder?: Maybe<PurchaseOrder>;
+  purchaseOrderId: Scalars['String']['output'];
+  serialGenerationHistories?: Maybe<Array<GenerateHistory>>;
+  serialPrefix?: Maybe<Scalars['String']['output']>;
+  shipments?: Maybe<Array<PurchaseOrderShipment>>;
+  status: PurchaseOrderBatchStatus;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type PurchaseOrderBatchDetailsInput = {
+  batchCode: Scalars['String']['input'];
+  firmwareVersion?: InputMaybe<Scalars['String']['input']>;
+  hardwareVersion?: InputMaybe<Scalars['String']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+  orderedQuantity: Scalars['Int']['input'];
+  packagingVersion?: InputMaybe<Scalars['String']['input']>;
+  plannedProductionDate?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum PurchaseOrderBatchStatus {
+  CANCELLED = 'CANCELLED',
+  CREATED = 'CREATED',
+  DRAFT = 'DRAFT',
+  IN_PRODUCTION = 'IN_PRODUCTION',
+  IN_TRANSIT = 'IN_TRANSIT',
+  RECEIVED = 'RECEIVED'
+}
+
+export type PurchaseOrderItem = {
+  batches?: Maybe<Array<PurchaseOrderBatch>>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  lineTotal?: Maybe<Scalars['Float']['output']>;
+  model: Model;
+  modelCode: Scalars['String']['output'];
+  modelId: Scalars['String']['output'];
+  modelName: Scalars['String']['output'];
+  purchaseOrderId: Scalars['String']['output'];
+  quantity: Scalars['Float']['output'];
+  unitPrice?: Maybe<Scalars['Float']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  version?: Maybe<Scalars['String']['output']>;
+};
+
+export type PurchaseOrderSearchInput = {
+  keyword?: InputMaybe<Scalars['String']['input']>;
+  orderDateFrom?: InputMaybe<Scalars['String']['input']>;
+  orderDateTo?: InputMaybe<Scalars['String']['input']>;
+  page?: Scalars['Int']['input'];
+  size?: Scalars['Int']['input'];
+  status?: InputMaybe<PurchaseOrderStatus>;
+  supplierId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type PurchaseOrderShipment = {
+  batch?: Maybe<PurchaseOrderBatch>;
+  batchId?: Maybe<Scalars['String']['output']>;
+  carrier?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  expectedArrivalDate?: Maybe<Scalars['String']['output']>;
+  expectedShipDate?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  organizationId?: Maybe<Scalars['String']['output']>;
+  purchaseOrder?: Maybe<PurchaseOrder>;
+  purchaseOrderId: Scalars['String']['output'];
+  quantity: Scalars['Float']['output'];
+  shipmentCode: Scalars['String']['output'];
+  status: PurchaseOrderShipmentStatus;
+  trackingNumber?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export enum PurchaseOrderShipmentStatus {
+  CANCELLED = 'CANCELLED',
+  DELIVERED = 'DELIVERED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  PLANNED = 'PLANNED',
+  READY_TO_SHIP = 'READY_TO_SHIP',
+  SHIPPED = 'SHIPPED'
+}
+
+export enum PurchaseOrderStatus {
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+  CONFIRMED = 'CONFIRMED',
+  DRAFT = 'DRAFT',
+  IN_PRODUCTION = 'IN_PRODUCTION',
+  PENDING_APPROVAL = 'PENDING_APPROVAL'
+}
+
+export type PurchaseOrderStatusCount = {
+  count: Scalars['Int']['output'];
+  status: PurchaseOrderStatus;
 };
 
 export type Query = {
@@ -1836,6 +2182,7 @@ export type Query = {
   permission: Permission;
   permissions: Array<Permission>;
   permissionsByType: Array<Permission>;
+  printStockHistoryLabels: Array<BatchLabelItem>;
   province: Province;
   provinces: Array<Province>;
   provincesByCountry: Array<Province>;
@@ -1843,6 +2190,8 @@ export type Query = {
   publicDeviceTypes: PaginatedDeviceTypeResponse;
   publicModel: Model;
   publicModels: PaginatedModelResponse;
+  purchaseOrder: PurchaseOrder;
+  purchaseOrders: PaginatedPurchaseOrderResponse;
   roleHierarchy: Array<BusinessRole>;
   searchNhanhPurchaseDocuments: NhanhPurchaseDocumentSearchResponse;
   shippingOrder: ShippingOrder;
@@ -1851,6 +2200,9 @@ export type Query = {
   stockBatches: Array<StockBatchResponse>;
   stockHistories: PaginatedStockHistoryResponse;
   stockOverview: StockOverviewResponse;
+  supplier: Supplier;
+  supplierByCode: Supplier;
+  suppliers: PaginatedSupplierResponse;
   user: User;
   userProfile: User;
   users: PaginatedUserResponse;
@@ -2067,6 +2419,11 @@ export type QueryPermissionsByTypeArgs = {
 };
 
 
+export type QueryPrintStockHistoryLabelsArgs = {
+  stockHistoryId: Scalars['String']['input'];
+};
+
+
 export type QueryProvinceArgs = {
   id: Scalars['ID']['input'];
 };
@@ -2094,6 +2451,16 @@ export type QueryPublicModelArgs = {
 
 export type QueryPublicModelsArgs = {
   pagination?: InputMaybe<PublicModelSearchInput>;
+};
+
+
+export type QueryPurchaseOrderArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPurchaseOrdersArgs = {
+  pagination?: InputMaybe<PurchaseOrderSearchInput>;
 };
 
 
@@ -2130,6 +2497,21 @@ export type QueryStockHistoriesArgs = {
 
 export type QueryStockOverviewArgs = {
   warehouseId?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QuerySupplierArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QuerySupplierByCodeArgs = {
+  code: Scalars['String']['input'];
+};
+
+
+export type QuerySuppliersArgs = {
+  pagination?: InputMaybe<PaginationInput>;
 };
 
 
@@ -2296,6 +2678,24 @@ export type ShipDeviceInput = {
   serialNumber: Scalars['String']['input'];
   trackingNumber: Scalars['String']['input'];
   warehouseId: Scalars['ID']['input'];
+};
+
+export type ShipDevicesByBatchInput = {
+  agentId?: InputMaybe<Scalars['String']['input']>;
+  agentName?: InputMaybe<Scalars['String']['input']>;
+  batchCode: Scalars['String']['input'];
+  carrier?: InputMaybe<Scalars['String']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+  quantity: Scalars['Int']['input'];
+  trackingNumber?: InputMaybe<Scalars['String']['input']>;
+  warehouseId: Scalars['String']['input'];
+};
+
+export type ShipDevicesByBatchResponse = {
+  exportedCount: Scalars['Float']['output'];
+  serialNumbers: Array<Scalars['String']['output']>;
+  stockHistoryId: Scalars['String']['output'];
+  trackingNumber?: Maybe<Scalars['String']['output']>;
 };
 
 export type ShippingOrder = {
@@ -2480,6 +2880,24 @@ export type SubscriptionImportDeviceProgressArgs = {
   exportId?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type Supplier = {
+  address?: Maybe<Scalars['String']['output']>;
+  code: Scalars['String']['output'];
+  contactPerson?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  name: Scalars['String']['output'];
+  organizationId: Scalars['String']['output'];
+  phone?: Maybe<Scalars['String']['output']>;
+  taxCode?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
 export type SyncNhanhProductMappingsInput = {
   onlyMissing?: InputMaybe<Scalars['Boolean']['input']>;
   partnerCredentialId: Scalars['ID']['input'];
@@ -2598,6 +3016,39 @@ export type UpdateOrganizationInput = {
   shortName?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdatePurchaseOrderBatchInput = {
+  firmwareVersion?: InputMaybe<Scalars['String']['input']>;
+  hardwareVersion?: InputMaybe<Scalars['String']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+  orderedQuantity?: InputMaybe<Scalars['Int']['input']>;
+  packagingVersion?: InputMaybe<Scalars['String']['input']>;
+  plannedProductionDate?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<PurchaseOrderBatchStatus>;
+};
+
+export type UpdatePurchaseOrderInput = {
+  currency?: InputMaybe<Scalars['String']['input']>;
+  factoryContact?: InputMaybe<Scalars['String']['input']>;
+  items?: InputMaybe<Array<CreatePurchaseOrderItemInput>>;
+  orderDate?: InputMaybe<Scalars['String']['input']>;
+  paymentTerms?: InputMaybe<Scalars['String']['input']>;
+  projectNote?: InputMaybe<Scalars['String']['input']>;
+  requestedDeliveryDate?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<PurchaseOrderStatus>;
+  supplierId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type UpdatePurchaseOrderShipmentInput = {
+  batchId?: InputMaybe<Scalars['ID']['input']>;
+  carrier?: InputMaybe<Scalars['String']['input']>;
+  expectedArrivalDate?: InputMaybe<Scalars['String']['input']>;
+  expectedShipDate?: InputMaybe<Scalars['String']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+  quantity?: InputMaybe<Scalars['Int']['input']>;
+  status?: InputMaybe<PurchaseOrderShipmentStatus>;
+  trackingNumber?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateShippingStatusInput = {
   location?: InputMaybe<Scalars['String']['input']>;
   newStatus: ShippingStatusEnum;
@@ -2605,6 +3056,18 @@ export type UpdateShippingStatusInput = {
   returnWarehouseId?: InputMaybe<Scalars['ID']['input']>;
   stockHistoryId?: InputMaybe<Scalars['String']['input']>;
   trackingNumber?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateSupplierInput = {
+  address?: InputMaybe<Scalars['String']['input']>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  contactPerson?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  taxCode?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateUserInput = {

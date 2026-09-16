@@ -1,0 +1,145 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <!-- Header: tiêu đề + filter + actions -->
+    <div class="flex items-center justify-between px-4">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-xl font-bold">Danh sách nhà cung cấp</h1>
+
+            <!-- Filter form -->
+            <form [formGroup]="filterForm"
+                class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-3">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
+                    <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
+                </mat-form-field>
+                <button type="button"
+                    class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                    (click)="onGetData()">
+                    Tìm kiếm
+                </button>
+            </form>
+        </div>
+
+        <!-- Action button (thêm mới) -->
+        <button *permission="[PermissionEnum.SUPPLIER_MANAGE]"
+            class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+            (click)="onOpenCreateDialog()">
+            <mat-icon>add</mat-icon>
+            Thêm mới
+        </button>
+    </div>
+
+    <!-- Table -->
+    <app-table
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns"
+        [dataSource]="dataSource"
+        [pagination]="pagination"
+        (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<!-- Status badge template -->
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-4">
+        @if(item.isActive) {
+        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Hoạt động</span>
+        } @else {
+        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Không hoạt động</span>
+        }
+    </div>
+</ng-template>
+
+<!-- Action buttons template -->
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div *permission="[PermissionEnum.SUPPLIER_MANAGE]" class="flex items-center justify-start px-4 gap-3">
+        <button class="flex items-center justify-center border-none bg-transparent" title="Chỉnh sửa"
+            (click)="onEdit(item)">
+            <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+        </button>
+        <button class="flex items-center justify-center border-none bg-transparent" title="Xóa"
+            (click)="onDelete(item)">
+            <mat-icon class="text-red-500">delete</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Slide-nav create/edit template -->
+<ng-template #createDialogContent>
+    <form [formGroup]="createForm" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="require">Mã nhà cung cấp:</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="code" placeholder="Nhập mã nhà cung cấp">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="require">Tên nhà cung cấp:</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="name" placeholder="Nhập tên nhà cung cấp">
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label>Người liên hệ:</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="contactPerson" placeholder="Nhập tên người liên hệ">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label>Số điện thoại:</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="phone" placeholder="Nhập số điện thoại">
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label>Email:</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="email" placeholder="Nhập email" type="email">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label>Mã số thuế:</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="taxCode" placeholder="Nhập mã số thuế">
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label>Địa chỉ:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="address" placeholder="Nhập địa chỉ">
+            </mat-form-field>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label>Mô tả:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="description" placeholder="Nhập mô tả" rows="4"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+    <div class="flex items-center justify-end gap-3 pt-3">
+        <button type="button"
+            class="flex items-center justify-center px-4 border border-gray-400 bg-white text-gray-700 font-semibold"
+            (click)="onCancel()">
+            Hủy
+        </button>
+        <button type="button"
+            class="flex items-center justify-center gap-2 px-4 border-none bg-primary text-white font-semibold"
+            (click)="onSave()">
+            <mat-icon>save</mat-icon>
+            Lưu
+        </button>
+    </div>
+</ng-template>
+
+<!-- Dialog delete confirmation template -->
+<ng-template #deleteNotification>
+    <p>Bạn có chắc muốn xóa nhà cung cấp <strong>{{selectedItem?.name}}</strong>?</p>
+</ng-template>

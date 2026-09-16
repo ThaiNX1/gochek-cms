@@ -243,4 +243,18 @@ export enum PermissionEnum {
   NHANH_SYNC = 'nhanh:sync', // Sync Nhanh products, depots and purchase documents
   NHANH_CREDENTIAL_MANAGE = 'nhanh:credential_manage', // Manage Nhanh credentials and tokens
   NHANH_MANAGE = 'nhanh:manage', // Full Nhanh integration management
+  
+  // Supplier permissions
+  SUPPLIER_READ = 'supplier:read', // Xem nhà cung cấp
+  SUPPLIER_CREATE = 'supplier:create', // Tạo nhà cung cấp
+  SUPPLIER_UPDATE = 'supplier:update', // Cập nhật nhà cung cấp
+  SUPPLIER_DELETE = 'supplier:delete', // Xóa nhà cung cấp
+  SUPPLIER_MANAGE = 'supplier:manage', // Quản lý nhà cung cấp
+
+  // Purchase Order permissions
+  PURCHASE_ORDERS_READ = 'purchase_orders:read', // Xem PO, batch/lot và lịch sử sinh serial
+  PURCHASE_ORDERS_CREATE = 'purchase_orders:create', // Tạo PO
+  PURCHASE_ORDERS_UPDATE = 'purchase_orders:update', // Cập nhật PO
+  PURCHASE_ORDERS_DELETE = 'purchase_orders:delete', // Xóa PO chưa sinh serial
+  PURCHASE_ORDERS_MANAGE = 'purchase_orders:manage', // Quản lý PO (sinh serial, assign component, approve, reject, cancel, ...)
 }

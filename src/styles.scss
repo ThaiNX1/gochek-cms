@@ -61,7 +61,6 @@ body {
   input,
   button,
   span,
-  mat-icon,
   mat-checkbox,
   mat-select,
   mat-option,
@@ -83,7 +82,8 @@ body {
   mat-icon {
     width: auto !important;
     height: auto !important;
-    //color: var(--text-color) !important;
+    color: inherit;
+    font-family: "Material Icons" !important;
   }
 }
 

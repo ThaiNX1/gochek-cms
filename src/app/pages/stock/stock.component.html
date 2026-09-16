@@ -160,10 +160,11 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="flex flex-col gap-1">
-                <label>Mã nhà cung cấp</label>
-                <mat-form-field appearance="outline" floatLabel="auto">
-                    <input matInput formControlName="supplier" placeholder="Nhập mã nhà cung cấp">
-                </mat-form-field>
+                <label>Nhà cung cấp:</label>
+                <app-select-search class="w-full bg-white" [options]="supplierList" formControlName="supplierId"
+                    [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="supplierSearchQuery"
+                    [searchDataKey]="'suppliers'" placeholder="Chọn nhà cung cấp">
+                </app-select-search>
             </div>
             <div class="flex flex-col gap-1">
                 <label>Model:</label>

@@ -18,12 +18,15 @@ import { RoleComponent } from '../pages/role/role.component';
 import { SettingsComponent } from '../pages/settings/settings.component';
 import { StockHistoryComponent } from '../pages/stock-history/stock-history.component';
 import { StockComponent } from '../pages/stock/stock.component';
+import { SupplierComponent } from '../pages/supplier/supplier.component';
 import { UserCreateComponent } from '../pages/user/user-create/user-create.component';
 import { UserComponent } from '../pages/user/user.component';
 import { ViettelPostComponent } from '../pages/viettel-post/viettel-post.component';
 import { WarehouseComponent } from '../pages/warehouse/warehouse.component';
 import { WebsiteBannerCreateComponent } from '../pages/website/website-banner/website-banner-create/website-banner-create.component';
 import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
+import { PurchaseOrderComponent } from '../pages/purchase-order/purchase-order.component';
+import { PurchaseOrderCreateComponent } from '../pages/purchase-order/purchase-order-create/purchase-order-create.component';
 const routes: Routes = [
   {
     path: '',
@@ -131,6 +134,14 @@ const routes: Routes = [
     },
   },
   {
+    path: 'supplier',
+    component: SupplierComponent,
+    canActivate: [PageGuard],
+    data: {
+      permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+    },
+  },
+  {
     path: 'viettel-post',
     component: ViettelPostComponent,
     canActivate: [PageGuard],
@@ -149,6 +160,18 @@ const routes: Routes = [
   {
     path: 'website/banner/:id',
     component: WebsiteBannerCreateComponent,
+  },
+  {
+    path: 'purchase-order',
+    component: PurchaseOrderComponent,
+  },
+  {
+    path: 'purchase-order/create',
+    component: PurchaseOrderCreateComponent,
+  },
+  {
+    path: 'purchase-order/:id',
+    component: PurchaseOrderCreateComponent,
   },
   {
     path: 'image_convert',

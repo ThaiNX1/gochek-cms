@@ -10,12 +10,13 @@ export class BrandingService {
   // Default branding values
   private readonly DEFAULT_LOGO_PATH = 'assets/images/logo.svg';
   private readonly DEFAULT_FAVICON_PATH = 'favicon.png';
-  private readonly DEFAULT_PRIMARY_COLOR = '#36474f';
+  private readonly DEFAULT_PRIMARY_COLOR = '#262827';
   private readonly DEFAULT_TEXT_COLOR = '#000000';
   private readonly DEFAULT_SHORT_NAME = 'GoChek';
 
   constructor(private rendererFactory: RendererFactory2) {
     this.renderer = rendererFactory.createRenderer(null, null);
+    this.initBrandingFromStorage();
   }
 
   /**
@@ -147,7 +148,13 @@ export class BrandingService {
     }
 
     if (primaryColor) {
-      this.updatePrimaryColor(primaryColor);
+      const effectiveColor = primaryColor === '#36474f' ? this.DEFAULT_PRIMARY_COLOR : primaryColor;
+      this.updatePrimaryColor(effectiveColor);
+      if (primaryColor === '#36474f') {
+        localStorage.setItem(storageKey.primaryColor, this.DEFAULT_PRIMARY_COLOR);
+      }
+    } else {
+      this.updatePrimaryColor(this.DEFAULT_PRIMARY_COLOR);
     }
 
     if (secondaryColor) {

@@ -261,6 +261,7 @@ type RouterMenu = Menu & {
   isExpanded?: boolean;
   children?: RouterMenu[];
   childrenIds?: string[];
+  permissions?: string[];
 }
 
 export interface Menu {

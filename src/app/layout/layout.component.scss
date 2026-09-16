@@ -1,11 +1,18 @@
-.menu-item{
+.menu-item {
     height: 45px !important;
     padding: 0 10px !important;
+    gap: 0 !important;
+
+    ::ng-deep .mdc-list-item__start {
+        margin-left: 0 !important;
+        margin-right: 12px !important;
+    }
+
     mat-icon,
     span {
         color: var(--primary-color) !important;
     }
-    &:hover{
+    &:hover {
         cursor: pointer;
         background-color: var(--gray-400) !important;
         mat-icon,
@@ -14,14 +21,18 @@
         }
     }
 }
-// :host::ng-deep.mdc-list-item__primary-text{
-//     color: #FFFFFF !important;
-// }
-.active{
-    // box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+
+:host::ng-deep .mat-mdc-list-item {
+    .mdc-list-item__start {
+        margin-left: 0 !important;
+        margin-right: 12px !important;
+    }
+}
+
+.active {
     background-color: var(--gray-100) !important; 
     border-radius: 8px !important;
-    mat-icon,span{
+    mat-icon, span {
         color: var(--primary-color) !important;
         font-weight: 500 !important;
     }

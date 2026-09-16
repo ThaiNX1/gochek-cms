@@ -15,6 +15,7 @@ import { GET_DEVICE_ACTIVE_CODE } from '../../commons/queries/device.query';
 import { ALL_PREFIX } from '../../commons/queries/generate-history.query';
 import { GET_PARTNER_CREDENTIALS } from '../../commons/queries/partner-credential.query';
 import { CREATE_VIETTEL_POST_ORDER, PRINT_VIETTEL_POST_ORDER } from '../../commons/queries/shipping.query';
+import { GET_SUPPLIERS } from '../../commons/queries/supplier.query';
 import {
   CREATE_STOCK_BATCH,
   GET_STOCK_HISTORIES,
@@ -90,6 +91,8 @@ export class StockComponent extends BaseClass {
   prefixStrList: string[] = [];
   modelList: any[] = [];
   modelSearchQuery = GET_MODELS;
+  supplierList: any[] = [];
+  supplierSearchQuery = GET_SUPPLIERS;
   partnerCredentials: PartnerCredential[] = [];
   batchDataSource: any[] = [];
   batchPagination = {
@@ -136,7 +139,7 @@ export class StockComponent extends BaseClass {
       prefix: new FormControl('', [Validators.required, Validators.minLength(2), Validators.maxLength(2)]),
       expectedQuantity: new FormControl(null, [Validators.required, Validators.min(1)]),
       actualQuantity: new FormControl(null, [Validators.required, Validators.min(1)]),
-      supplier: new FormControl(''),
+      supplierId: new FormControl(''),
       modelId: new FormControl(''),
       note: new FormControl(''),
     });
@@ -342,7 +345,7 @@ export class StockComponent extends BaseClass {
         expectedQuantity: Number(formValue.expectedQuantity),
         actualQuantity: Number(formValue.actualQuantity),
         warehouseId: formValue.warehouseId,
-        supplier: formValue.supplier,
+        supplierId: formValue.supplierId,
         modelId: formValue.modelId,
         note: formValue.note,
       }

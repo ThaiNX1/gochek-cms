@@ -1,0 +1,291 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
+    <!-- Header: tiêu đề + filter + actions -->
+    <div class="flex items-center justify-between px-4 flex-wrap gap-3">
+        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
+            <h1 class="text-xl font-bold whitespace-nowrap">Đơn đặt hàng (PO)</h1>
+
+            <!-- Filter form -->
+            <form [formGroup]="filterForm"
+                class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-3">
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[250px] bg-white">
+                    <input matInput formControlName="keyword" placeholder="Tìm theo mã PO, nhà máy..." />
+                </mat-form-field>
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[180px] bg-white">
+                    <mat-select formControlName="status" placeholder="Trạng thái">
+                        @for (opt of statusOptions; track opt.value) {
+                        <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <button type="button"
+                    class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                    (click)="onGetData()">
+                    Tìm kiếm
+                </button>
+            </form>
+        </div>
+
+        <!-- Action button (tạo mới) -->
+        <button *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]"
+            class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+            (click)="onCreatePO()">
+            <mat-icon class="text-white">add</mat-icon>
+            Tạo đơn đặt hàng
+        </button>
+    </div>
+
+    <section class="px-4">
+        <div class="mb-2 flex items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold text-gray-700">Tổng quan trạng thái</h2>
+            <span class="hidden text-xs text-gray-500 sm:inline">Chọn một thẻ để lọc danh sách</span>
+        </div>
+        <div class="status-dashboard-grid grid gap-3">
+            @for (item of statusDashboardItems; track item.status) {
+            <button type="button"
+                class="status-dashboard-card group min-w-0 rounded-xl border px-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                [ngClass]="item.cardClass"
+                [class.status-dashboard-card--selected]="filterForm.value.status === item.status"
+                [attr.aria-pressed]="filterForm.value.status === item.status" (click)="onStatusCardClick(item.status)">
+                <div class="flex h-full items-center gap-2">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                        [ngClass]="item.iconClass">
+                        <mat-icon>{{ item.icon }}</mat-icon>
+                    </span>
+                    <div class="min-w-0 flex-1 whitespace-normal break-words text-xs font-semibold uppercase leading-4 tracking-wide text-gray-600">
+                        {{ item.label }}
+                    </div>
+                    <div class="shrink-0 text-2xl font-bold leading-none" [ngClass]="item.valueClass">
+                        {{ getStatusCount(item.status) | number }}
+                    </div>
+                </div>
+            </button>
+            }
+        </div>
+    </section>
+
+    <!-- Table with expandable rows -->
+    <app-table
+        class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
+        [columns]="displayedColumns" [dataSource]="dataSource" [pagination]="pagination" [expandable]="true"
+        [expandTemplate]="expandedRowTemplate" (pageChange)="onPageChange($event)">
+    </app-table>
+</div>
+
+<!-- Status badge template -->
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+    <div class="flex items-center justify-center px-2">
+        <span class="px-2 py-1 rounded text-xs font-medium whitespace-nowrap" [ngClass]="getStatusClass(item.status)">
+            {{ getStatusLabel(item.status) }}
+        </span>
+    </div>
+</ng-template>
+
+<!-- Action buttons template -->
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+    <div class="flex items-center justify-start px-4 gap-2">
+        <button class="flex items-center justify-center border-none bg-transparent" title="Xem chi tiết"
+            (click)="onViewPO(item)">
+            <mat-icon class="text-blue-500">visibility</mat-icon>
+        </button>
+
+        @if (isDraft(item.status)) {
+            <button *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]"
+                class="flex items-center justify-center border-none bg-transparent" title="Gửi duyệt"
+                (click)="onOpenSubmitApprovalDialog(item)">
+                <mat-icon class="text-orange-500">send</mat-icon>
+            </button>
+        }
+
+        @if (canApprove(item)) {
+            <button class="flex items-center justify-center border-none bg-transparent" title="Duyệt"
+                (click)="onApprove(item)">
+                <mat-icon class="text-green-600">check_circle</mat-icon>
+            </button>
+            <button class="flex items-center justify-center border-none bg-transparent" title="Từ chối"
+                (click)="onOpenRejectDialog(item)">
+                <mat-icon class="text-red-500">cancel</mat-icon>
+            </button>
+        }
+
+        <button *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]"
+            class="flex items-center justify-center border-none bg-transparent" title="Xóa" (click)="onDelete(item)">
+            <mat-icon class="text-red-500">delete</mat-icon>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Submit for approval dialog template -->
+<ng-template #submitApprovalDialogContent>
+    <form [formGroup]="submitApprovalForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Người duyệt:</label>
+            <app-select-search
+                class="w-full bg-white"
+                [options]="approverList"
+                formControlName="approverId"
+                [valueKey]="'id'"
+                [labelKey]="'name'"
+                [searchQuery]="approverSearchQuery"
+                [searchDataKey]="'users'"
+                [paginationSearch]="true"
+                placeholder="Chọn người duyệt">
+            </app-select-search>
+            <span class="text-xs text-gray-500">Chọn người có quyền duyệt PO này</span>
+        </div>
+    </form>
+    <div class="flex items-stretch justify-center gap-3 pt-3">
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
+            type="button" (click)="onCancelDialog()">
+            <mat-icon class="text-white text-xl">cancel</mat-icon>
+            <span class="text-white font-semibold">Hủy</span>
+        </button>
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
+            type="button" (click)="onConfirmSubmitApproval()">
+            <mat-icon class="text-white text-xl">send</mat-icon>
+            <span class="text-white font-semibold">Gửi duyệt</span>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Reject dialog template -->
+<ng-template #rejectDialogContent>
+    <form [formGroup]="rejectForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label>Lý do từ chối:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="rejectionReason" rows="4"
+                    placeholder="Nhập lý do từ chối (tuỳ chọn)"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+    <div class="flex items-stretch justify-center gap-3 pt-3">
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
+            type="button" (click)="onCancelDialog()">
+            <mat-icon class="text-white text-xl">close</mat-icon>
+            <span class="text-white font-semibold">Hủy</span>
+        </button>
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-red-500"
+            type="button" (click)="onConfirmReject()">
+            <mat-icon class="text-white text-xl">cancel</mat-icon>
+            <span class="text-white font-semibold">Từ chối</span>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Expanded row template: Item + Batch/Lot list với progress -->
+<ng-template #expandedRowTemplate let-item="item">
+    <div class="p-4 bg-gray-50 border-t border-gray-300">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-gray-700">
+                <mat-icon class="text-base align-middle mr-1">inventory_2</mat-icon>
+                Danh sách sản phẩm & Batch/Lot của PO: {{ item.poNumber }}
+            </h3>
+            <span class="text-xs text-gray-500">
+                Tổng batch: {{ item.batchCount || 0 }}
+            </span>
+        </div>
+
+        @if (item.items?.length > 0) {
+            <div class="flex flex-col gap-3">
+                @for (poItem of item.items; track poItem.id) {
+                    <div class="rounded border border-gray-300 bg-white overflow-hidden">
+                        <!-- Item header -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-gray-100 border-b border-gray-300">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <mat-icon class="text-primary text-base">memory</mat-icon>
+                                <span class="font-semibold text-gray-800 truncate">{{ poItem.modelName }}</span>
+                                @if (poItem.modelCode) {
+                                    <span class="text-xs text-gray-500">({{ poItem.modelCode }})</span>
+                                }
+                                @if (poItem.version) {
+                                    <span class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded border border-blue-200">
+                                        v{{ poItem.version }}
+                                    </span>
+                                }
+                            </div>
+                            <div class="flex items-center gap-4 text-xs text-gray-600">
+                                <span>SL: <strong class="text-gray-800">{{ poItem.quantity | number }}</strong></span>
+                                <span>Batch: <strong class="text-gray-800">{{ poItem.batches?.length || 0 }}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Batch list -->
+                        @if (poItem.batches?.length > 0) {
+                            <div class="overflow-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-gray-50 text-gray-700">
+                                            <th class="px-3 py-2 text-center font-semibold border-b border-gray-300 w-[50px]">#</th>
+                                            <th class="px-3 py-2 text-left font-semibold border-b border-gray-300 min-w-[160px]">Mã Batch/Lot</th>
+                                            <th class="px-3 py-2 text-center font-semibold border-b border-gray-300 min-w-[90px]">SL đặt</th>
+                                            <th class="px-3 py-2 text-center font-semibold border-b border-gray-300 min-w-[90px]">SL đã tạo</th>
+                                            <th class="px-3 py-2 text-center font-semibold border-b border-gray-300 min-w-[130px]">Ngày SX (dự kiến)</th>
+                                            <th class="px-3 py-2 text-left font-semibold border-b border-gray-300 min-w-[420px]">Tiến trình</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (batch of poItem.batches; track batch.id; let i = $index) {
+                                            <tr class="hover:bg-gray-50 border-b border-gray-200 last:border-b-0">
+                                                <td class="px-3 py-2 text-center text-gray-500">{{ i + 1 }}</td>
+                                                <td class="px-3 py-2 font-medium text-gray-900">{{ batch.batchCode }}</td>
+                                                <td class="px-3 py-2 text-center">{{ batch.orderedQuantity | number }}</td>
+                                                <td class="px-3 py-2 text-center">{{ batch.generatedQuantity | number }}</td>
+                                                <td class="px-3 py-2 text-center text-gray-600">
+                                                    {{ (batch.plannedProductionDate | date:'dd-MM-yyyy') || '-' }}
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    @if (isBatchCancelled(batch.status)) {
+                                                        <div class="flex items-center gap-2 text-red-600">
+                                                            <mat-icon class="text-base">cancel</mat-icon>
+                                                            <span class="text-xs font-semibold">Batch đã hủy</span>
+                                                        </div>
+                                                    } @else {
+                                                        <div class="flex items-start min-w-[420px]">
+                                                            @for (step of batchSteps; track step.key; let sIdx = $index; let last = $last) {
+                                                                <div class="flex flex-col items-center gap-1.5 shrink-0">
+                                                                    <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                                                        [ngClass]="getBatchStepCircleClass(batch.status, sIdx)"
+                                                                        [title]="step.label">
+                                                                        @if (getBatchStepState(batch.status, sIdx) !== 'pending') {
+                                                                            <mat-icon class="!text-[16px] !w-[16px] !h-[16px] leading-none !text-white">check</mat-icon>
+                                                                        }
+                                                                    </div>
+                                                                    <span class="text-[11px] whitespace-nowrap"
+                                                                        [ngClass]="getBatchStepLabelClass(batch.status, sIdx)">
+                                                                        {{ step.label }}
+                                                                    </span>
+                                                                </div>
+                                                                @if (!last) {
+                                                                    <div class="flex-1 h-1 mx-1 mt-3 rounded"
+                                                                        [ngClass]="getBatchStepLineClass(batch.status, sIdx)">
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        </div>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        } @else {
+                            <div class="text-center text-gray-400 text-sm py-3">
+                                Chưa có batch/lot nào cho sản phẩm này
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        } @else {
+            <div class="text-center text-gray-400 text-sm py-4 bg-white rounded border border-gray-300">
+                Chưa có sản phẩm nào
+            </div>
+        }
+    </div>
+</ng-template>
+
+<!-- Dialog delete confirmation template -->
+<ng-template #deleteNotification>
+    <p>Bạn có chắc muốn xóa đơn đặt hàng <strong>{{selectedItem?.poNumber}}</strong>?</p>
+</ng-template>

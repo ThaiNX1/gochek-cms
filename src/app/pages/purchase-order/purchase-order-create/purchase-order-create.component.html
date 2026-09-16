@@ -1,0 +1,603 @@
+<div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-300 sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+            <button type="button" class="flex items-center justify-center border-none bg-transparent p-1"
+                (click)="onCancel()" title="Quay lại">
+                <mat-icon>arrow_back</mat-icon>
+            </button>
+            <h1 class="text-xl font-bold">{{ isEditMode ? 'Chi tiết đơn đặt hàng' : 'Tạo đơn đặt hàng mới' }}</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-gray-400 bg-white text-gray-700 font-semibold hover:bg-gray-100"
+                (click)="onCancel()">
+                Hủy
+            </button>
+            @if (canEditPurchaseOrder) {
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-md border-none bg-primary text-white font-semibold hover:opacity-90"
+                (click)="onSave()">
+                <mat-icon class="text-xl">save</mat-icon>
+                {{ isEditMode ? 'Cập nhật PO' : 'Lưu PO' }}
+            </button>
+            }
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-auto p-6">
+        <form [formGroup]="poForm" class="flex flex-col gap-6 max-w-[1200px] mx-auto">
+
+            <!-- Section 1: Thông tin chung PO -->
+            <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                <div class="px-5 py-3 bg-gray-50 border-b border-gray-300 flex items-center gap-2">
+                    <mat-icon class="text-primary text-xl">description</mat-icon>
+                    <h2 class="text-base font-semibold text-gray-800">Thông tin đơn đặt hàng (PO)</h2>
+                </div>
+                <div class="p-5">
+                    <!-- Row 1 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700 require">Mã PO</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <input matInput formControlName="poNumber" placeholder="PO-DDMMYY-001" readonly>
+                            </mat-form-field>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700 require">Nhà máy sản xuất</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <mat-select formControlName="supplierId" placeholder="Chọn nhà máy">
+                                    @for (opt of supplierOptions; track opt.value) {
+                                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                                    }
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700">Tiền tệ</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <mat-select formControlName="currency" placeholder="Chọn tiền tệ">
+                                    @for (opt of currencyOptions; track opt.value) {
+                                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                                    }
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700 require">Ngày đặt</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <input matInput [matDatepicker]="orderDatePicker" formControlName="orderDate"
+                                    [max]="orderDateMax" placeholder="dd/mm/yyyy">
+                                <mat-datepicker-toggle matIconSuffix [for]="orderDatePicker"></mat-datepicker-toggle>
+                                <mat-datepicker #orderDatePicker></mat-datepicker>
+                            </mat-form-field>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700">Ngày yêu cầu giao</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <input matInput [matDatepicker]="deliveryDatePicker"
+                                    formControlName="requestedDeliveryDate" [min]="requestedDeliveryDateMin"
+                                    placeholder="dd/mm/yyyy">
+                                <mat-datepicker-toggle matIconSuffix
+                                    [for]="deliveryDatePicker"></mat-datepicker-toggle>
+                                <mat-datepicker #deliveryDatePicker></mat-datepicker>
+                            </mat-form-field>
+                            @if (poForm.hasError('deliveryDateNotAfterOrderDate') &&
+                            (poForm.get('orderDate')?.touched || poForm.get('requestedDeliveryDate')?.touched)) {
+                            <span class="text-xs text-red-600">Ngày yêu cầu giao phải lớn hơn ngày đặt</span>
+                            }
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700">Điều khoản thanh toán</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <mat-select formControlName="paymentTerms" placeholder="Chọn điều khoản">
+                                    @for (opt of paymentTermOptions; track opt.value) {
+                                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                                    }
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+
+                    <!-- Row 3 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700">Người liên hệ (nhà máy)</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <input matInput formControlName="factoryContact"
+                                    placeholder="Tên / Email / WeChat">
+                            </mat-form-field>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm font-medium text-gray-700">Dự án / Ghi chú</label>
+                            <mat-form-field appearance="outline" floatLabel="auto">
+                                <input matInput formControlName="projectNote"
+                                    placeholder="Nhập thông tin (nếu có)">
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Danh sách sản phẩm -->
+            <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                <div class="px-5 py-3 bg-gray-50 border-b border-gray-300 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <mat-icon class="text-primary text-xl">inventory</mat-icon>
+                        <h2 class="text-base font-semibold text-gray-800">Danh sách sản phẩm</h2>
+                    </div>
+                    @if (canEditPurchaseOrder) {
+                    <button type="button"
+                        class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
+                        (click)="addProduct()">
+                        <mat-icon class="text-lg">add</mat-icon>
+                        Thêm sản phẩm
+                    </button>
+                    }
+                </div>
+                <div class="p-5 overflow-auto">
+                    @if (productFormArray.length > 0) {
+                    <table class="w-full text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[50px]">#</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[200px]">Sản phẩm / Model</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[110px] min-w-[110px] max-w-[110px]">Số lượng</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[140px] min-w-[140px] max-w-[140px]">Đơn giá ({{ poForm.value.currency || 'CNY' }})</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[120px]">Thành tiền ({{ poForm.value.currency || 'CNY' }})</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[80px]">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody formArrayName="products">
+                            @for (productForm of productFormArray.controls; track productForm; let i = $index) {
+                            <tr [formGroupName]="i">
+                                <td class="px-3 py-2 text-center border border-gray-300 text-gray-500">{{ i + 1 }}</td>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    @if (canEditPurchaseOrder) {
+                                    <app-select-search
+                                        [options]="modelOptions"
+                                        [searchQuery]="GET_MODELS_FOR_SELECT"
+                                        searchDataKey="models"
+                                        [paginationSearch]="true"
+                                        valueKey="id"
+                                        labelKey="name"
+                                        formControlName="modelId"
+                                        [required]="true"
+                                        placeholder="Chọn sản phẩm"
+                                        (selected)="onProductModelSelected($event, i)">
+                                    </app-select-search>
+                                    } @else {
+                                    <span class="font-medium">{{ productForm.get('modelName')?.value }}</span>
+                                    <span class="text-gray-400 text-xs ml-1">{{ productForm.get('modelCode')?.value }}</span>
+                                    }
+                                </td>
+                                <td class="px-2 py-2 text-center border border-gray-300 w-[110px] min-w-[110px] max-w-[110px]">
+                                    @if (canEditPurchaseOrder) {
+                                    <mat-form-field appearance="outline" floatLabel="auto" class="table-form-field w-full">
+                                        <input matInput type="text" inputmode="numeric" class="text-center"
+                                            formControlName="quantity" (input)="onProductQuantityInput($event, i)"
+                                            placeholder="0">
+                                    </mat-form-field>
+                                    } @else {
+                                    {{ productForm.get('quantity')?.value | number }}
+                                    }
+                                </td>
+                                <td class="px-2 py-2 text-center border border-gray-300 w-[140px] min-w-[140px] max-w-[140px]">
+                                    @if (canEditPurchaseOrder) {
+                                    <mat-form-field appearance="outline" floatLabel="auto" class="table-form-field w-full">
+                                        <input matInput type="number" class="text-center" formControlName="unitPrice"
+                                            (input)="updateProductLineTotal(i)" placeholder="--" min="0">
+                                    </mat-form-field>
+                                    } @else {
+                                    {{ productForm.get('unitPrice')?.value != null ? (productForm.get('unitPrice')?.value | number) : '--' }}
+                                    }
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300 text-gray-500">
+                                    {{ productForm.get('lineTotal')?.value != null ? (productForm.get('lineTotal')?.value | number) : '--' }}
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    @if (canEditPurchaseOrder) {
+                                    <button type="button" class="border-none bg-transparent p-1" title="Xóa"
+                                        (click)="removeProduct(i)">
+                                        <mat-icon class="text-red-500 text-xl">delete_outline</mat-icon>
+                                    </button>
+                                    }
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                    } @else {
+                    <div class="text-center text-gray-400 py-6">
+                        Chưa có sản phẩm nào. Nhấn "+ Thêm sản phẩm" để bắt đầu.
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Section 3: Thông tin sản xuất (Batch/Lot) -->
+            <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                <div class="px-5 py-3 bg-gray-50 border-b border-gray-300 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <mat-icon class="text-primary text-xl">precision_manufacturing</mat-icon>
+                        <h2 class="text-base font-semibold text-gray-800">Thông tin sản xuất</h2>
+                    </div>
+                    @if (canEditPurchaseOrder) {
+                    <button type="button"
+                        class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
+                        (click)="addBatch()">
+                        <mat-icon class="text-lg">add</mat-icon>
+                        Thêm batch
+                    </button>
+                    }
+                </div>
+                <div class="p-5 overflow-auto">
+                    @if (batches.length > 0) {
+                    <table class="w-full text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[50px]">#</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[180px]">Sản phẩm / Model</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[180px]">Mã Batch / Lot</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[120px]">Số lượng đặt *</th>
+                                @if (showProductionProgress) {
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[120px]">SL đã tạo</th>
+                                }
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[160px]">Ngày sản xuất (dự kiến)</th>
+                                @if (showProductionProgress) {
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[420px]">Tiến trình</th>
+                                } @else {
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[200px]">Ghi chú</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[80px]">Thao tác</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (batch of batches; track $index; let i = $index) {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-3 py-2 text-center border border-gray-300 text-gray-500">{{ i + 1 }}</td>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    {{ getBatchProductLabel(batch) }}
+                                </td>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    <span class="font-medium">{{ batch.batchCode }}</span>
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    {{ batch.orderedQuantity | number }}
+                                </td>
+                                @if (showProductionProgress) {
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    {{ (batch.generatedQuantity || 0) | number }}
+                                </td>
+                                }
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    {{ batch.plannedProductionDate ? (batch.plannedProductionDate | date:'dd-MM-yyyy') : '-' }}
+                                </td>
+                                @if (showProductionProgress) {
+                                <td class="px-3 py-2 border border-gray-300">
+                                    @if (isBatchCancelled(batch.status)) {
+                                    <div class="flex items-center gap-2 text-red-600">
+                                        <mat-icon class="text-base">cancel</mat-icon>
+                                        <span class="text-xs font-semibold">Batch đã hủy</span>
+                                    </div>
+                                    } @else {
+                                    <div class="flex items-start min-w-[420px]">
+                                        @for (step of batchSteps; track step.key; let sIdx = $index; let last = $last) {
+                                        <div class="flex flex-col items-center gap-1.5 shrink-0">
+                                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                                [ngClass]="getBatchStepCircleClass(batch.status, sIdx)" [title]="step.label">
+                                                @if (getBatchStepState(batch.status, sIdx) !== 'pending') {
+                                                <mat-icon class="!text-[16px] !w-[16px] !h-[16px] leading-none !text-white">check</mat-icon>
+                                                }
+                                            </div>
+                                            <span class="text-[11px] whitespace-nowrap"
+                                                [ngClass]="getBatchStepLabelClass(batch.status, sIdx)">{{ step.label }}</span>
+                                        </div>
+                                        @if (!last) {
+                                        <div class="flex-1 h-1 mx-1 mt-3 rounded"
+                                            [ngClass]="getBatchStepLineClass(batch.status, sIdx)"></div>
+                                        }
+                                        }
+                                    </div>
+                                    }
+                                </td>
+                                } @else {
+                                <td class="px-3 py-2 border border-gray-300">
+                                    {{ batch.note || '-' }}
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    @if (canEditPurchaseOrder) {
+                                    <div class="flex items-center justify-center gap-1">
+                                    <button type="button" class="border-none bg-transparent p-1" title="Chỉnh sửa"
+                                        (click)="editBatch(i)">
+                                        <mat-icon class="text-blue-500 text-xl">edit</mat-icon>
+                                    </button>
+                                    <button type="button" class="border-none bg-transparent p-1" title="Xóa"
+                                        (click)="removeBatch(i)">
+                                        <mat-icon class="text-red-500 text-xl">delete_outline</mat-icon>
+                                    </button>
+                                    </div>
+                                    }
+                                </td>
+                                }
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                    } @else {
+                    <div class="text-center text-gray-400 py-6">
+                        Chưa có batch/lot nào. Nhấn "+ Thêm batch" để bắt đầu.
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Section 4: Thông tin vận chuyển (Shipment) -->
+            <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                <div class="px-5 py-3 bg-gray-50 border-b border-gray-300 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <mat-icon class="text-primary text-xl">local_shipping</mat-icon>
+                        <h2 class="text-base font-semibold text-gray-800">Thông tin vận chuyển (Shipment)</h2>
+                    </div>
+                    @if (canEditPurchaseOrder) {
+                    <button type="button"
+                        class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
+                        (click)="addShipment()">
+                        <mat-icon class="text-lg">add</mat-icon>
+                        Thêm shipment
+                    </button>
+                    }
+                </div>
+                <div class="p-5 overflow-auto">
+                    @if (shipments.length > 0) {
+                    <table class="w-full text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[50px]">#</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[150px]">Mã Shipment</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[200px]">Batch/Lot</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[110px]">Tổng SL</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[140px]">Trạng thái</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[160px]">Kho nhận</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[140px]">Đơn vị vận chuyển</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[140px]">Ngày dự kiến nhận</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[100px]">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (shipment of shipments; track $index; let i = $index) {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-3 py-2 text-center border border-gray-300 text-gray-500">{{ i + 1 }}</td>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    <span class="font-medium">{{ shipment.shipmentCode }}</span>
+                                </td>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    <div class="flex flex-wrap gap-1">
+                                        @for (idx of shipment.batchIndexes; track idx) {
+                                            @if (batches[idx]) {
+                                                <span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200">
+                                                    {{ batches[idx].batchCode }}
+                                                </span>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    {{ shipment.quantity | number }}
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    <span class="px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
+                                        [ngClass]="getShipmentStatusClass(shipment.status)">
+                                        {{ getShipmentStatusLabel(shipment.status) }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    {{ shipment.receivingWarehouseName || '-' }}
+                                </td>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    {{ shipment.carrier || '-' }}
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    {{ shipment.expectedArrivalDate || '-' }}
+                                </td>
+                                <td class="px-3 py-2 text-center border border-gray-300">
+                                    @if (canEditPurchaseOrder) {
+                                    <div class="flex items-center justify-center gap-1">
+                                        <button type="button" class="border-none bg-transparent p-1" title="Chỉnh sửa"
+                                            (click)="editShipment(i)">
+                                            <mat-icon class="text-blue-500 text-xl">edit</mat-icon>
+                                        </button>
+                                        <button type="button" class="border-none bg-transparent p-1" title="Xóa"
+                                            (click)="removeShipment(i)">
+                                            <mat-icon class="text-red-500 text-xl">delete_outline</mat-icon>
+                                        </button>
+                                    </div>
+                                    }
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                    } @else {
+                    <div class="text-center text-gray-400 py-6">
+                        Chưa có shipment nào. Nhấn "+ Thêm shipment" để bắt đầu.
+                    </div>
+                    }
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<ng-template #batchDrawerContent>
+    <form [formGroup]="batchForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700 require">Sản phẩm / Model</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <mat-select formControlName="productIndex" placeholder="Chọn sản phẩm">
+                    @for (productForm of productFormArray.controls; track productForm; let i = $index) {
+                    @if (productForm.get('modelId')?.value) {
+                    <mat-option [value]="i">
+                        {{ productForm.get('modelName')?.value || productForm.get('modelCode')?.value }}
+                        {{ productForm.get('version')?.value ? ' - ' + productForm.get('version')?.value : '' }}
+                    </mat-option>
+                    }
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700 require">Mã Batch / Lot</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="batchCode" placeholder="BAT-DDMMYY-001" readonly>
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700 require">Số lượng đặt</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput type="number" min="1" formControlName="orderedQuantity" placeholder="0">
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Ngày sản xuất (dự kiến)</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput [matDatepicker]="batchProductionDatePicker"
+                    formControlName="plannedProductionDate" placeholder="dd-MM-yyyy">
+                <mat-datepicker-toggle matIconSuffix [for]="batchProductionDatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #batchProductionDatePicker></mat-datepicker>
+            </mat-form-field>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Ghi chú</label>
+            <mat-form-field appearance="outline" floatLabel="auto" class="batch-note-field">
+                <textarea matInput formControlName="note" rows="4" placeholder="Nhập ghi chú (nếu có)"></textarea>
+            </mat-form-field>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button"
+                class="flex items-center justify-center px-4 border border-gray-400 bg-white text-gray-700 font-semibold"
+                (click)="cancelBatchDrawer()">
+                Hủy
+            </button>
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-4 border-none bg-primary text-white font-semibold"
+                (click)="saveBatch()">
+                <mat-icon>save</mat-icon>
+                {{ editingBatchIndex === null ? 'Thêm batch' : 'Cập nhật' }}
+            </button>
+        </div>
+    </form>
+</ng-template>
+
+<ng-template #shipmentDrawerContent>
+    <form [formGroup]="shipmentForm" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700 require">Mã Shipment</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="shipmentCode" placeholder="VD: SH202610001">
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700 require">Trạng thái vận chuyển</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <mat-select formControlName="status" placeholder="Chọn trạng thái">
+                        @for (opt of shipmentStatusOptions; track opt.value) {
+                            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700 require">Batch/Lot (chọn nhiều)</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <mat-select formControlName="batchIndexes" placeholder="Chọn batch/lot" multiple>
+                    @for (batch of batches; track $index; let i = $index) {
+                        <mat-option [value]="i">
+                            {{ batch.batchCode }} - {{ getBatchProductLabel(batch) }}
+                            ({{ batch.orderedQuantity | number }} sp)
+                        </mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            @if (batches.length === 0) {
+                <span class="text-xs text-red-500">Chưa có batch/lot. Vui lòng thêm batch trước.</span>
+            }
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700 require">Kho nhận</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <mat-select formControlName="receivingWarehouseId" placeholder="Chọn kho nhận">
+                        @for (warehouse of warehouseList; track warehouse.id) {
+                            <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700">Đơn vị vận chuyển</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput formControlName="carrier" placeholder="VD: DHL, FedEx, Viettel Post...">
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700">Ngày xuất (dự kiến)</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput [matDatepicker]="shipDatePicker" formControlName="expectedShipDate"
+                        placeholder="dd/mm/yyyy">
+                    <mat-datepicker-toggle matIconSuffix [for]="shipDatePicker"></mat-datepicker-toggle>
+                    <mat-datepicker #shipDatePicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700">Ngày dự kiến nhận</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput [matDatepicker]="arrivalDatePicker" formControlName="expectedArrivalDate"
+                        placeholder="dd/mm/yyyy">
+                    <mat-datepicker-toggle matIconSuffix [for]="arrivalDatePicker"></mat-datepicker-toggle>
+                    <mat-datepicker #arrivalDatePicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Mã vận đơn (Tracking)</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput formControlName="trackingNumber" placeholder="Nhập tracking number (nếu có)">
+            </mat-form-field>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button"
+                class="flex items-center justify-center px-4 border border-gray-400 bg-white text-gray-700 font-semibold"
+                (click)="cancelShipmentDrawer()">
+                Hủy
+            </button>
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-4 border-none bg-primary text-white font-semibold"
+                (click)="saveShipment()">
+                <mat-icon>save</mat-icon>
+                {{ editingShipmentIndex === null ? 'Thêm shipment' : 'Cập nhật' }}
+            </button>
+        </div>
+    </form>
+</ng-template>

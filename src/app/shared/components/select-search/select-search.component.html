@@ -5,7 +5,7 @@
     </div>
   } -->
   <mat-form-field appearance="outline" [floatLabel]="'auto'" class="w-full"
-    [ngClass]="{'form-field-invalid': ngControl.invalid && ngControl.touched}">
+    [ngClass]="{'form-field-invalid': ngControl?.invalid && ngControl?.touched}">
     @if(matLabel.length) {
       <mat-label>{{ matLabel }}</mat-label>
     }
