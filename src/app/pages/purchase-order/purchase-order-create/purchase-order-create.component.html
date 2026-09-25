@@ -7,8 +7,31 @@
                 <mat-icon>arrow_back</mat-icon>
             </button>
             <h1 class="text-xl font-bold">{{ isEditMode ? 'Chi tiết đơn đặt hàng' : 'Tạo đơn đặt hàng mới' }}</h1>
+            @if (isEditMode && poData?.status) {
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-semibold whitespace-nowrap"
+                [ngClass]="getPoStatusClass(poData.status)">
+                <mat-icon class="text-sm">{{ getPoStatusIcon(poData.status) }}</mat-icon>
+                {{ getPoStatusLabel(poData.status) }}
+            </span>
+            }
         </div>
         <div class="flex items-center gap-3">
+            @if (canShowCancelPurchaseOrderAction) {
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-red-500 bg-white text-red-600 font-semibold hover:bg-red-50"
+                (click)="onOpenCancelPurchaseOrderDialog()">
+                <mat-icon class="text-xl">block</mat-icon>
+                Hủy PO
+            </button>
+            }
+            @if (canShowCompletePurchaseOrderAction) {
+            <button type="button"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-md border-none bg-green-600 text-white font-semibold hover:bg-green-700"
+                (click)="onOpenCompletePurchaseOrderDialog()">
+                <mat-icon class="text-xl">task_alt</mat-icon>
+                Hoàn thành PO
+            </button>
+            }
             <button type="button"
                 class="flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-gray-400 bg-white text-gray-700 font-semibold hover:bg-gray-100"
                 (click)="onCancel()">
@@ -41,7 +64,7 @@
                         <div class="flex flex-col gap-1">
                             <label class="text-sm font-medium text-gray-700 require">Mã PO</label>
                             <mat-form-field appearance="outline" floatLabel="auto">
-                                <input matInput formControlName="poNumber" placeholder="PO-DDMMYY-001" readonly>
+                                <input matInput formControlName="poNumber" placeholder="PO-DDMMYY-001">
                             </mat-form-field>
                         </div>
                         <div class="flex flex-col gap-1">
@@ -227,24 +250,68 @@
                         <mat-icon class="text-primary text-xl">precision_manufacturing</mat-icon>
                         <h2 class="text-base font-semibold text-gray-800">Thông tin sản xuất</h2>
                     </div>
-                    @if (canEditPurchaseOrder) {
-                    <button type="button"
-                        class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
-                        (click)="addBatch()">
-                        <mat-icon class="text-lg">add</mat-icon>
-                        Thêm batch
-                    </button>
-                    }
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        @if (isEditMode && selectedBatches.length > 0) {
+                        <span class="px-2 py-1 rounded bg-blue-50 text-blue-700 text-xs font-semibold">
+                            Đã chọn {{ selectedBatches.length }} batch
+                        </span>
+                        @if (canEditPurchaseOrder && selectedBatches.length === 1) {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-blue-500 bg-white text-blue-600 text-sm font-semibold hover:bg-blue-50"
+                            (click)="editSelectedBatch()">
+                            <mat-icon class="text-lg">edit</mat-icon>
+                            Chỉnh sửa
+                        </button>
+                        }
+                        @if (canEditPurchaseOrder) {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-red-500 bg-white text-red-600 text-sm font-semibold hover:bg-red-50"
+                            (click)="removeSelectedBatches()">
+                            <mat-icon class="text-lg">delete_outline</mat-icon>
+                            Xóa
+                        </button>
+                        }
+                        @if (canSelectSelectedBatchesForProduction) {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border-none bg-green-600 text-white text-sm font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            [disabled]="updatingBatchId !== null"
+                            (click)="selectSelectedBatchesForProduction()">
+                            {{ updatingBatchId ? 'Đang chuyển...' : 'Bắt đầu sản xuất' }}
+                        </button>
+                        }
+                        @if (canSelectSelectedBatchesForProductionCompleted) {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border-none bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            [disabled]="updatingBatchId !== null"
+                            (click)="selectSelectedBatchesForProductionCompleted()">
+                            <mat-icon class="text-sm">done_all</mat-icon>
+                            {{ updatingBatchId ? 'Đang cập nhật...' : 'Hoàn thành sản xuất' }}
+                        </button>
+                        }
+                        }
+                        @if (canEditPurchaseOrder) {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
+                            (click)="addBatch()">
+                            <mat-icon class="text-lg">add</mat-icon>
+                            Thêm batch
+                        </button>
+                        }
+                    </div>
                 </div>
-                <div class="p-5 overflow-auto">
+                <div class="production-table-scroll gray-500-scroll p-5">
                     @if (batches.length > 0) {
-                    <table class="w-full text-sm border-collapse">
+                    <table class="production-table w-full text-sm border-collapse"
+                        [class.production-table--progress]="showProductionProgress">
                         <thead>
                             <tr class="bg-gray-100 text-gray-700">
+                                @if (isEditMode) {
+                                <th class="px-2 py-2 text-center font-semibold border border-gray-300 w-[60px]">Chọn</th>
+                                }
                                 <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[50px]">#</th>
                                 <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[180px]">Sản phẩm / Model</th>
                                 <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[180px]">Mã Batch / Lot</th>
-                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[120px]">Số lượng đặt *</th>
+                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[120px]">SL đặt</th>
                                 @if (showProductionProgress) {
                                 <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[120px]">SL đã tạo</th>
                                 }
@@ -253,13 +320,29 @@
                                 <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[420px]">Tiến trình</th>
                                 } @else {
                                 <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[200px]">Ghi chú</th>
+                                @if (!isEditMode) {
                                 <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[80px]">Thao tác</th>
+                                }
                                 }
                             </tr>
                         </thead>
                         <tbody>
                             @for (batch of batches; track $index; let i = $index) {
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50" [class.bg-blue-50]="isBatchSelected(batch)">
+                                @if (isEditMode) {
+                                <td class="px-2 py-2 text-center align-middle border border-gray-300">
+                                    <div class="flex items-center justify-center">
+                                        <mat-checkbox
+                                            class="!mb-6"
+                                            [checked]="isBatchSelected(batch)"
+                                            [disabled]="isBatchSelectionDisabled(batch)"
+                                            [title]="isBatchSelectionDisabled(batch) && !isBatchSelected(batch)
+                                                ? 'Chỉ có thể chọn các batch cùng trạng thái' : 'Chọn batch'"
+                                            (change)="toggleBatchSelection(batch, $event.checked)">
+                                        </mat-checkbox>
+                                    </div>
+                                </td>
+                                }
                                 <td class="px-3 py-2 text-center border border-gray-300 text-gray-500">{{ i + 1 }}</td>
                                 <td class="px-3 py-2 border border-gray-300">
                                     {{ getBatchProductLabel(batch) }}
@@ -310,8 +393,8 @@
                                 <td class="px-3 py-2 border border-gray-300">
                                     {{ batch.note || '-' }}
                                 </td>
+                                @if (!isEditMode) {
                                 <td class="px-3 py-2 text-center border border-gray-300">
-                                    @if (canEditPurchaseOrder) {
                                     <div class="flex items-center justify-center gap-1">
                                     <button type="button" class="border-none bg-transparent p-1" title="Chỉnh sửa"
                                         (click)="editBatch(i)">
@@ -322,8 +405,8 @@
                                         <mat-icon class="text-red-500 text-xl">delete_outline</mat-icon>
                                     </button>
                                     </div>
-                                    }
                                 </td>
+                                }
                                 }
                             </tr>
                             }
@@ -337,41 +420,96 @@
                 </div>
             </div>
 
-            <!-- Section 4: Thông tin vận chuyển (Shipment) -->
+            <!-- Section 4: Thông tin vận chuyển -->
             <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
                 <div class="px-5 py-3 bg-gray-50 border-b border-gray-300 flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <mat-icon class="text-primary text-xl">local_shipping</mat-icon>
-                        <h2 class="text-base font-semibold text-gray-800">Thông tin vận chuyển (Shipment)</h2>
+                        <h2 class="text-base font-semibold text-gray-800">Thông tin vận chuyển</h2>
                     </div>
-                    @if (canEditPurchaseOrder) {
-                    <button type="button"
-                        class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
-                        (click)="addShipment()">
-                        <mat-icon class="text-lg">add</mat-icon>
-                        Thêm shipment
-                    </button>
-                    }
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        @if (isEditMode && selectedShipmentIndexes.length > 0) {
+                        <span class="px-2 py-1 rounded bg-blue-50 text-blue-700 text-xs font-semibold">
+                            Đã chọn {{ selectedShipmentIndexes.length }} vận chuyển
+                        </span>
+                        @if (selectedShipmentIndexes.length === 1 && poData?.status !== 'CANCELLED' && shipments[selectedShipmentIndexes[0]]?.status === 'PLANNED') {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-blue-500 bg-white text-blue-600 text-sm font-semibold hover:bg-blue-50"
+                            (click)="editShipment(selectedShipmentIndexes[0])">
+                            <mat-icon class="text-lg">edit</mat-icon>
+                            Chỉnh sửa
+                        </button>
+                        }
+                        @if (canAdvanceSelectedShipments && poData?.status !== 'CANCELLED') {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-green-500 bg-white text-green-700 text-sm font-semibold hover:bg-green-50 disabled:opacity-40"
+                            [disabled]="updatingShipmentIds"
+                            (click)="advanceSelectedShipments()">
+                            <mat-icon class="text-lg">arrow_forward</mat-icon>
+                            {{ getNextShipmentStatusLabel(getNextShipmentStatus(selectedShipmentStatus!)) }}
+                        </button>
+                        }
+                        @if (poData?.status !== 'CANCELLED') {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-500 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50"
+                            (click)="printSelectedLabels()">
+                            <mat-icon class="text-lg">print</mat-icon>
+                            In Label
+                        </button>
+                        }
+                        @if (canCancelSelectedShipments && poData?.status !== 'CANCELLED') {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-orange-500 bg-white text-orange-600 text-sm font-semibold hover:bg-orange-50 disabled:opacity-40"
+                            [disabled]="updatingShipmentIds"
+                            (click)="cancelSelectedShipments()">
+                            <mat-icon class="text-lg">block</mat-icon>
+                            Hủy vận chuyển
+                        </button>
+                        }
+                        }
+                        @if (canCreateShipment) {
+                        <button type="button"
+                            class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
+                            (click)="addShipment()">
+                            <mat-icon class="text-lg">add</mat-icon>
+                            Thêm vận chuyển
+                        </button>
+                        }
+                    </div>
                 </div>
-                <div class="p-5 overflow-auto">
+                <div class="production-table-scroll gray-500-scroll p-5">
                     @if (shipments.length > 0) {
-                    <table class="w-full text-sm border-collapse">
+                    <table class="shipment-table w-full text-sm border-collapse">
                         <thead>
                             <tr class="bg-gray-100 text-gray-700">
+                                @if (isEditMode) {
+                                <th class="px-2 py-2 text-center font-semibold border border-gray-300 w-[60px]">Chọn</th>
+                                }
                                 <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[50px]">#</th>
-                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[150px]">Mã Shipment</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[150px]">Mã vận chuyển</th>
                                 <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[200px]">Batch/Lot</th>
                                 <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[110px]">Tổng SL</th>
-                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[140px]">Trạng thái</th>
                                 <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[160px]">Kho nhận</th>
                                 <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[140px]">Đơn vị vận chuyển</th>
                                 <th class="px-3 py-2 text-center font-semibold border border-gray-300 min-w-[140px]">Ngày dự kiến nhận</th>
-                                <th class="px-3 py-2 text-center font-semibold border border-gray-300 w-[100px]">Thao tác</th>
+                                <th class="px-3 py-2 text-left font-semibold border border-gray-300 min-w-[520px]">Tiến trình</th>
                             </tr>
                         </thead>
                         <tbody>
                             @for (shipment of shipments; track $index; let i = $index) {
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50" [class.bg-blue-50]="isShipmentSelected(i)">
+                                @if (isEditMode) {
+                                <td class="px-2 py-2 text-center align-middle border border-gray-300">
+                                    <div class="flex items-center justify-center">
+                                        <mat-checkbox
+                                            class="!mb-6"
+                                            [checked]="isShipmentSelected(i)"
+                                            [disabled]="isShipmentSelectionDisabled(i)"
+                                            (change)="toggleShipmentSelection(i, $event.checked)">
+                                        </mat-checkbox>
+                                    </div>
+                                </td>
+                                }
                                 <td class="px-3 py-2 text-center border border-gray-300 text-gray-500">{{ i + 1 }}</td>
                                 <td class="px-3 py-2 border border-gray-300">
                                     <span class="font-medium">{{ shipment.shipmentCode }}</span>
@@ -390,12 +528,6 @@
                                 <td class="px-3 py-2 text-center border border-gray-300">
                                     {{ shipment.quantity | number }}
                                 </td>
-                                <td class="px-3 py-2 text-center border border-gray-300">
-                                    <span class="px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
-                                        [ngClass]="getShipmentStatusClass(shipment.status)">
-                                        {{ getShipmentStatusLabel(shipment.status) }}
-                                    </span>
-                                </td>
                                 <td class="px-3 py-2 border border-gray-300">
                                     {{ shipment.receivingWarehouseName || '-' }}
                                 </td>
@@ -405,17 +537,30 @@
                                 <td class="px-3 py-2 text-center border border-gray-300">
                                     {{ shipment.expectedArrivalDate || '-' }}
                                 </td>
-                                <td class="px-3 py-2 text-center border border-gray-300">
-                                    @if (canEditPurchaseOrder) {
-                                    <div class="flex items-center justify-center gap-1">
-                                        <button type="button" class="border-none bg-transparent p-1" title="Chỉnh sửa"
-                                            (click)="editShipment(i)">
-                                            <mat-icon class="text-blue-500 text-xl">edit</mat-icon>
-                                        </button>
-                                        <button type="button" class="border-none bg-transparent p-1" title="Xóa"
-                                            (click)="removeShipment(i)">
-                                            <mat-icon class="text-red-500 text-xl">delete_outline</mat-icon>
-                                        </button>
+                                <td class="px-3 py-2 border border-gray-300">
+                                    @if (isShipmentCancelled(shipment.status)) {
+                                    <div class="flex items-center gap-2 text-red-600">
+                                        <mat-icon class="text-base">cancel</mat-icon>
+                                        <span class="text-xs font-semibold">Vận chuyển đã hủy</span>
+                                    </div>
+                                    } @else {
+                                    <div class="flex items-start min-w-[500px]">
+                                        @for (step of shipmentSteps; track step.key; let sIdx = $index; let last = $last) {
+                                        <div class="flex flex-col items-center gap-1.5 shrink-0">
+                                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                                [ngClass]="getShipmentStepCircleClass(shipment.status, sIdx)" [title]="step.label">
+                                                @if (getShipmentStepState(shipment.status, sIdx) !== 'pending') {
+                                                <mat-icon class="!text-[16px] !w-[16px] !h-[16px] leading-none !text-white">check</mat-icon>
+                                                }
+                                            </div>
+                                            <span class="text-[11px] whitespace-nowrap"
+                                                [ngClass]="getShipmentStepLabelClass(shipment.status, sIdx)">{{ step.label }}</span>
+                                        </div>
+                                        @if (!last) {
+                                        <div class="flex-1 h-1 mx-1 mt-3 rounded"
+                                            [ngClass]="getShipmentStepLineClass(shipment.status, sIdx)"></div>
+                                        }
+                                        }
                                     </div>
                                     }
                                 </td>
@@ -425,7 +570,10 @@
                     </table>
                     } @else {
                     <div class="text-center text-gray-400 py-6">
-                        Chưa có shipment nào. Nhấn "+ Thêm shipment" để bắt đầu.
+                        Chưa có thông tin vận chuyển.
+                        @if (!canCreateShipment) {
+                        <div class="mt-1 text-xs">Chỉ có thể tạo vận chuyển khi có batch đã hoàn thành sản xuất.</div>
+                        }
                     </div>
                     }
                 </div>
@@ -457,7 +605,7 @@
             <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-gray-700 require">Mã Batch / Lot</label>
                 <mat-form-field appearance="outline" floatLabel="auto">
-                    <input matInput formControlName="batchCode" placeholder="BAT-DDMMYY-001" readonly>
+                    <input matInput formControlName="batchCode" placeholder="BAT-DDMMYY-001">
                 </mat-form-field>
             </div>
             <div class="flex flex-col gap-1">
@@ -468,14 +616,30 @@
             </div>
         </div>
 
-        <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">Ngày sản xuất (dự kiến)</label>
-            <mat-form-field appearance="outline" floatLabel="auto">
-                <input matInput [matDatepicker]="batchProductionDatePicker"
-                    formControlName="plannedProductionDate" placeholder="dd-MM-yyyy">
-                <mat-datepicker-toggle matIconSuffix [for]="batchProductionDatePicker"></mat-datepicker-toggle>
-                <mat-datepicker #batchProductionDatePicker></mat-datepicker>
-            </mat-form-field>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700">Ngày sản xuất (dự kiến)</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput [matDatepicker]="batchProductionDatePicker"
+                        formControlName="plannedProductionDate" placeholder="dd-MM-yyyy">
+                    <mat-datepicker-toggle matIconSuffix [for]="batchProductionDatePicker"></mat-datepicker-toggle>
+                    <mat-datepicker #batchProductionDatePicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-gray-700">Tiền tố serial (Serial Prefix)</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input type="text" matInput formControlName="serialPrefix"
+                        placeholder="Chọn hoặc nhập tiền tố (2 ký tự)"
+                        minlength="2" maxlength="2"
+                        [matAutocomplete]="serialPrefixAuto">
+                    <mat-autocomplete autoActiveFirstOption #serialPrefixAuto="matAutocomplete">
+                        @for (option of prefixStrList; track option) {
+                            <mat-option [value]="option">{{ option }}</mat-option>
+                        }
+                    </mat-autocomplete>
+                </mat-form-field>
+            </div>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -501,13 +665,44 @@
     </form>
 </ng-template>
 
+<ng-template #cancelPoNotification>
+    <p>Bạn có chắc muốn hủy đơn đặt hàng <strong>{{ poData?.poNumber }}</strong>?</p>
+</ng-template>
+
+<ng-template #completePoDialogContent>
+    <form [formGroup]="completePoForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Số lượng thực tế đã xử lý:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput type="number" min="0" step="1" formControlName="actualProcessedQuantity"
+                    placeholder="Nhập số nguyên không âm">
+            </mat-form-field>
+            @if (completePoForm.get('actualProcessedQuantity')?.touched &&
+            completePoForm.get('actualProcessedQuantity')?.invalid) {
+            <span class="text-xs text-red-600">Số lượng thực tế phải là số nguyên không âm</span>
+            }
+        </div>
+    </form>
+    <div class="flex items-stretch justify-center gap-3 pt-3">
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
+            type="button" (click)="closePurchaseOrderActionDialog()">
+            <mat-icon class="text-xl">close</mat-icon>
+            <span class="font-semibold">Đóng</span>
+        </button>
+        <button class="w-full md:w-[140px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-green-600"
+            type="button" (click)="onConfirmCompletePurchaseOrder()">
+            <span class="text-white font-semibold">Hoàn thành</span>
+        </button>
+    </div>
+</ng-template>
+
 <ng-template #shipmentDrawerContent>
     <form [formGroup]="shipmentForm" class="flex flex-col gap-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="flex flex-col gap-1">
-                <label class="text-sm font-medium text-gray-700 require">Mã Shipment</label>
+                <label class="text-sm font-medium text-gray-700 require">Mã vận chuyển</label>
                 <mat-form-field appearance="outline" floatLabel="auto">
-                    <input matInput formControlName="shipmentCode" placeholder="VD: SH202610001">
+                    <input matInput formControlName="shipmentCode" placeholder="SHP-DDMMYY-001" readonly>
                 </mat-form-field>
             </div>
             <div class="flex flex-col gap-1">
@@ -523,14 +718,16 @@
         </div>
 
         <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700 require">Batch/Lot (chọn nhiều)</label>
+            <label class="text-sm font-medium text-gray-700 require">Batch/Lot đã hoàn thành sản xuất</label>
             <mat-form-field appearance="outline" floatLabel="auto">
                 <mat-select formControlName="batchIndexes" placeholder="Chọn batch/lot" multiple>
                     @for (batch of batches; track $index; let i = $index) {
+                    @if (canSelectBatchForShipment(i)) {
                         <mat-option [value]="i">
                             {{ batch.batchCode }} - {{ getBatchProductLabel(batch) }}
                             ({{ batch.orderedQuantity | number }} sp)
                         </mat-option>
+                    }
                     }
                 </mat-select>
             </mat-form-field>
@@ -563,7 +760,7 @@
                 <label class="text-sm font-medium text-gray-700">Ngày xuất (dự kiến)</label>
                 <mat-form-field appearance="outline" floatLabel="auto">
                     <input matInput [matDatepicker]="shipDatePicker" formControlName="expectedShipDate"
-                        placeholder="dd/mm/yyyy">
+                        [max]="expectedShipDateMax" placeholder="dd/mm/yyyy">
                     <mat-datepicker-toggle matIconSuffix [for]="shipDatePicker"></mat-datepicker-toggle>
                     <mat-datepicker #shipDatePicker></mat-datepicker>
                 </mat-form-field>
@@ -572,12 +769,16 @@
                 <label class="text-sm font-medium text-gray-700">Ngày dự kiến nhận</label>
                 <mat-form-field appearance="outline" floatLabel="auto">
                     <input matInput [matDatepicker]="arrivalDatePicker" formControlName="expectedArrivalDate"
-                        placeholder="dd/mm/yyyy">
+                        [min]="expectedArrivalDateMin" placeholder="dd/mm/yyyy">
                     <mat-datepicker-toggle matIconSuffix [for]="arrivalDatePicker"></mat-datepicker-toggle>
                     <mat-datepicker #arrivalDatePicker></mat-datepicker>
                 </mat-form-field>
             </div>
         </div>
+        @if (shipmentForm.hasError('arrivalDateBeforeShipDate') &&
+        (shipmentForm.get('expectedShipDate')?.touched || shipmentForm.get('expectedArrivalDate')?.touched)) {
+        <span class="text-xs text-red-600">Ngày dự kiến nhận không thể nhỏ hơn ngày xuất</span>
+        }
 
         <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-gray-700">Mã vận đơn (Tracking)</label>
@@ -596,7 +797,7 @@
                 class="flex items-center justify-center gap-2 px-4 border-none bg-primary text-white font-semibold"
                 (click)="saveShipment()">
                 <mat-icon>save</mat-icon>
-                {{ editingShipmentIndex === null ? 'Thêm shipment' : 'Cập nhật' }}
+                {{ editingShipmentIndex === null ? 'Thêm vận chuyển' : 'Cập nhật' }}
             </button>
         </div>
     </form>

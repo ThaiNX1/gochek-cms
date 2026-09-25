@@ -36,19 +36,27 @@ query StockOverview($warehouseId: String) {
 `;
 
 export const GET_STOCK_BATCHES = gql`
-query StockBatches($warehouseId: String) {
-    stockBatches(warehouseId: $warehouseId) {
-        batchCode
-        expectedQuantity
-        importedQuantity
-        remainingQuantity
-        shippedCount
-        startSerialNumber
-        endSerialNumber
-        importedAt
-        supplier
-        warehouseId
-        warehouseName
+query StockBatches($pagination: StockBatchSearchInput) {
+    stockBatches(pagination: $pagination) {
+        data {
+            batchCode
+            expectedQuantity
+            importedQuantity
+            remainingQuantity
+            shippedCount
+            startSerialNumber
+            endSerialNumber
+            importedAt
+            supplier
+            warehouseId
+            warehouseName
+        }
+        pagination {
+            page
+            size
+            total
+            totalPages
+        }
     }
 }
 `;

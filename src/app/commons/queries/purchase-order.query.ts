@@ -73,8 +73,14 @@ export const GET_PURCHASE_ORDERS = gql`
           expectedArrivalDate
           carrier
           trackingNumber
+          note
           status
-          batchId
+          warehouseId
+          shipmentBatches {
+            id
+            batchId
+            quantity
+          }
         }
       }
     }
@@ -86,6 +92,22 @@ export const GET_PURCHASE_ORDER_NUMBERS = gql`
     purchaseOrders(pagination: $pagination) {
       data {
         poNumber
+      }
+    }
+  }
+`;
+
+export const GET_PURCHASE_ORDER_SHIPMENT_CODES = gql`
+  query PurchaseOrderShipmentCodes($pagination: PurchaseOrderSearchInput) {
+    purchaseOrders(pagination: $pagination) {
+      pagination {
+        page
+        totalPages
+      }
+      data {
+        shipments {
+          shipmentCode
+        }
       }
     }
   }
@@ -111,13 +133,22 @@ export const GET_PURCHASE_ORDER = gql`
         code
         name
       }
+      createdBy {
+        id
+        name
+        email
+      }
       approverId
       approver {
         id
         name
         email
       }
+      approvedAt
+      approvalNote
       rejectionReason
+      completedAt
+      actualProcessedQuantity
       items {
         id
         modelId
@@ -141,6 +172,7 @@ export const GET_PURCHASE_ORDER = gql`
           firmwareVersion
           hardwareVersion
           packagingVersion
+          serialPrefix
           note
           status
           itemId
@@ -155,6 +187,7 @@ export const GET_PURCHASE_ORDER = gql`
         firmwareVersion
         hardwareVersion
         packagingVersion
+        serialPrefix
         note
         status
         itemId
@@ -183,8 +216,23 @@ export const GET_PURCHASE_ORDER = gql`
         expectedArrivalDate
         carrier
         trackingNumber
+        note
         status
-        batchId
+        warehouseId
+        warehouse {
+          id
+          name
+        }
+        shipmentBatches {
+          id
+          batchId
+          quantity
+          batch {
+            id
+            batchCode
+            status
+          }
+        }
       }
     }
   }
@@ -246,8 +294,26 @@ export const UPDATE_PURCHASE_ORDER_BATCH = gql`
       id
       batchCode
       orderedQuantity
+      generatedQuantity
       plannedProductionDate
       note
+      status
+      itemId
+      purchaseOrderId
+    }
+  }
+`;
+
+export const UPDATE_PURCHASE_ORDER_BATCH_STATUS = gql`
+  mutation UpdatePurchaseOrderBatchStatus($ids: [ID!]!, $status: PurchaseOrderBatchStatus!) {
+    updatePurchaseOrderBatchStatus(ids: $ids, status: $status) {
+      id
+      batchCode
+      orderedQuantity
+      generatedQuantity
+      plannedProductionDate
+      note
+      status
       itemId
       purchaseOrderId
     }
@@ -270,9 +336,38 @@ export const CREATE_PURCHASE_ORDER_SHIPMENT = gql`
       expectedArrivalDate
       carrier
       trackingNumber
+      note
       status
       purchaseOrderId
-      batchId
+      warehouseId
+      shipmentBatches {
+        id
+        batchId
+        quantity
+      }
+    }
+  }
+`;
+
+export const UPDATE_PURCHASE_ORDER_SHIPMENT = gql`
+  mutation UpdatePurchaseOrderShipment($id: ID!, $input: UpdatePurchaseOrderShipmentInput!) {
+    updatePurchaseOrderShipment(id: $id, input: $input) {
+      id
+      shipmentCode
+      quantity
+      expectedShipDate
+      expectedArrivalDate
+      carrier
+      trackingNumber
+      note
+      status
+      purchaseOrderId
+      warehouseId
+      shipmentBatches {
+        id
+        batchId
+        quantity
+      }
     }
   }
 `;
@@ -283,8 +378,44 @@ export const DELETE_PURCHASE_ORDER_SHIPMENT = gql`
   }
 `;
 
+export const UPDATE_PURCHASE_ORDER_SHIPMENT_STATUS = gql`
+  mutation UpdatePurchaseOrderShipmentStatus($id: ID!, $status: PurchaseOrderShipmentStatus!) {
+    updatePurchaseOrderShipmentStatus(id: $id, status: $status) {
+      id
+      shipmentCode
+      status
+    }
+  }
+`;
+
+export const RECEIVE_PURCHASE_ORDER_SHIPMENT = gql`
+  mutation ReceivePurchaseOrderShipment($input: ReceivePurchaseOrderShipmentInput!) {
+    receivePurchaseOrderShipment(input: $input) {
+      id
+      shipmentCode
+      status
+      warehouseId
+      warehouse {
+        id
+        name
+        code
+      }
+      shipmentBatches {
+        id
+        batchId
+        quantity
+        batch {
+          id
+          batchCode
+          status
+        }
+      }
+    }
+  }
+`;
+
 export const SUBMIT_PURCHASE_ORDER_FOR_APPROVAL = gql`
-  mutation SubmitPurchaseOrderForApproval($id: ID!, $approverId: ID) {
+  mutation SubmitPurchaseOrderForApproval($id: ID!, $approverId: ID!) {
     submitPurchaseOrderForApproval(id: $id, approverId: $approverId) {
       id
       poNumber
@@ -295,12 +426,13 @@ export const SUBMIT_PURCHASE_ORDER_FOR_APPROVAL = gql`
 `;
 
 export const APPROVE_PURCHASE_ORDER = gql`
-  mutation ApprovePurchaseOrder($id: ID!) {
-    approvePurchaseOrder(id: $id) {
+  mutation ApprovePurchaseOrder($id: ID!, $approvalNote: String) {
+    approvePurchaseOrder(id: $id, approvalNote: $approvalNote) {
       id
       poNumber
       status
       approverId
+      approvalNote
     }
   }
 `;
@@ -312,6 +444,28 @@ export const REJECT_PURCHASE_ORDER = gql`
       poNumber
       status
       approverId
+    }
+  }
+`;
+
+export const CANCEL_PURCHASE_ORDER = gql`
+  mutation CancelPurchaseOrder($id: ID!) {
+    cancelPurchaseOrder(id: $id) {
+      id
+      poNumber
+      status
+    }
+  }
+`;
+
+export const COMPLETE_PURCHASE_ORDER = gql`
+  mutation CompletePurchaseOrder($id: ID!, $actualProcessedQuantity: Int!) {
+    completePurchaseOrder(id: $id, actualProcessedQuantity: $actualProcessedQuantity) {
+      id
+      poNumber
+      status
+      actualProcessedQuantity
+      completedAt
     }
   }
 `;

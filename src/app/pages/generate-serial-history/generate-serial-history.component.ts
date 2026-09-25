@@ -63,7 +63,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     this.columns = [
       { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER, },
       { name: 'Ngày thực hiện', field: 'createdAt', className: 'min-w-[150px] max-w-[150px]', type: TableColumnType.DATE },
-      { name: 'Mã lô', field: 'batchCode', className: 'min-w-[120px] max-w-[120px]' },
+      { name: 'Mã lô', field: 'batchCode', className: 'min-w-[180px] max-w-[180px]' },
       { name: 'Prefix', field: 'prefix', className: 'min-w-[100px] max-w-[100px]' },
       { name: 'Số lượng', field: 'serialCount', className: 'min-w-[80px] max-w-[80px]' },
       { name: 'SL dự kiến', field: 'expectedQuantity', className: 'min-w-[100px] max-w-[100px]', type: TableColumnType.NUMBER },

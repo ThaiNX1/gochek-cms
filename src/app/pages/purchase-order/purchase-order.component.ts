@@ -16,13 +16,21 @@ import { DirectiveModule } from '../../shared/directive.module';
 import { TableColumnType } from '../../core/constants/enum';
 import { storageKey } from '../../core/constants/storage-key';
 import { ApiService } from '../../core/services/api.service';
-import { PaginatedPurchaseOrderResponse, PurchaseOrder, PurchaseOrderStatus } from '../../commons/types';
+import {
+  PaginatedPurchaseOrderResponse,
+  PurchaseOrder,
+  PurchaseOrderBatchStatus,
+  PurchaseOrderShipmentStatus,
+  PurchaseOrderStatus,
+} from '../../commons/types';
 import {
   GET_PURCHASE_ORDERS,
   DELETE_PURCHASE_ORDER,
   SUBMIT_PURCHASE_ORDER_FOR_APPROVAL,
   APPROVE_PURCHASE_ORDER,
   REJECT_PURCHASE_ORDER,
+  CANCEL_PURCHASE_ORDER,
+  COMPLETE_PURCHASE_ORDER,
   GET_USERS_FOR_APPROVER,
 } from '../../commons/queries/purchase-order.query';
 import { DialogComponent } from '../../shared/components/dialog/dialog.component';
@@ -59,14 +67,19 @@ export class PurchaseOrderComponent extends BaseClass {
   @ViewChild('expandedRowTemplate') expandedRowTemplate!: TemplateRef<any>;
   @ViewChild('deleteNotification') deleteNotification!: TemplateRef<any>;
   @ViewChild('submitApprovalDialogContent') submitApprovalDialogContent!: TemplateRef<any>;
+  @ViewChild('approveDialogContent') approveDialogContent!: TemplateRef<any>;
   @ViewChild('rejectDialogContent') rejectDialogContent!: TemplateRef<any>;
+  @ViewChild('cancelPoNotification') cancelPoNotification!: TemplateRef<any>;
+  @ViewChild('completePoDialogContent') completePoDialogContent!: TemplateRef<any>;
 
   selectedItem: any = null;
   PurchaseOrderStatus = PurchaseOrderStatus;
   currentUserId: string = '';
 
   submitApprovalForm!: FormGroup;
+  approveForm!: FormGroup;
   rejectForm!: FormGroup;
+  completePoForm!: FormGroup;
   approverList: any[] = [];
   approverSearchQuery = GET_USERS_FOR_APPROVER;
 
@@ -148,12 +161,12 @@ export class PurchaseOrderComponent extends BaseClass {
       { name: 'Nhà máy SX', field: 'supplierName', className: 'min-w-[180px] max-w-[180px]' },
       { name: 'Ngày đặt', field: 'orderDate', className: 'min-w-[110px] max-w-[110px]' },
       { name: 'Yêu cầu giao', field: 'requestedDeliveryDate', className: 'min-w-[110px] max-w-[110px]' },
-      { name: 'Tiền tệ', field: 'currency', className: 'min-w-[80px] max-w-[80px]' },
+      // { name: 'Tiền tệ', field: 'currency', className: 'min-w-[80px] max-w-[80px]' },
       { name: 'Sản phẩm', field: 'itemCount', className: 'text-center min-w-[90px] max-w-[90px]', type: TableColumnType.NUMBER },
       { name: 'Batch', field: 'batchCount', className: 'text-center min-w-[80px] max-w-[80px]', type: TableColumnType.NUMBER },
       { name: 'Trạng thái', field: 'statusName', className: 'min-w-[130px] max-w-[130px]', templateCode: 'statusColumnTemplate' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[110px] max-w-[110px]', type: TableColumnType.DATE },
-      { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
+      { name: 'Hành động', field: 'action', className: 'min-w-[180px] max-w-[180px]', templateCode: 'actionColumnTemplate', stickyEnd: true },
     ];
   }
 
@@ -169,8 +182,18 @@ export class PurchaseOrderComponent extends BaseClass {
     this.submitApprovalForm = new FormGroup({
       approverId: new FormControl('', [Validators.required]),
     });
+    this.approveForm = new FormGroup({
+      approvalNote: new FormControl(''),
+    });
     this.rejectForm = new FormGroup({
       rejectionReason: new FormControl(''),
+    });
+    this.completePoForm = new FormGroup({
+      actualProcessedQuantity: new FormControl<number | null>(null, [
+        Validators.required,
+        Validators.min(0),
+        Validators.pattern(/^\d+$/),
+      ]),
     });
     await this.onGetData();
   }
@@ -211,6 +234,63 @@ export class PurchaseOrderComponent extends BaseClass {
     return this.isPendingApproval(item.status) && item.approverId === this.currentUserId;
   }
 
+  canShowCancelAction(item: PurchaseOrder): boolean {
+    return item.status === PurchaseOrderStatus.CONFIRMED;
+  }
+
+  canShowCompleteAction(item: PurchaseOrder): boolean {
+    return item.status === PurchaseOrderStatus.IN_PRODUCTION;
+  }
+
+  canShowDeleteAction(item: PurchaseOrder): boolean {
+    // Không cho xóa PO đang/đã sản xuất hoặc đã hoàn thành
+    return item.status !== PurchaseOrderStatus.IN_PRODUCTION
+      && item.status !== PurchaseOrderStatus.COMPLETED;
+  }
+
+  private getPurchaseOrderBatches(item: any): any[] {
+    const itemBatches = (item.items || []).flatMap((poItem: any) => poItem.batches || []);
+    return itemBatches.length ? itemBatches : (item.batches || []);
+  }
+
+  private hasInProductionBatch(item: any): boolean {
+    return this.getPurchaseOrderBatches(item).some(
+      batch => batch.status === PurchaseOrderBatchStatus.IN_PRODUCTION
+    );
+  }
+
+  private hasShipmentNotReceivedAtWarehouse(item: any): boolean {
+    return (item.shipments || []).some(
+      (shipment: any) => shipment.status !== PurchaseOrderShipmentStatus.DELIVERED
+    );
+  }
+
+  private getCancelValidationMessage(item: PurchaseOrder): string | null {
+    if (item.status !== PurchaseOrderStatus.DRAFT && item.status !== PurchaseOrderStatus.CONFIRMED) {
+      return 'Chỉ có thể hủy PO ở trạng thái nháp hoặc đã xác nhận';
+    }
+    if (this.hasInProductionBatch(item)) {
+      return 'Không thể hủy PO khi còn batch đang sản xuất';
+    }
+    if (this.hasShipmentNotReceivedAtWarehouse(item)) {
+      return 'Không thể hủy PO khi còn shipment chưa nhập kho';
+    }
+    return null;
+  }
+
+  private getCompleteValidationMessage(item: PurchaseOrder): string | null {
+    if (item.status !== PurchaseOrderStatus.IN_PRODUCTION) {
+      return 'Chỉ có thể hoàn thành PO đang sản xuất';
+    }
+    if (this.hasInProductionBatch(item)) {
+      return 'Không thể hoàn thành PO khi còn batch đang sản xuất';
+    }
+    if (this.hasShipmentNotReceivedAtWarehouse(item)) {
+      return 'Không thể hoàn thành PO khi còn shipment chưa nhập kho';
+    }
+    return null;
+  }
+
   getStatusCount(status: PurchaseOrderStatus | ''): number {
     if (!status) {
       return Object.values(this.statusCounts).reduce((total, count) => total + (count ?? 0), 0);
@@ -224,45 +304,51 @@ export class PurchaseOrderComponent extends BaseClass {
     await this.onGetData();
   }
 
-  getBatchStatusLabel(status: string): string {
+  getBatchStatusLabel(status: PurchaseOrderBatchStatus): string {
     switch (status) {
-      case 'DRAFT': return 'Nháp';
-      case 'CREATED': return 'Đã tạo';
-      case 'IN_PRODUCTION': return 'Đang sản xuất';
-      case 'IN_TRANSIT': return 'Đang vận chuyển';
-      case 'RECEIVED': return 'Đã nhận';
-      case 'CANCELLED': return 'Đã hủy';
+      case PurchaseOrderBatchStatus.DRAFT: return 'Nháp';
+      case PurchaseOrderBatchStatus.CREATED: return 'Đã tạo';
+      case PurchaseOrderBatchStatus.IN_PRODUCTION: return 'Đang sản xuất';
+      case PurchaseOrderBatchStatus.PRODUCTION_COMPLETED: return 'Hoàn thành SX';
+      case PurchaseOrderBatchStatus.IN_TRANSIT: return 'Đang vận chuyển';
+      case PurchaseOrderBatchStatus.RECEIVED: return 'Chờ nhập kho';
+      case PurchaseOrderBatchStatus.WAREHOUSED: return 'Đã nhập kho';
+      case PurchaseOrderBatchStatus.CANCELLED: return 'Đã hủy';
       default: return status;
     }
   }
 
-  getBatchStatusClass(status: string): string {
+  getBatchStatusClass(status: PurchaseOrderBatchStatus): string {
     switch (status) {
-      case 'DRAFT': return 'bg-gray-100 text-gray-700';
-      case 'CREATED': return 'bg-slate-100 text-slate-700';
-      case 'IN_PRODUCTION': return 'bg-yellow-100 text-yellow-700';
-      case 'IN_TRANSIT': return 'bg-blue-100 text-blue-700';
-      case 'RECEIVED': return 'bg-green-100 text-green-700';
-      case 'CANCELLED': return 'bg-red-100 text-red-700';
+      case PurchaseOrderBatchStatus.DRAFT: return 'bg-gray-100 text-gray-700';
+      case PurchaseOrderBatchStatus.CREATED: return 'bg-slate-100 text-slate-700';
+      case PurchaseOrderBatchStatus.IN_PRODUCTION: return 'bg-yellow-100 text-yellow-700';
+      case PurchaseOrderBatchStatus.PRODUCTION_COMPLETED: return 'bg-teal-100 text-teal-700';
+      case PurchaseOrderBatchStatus.IN_TRANSIT: return 'bg-blue-100 text-blue-700';
+      case PurchaseOrderBatchStatus.RECEIVED: return 'bg-green-100 text-green-700';
+      case PurchaseOrderBatchStatus.WAREHOUSED: return 'bg-emerald-100 text-emerald-700';
+      case PurchaseOrderBatchStatus.CANCELLED: return 'bg-red-100 text-red-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   }
 
   // Các bước theo dòng đời của batch (không tính CANCELLED - render tách riêng)
-  readonly batchSteps: { key: string; label: string; icon: string }[] = [
-    { key: 'DRAFT', label: 'Nháp', icon: 'edit_note' },
-    { key: 'CREATED', label: 'Đã tạo', icon: 'assignment_turned_in' },
-    { key: 'IN_PRODUCTION', label: 'Sản xuất', icon: 'precision_manufacturing' },
-    { key: 'IN_TRANSIT', label: 'Vận chuyển', icon: 'local_shipping' },
-    { key: 'RECEIVED', label: 'Đã nhận', icon: 'task_alt' },
+  readonly batchSteps: { key: PurchaseOrderBatchStatus; label: string; icon: string }[] = [
+    { key: PurchaseOrderBatchStatus.DRAFT, label: 'Nháp', icon: 'edit_note' },
+    { key: PurchaseOrderBatchStatus.CREATED, label: 'Đã tạo', icon: 'assignment_turned_in' },
+    { key: PurchaseOrderBatchStatus.IN_PRODUCTION, label: 'Sản xuất', icon: 'precision_manufacturing' },
+    { key: PurchaseOrderBatchStatus.PRODUCTION_COMPLETED, label: 'Hoàn thành SX', icon: 'done_all' },
+    { key: PurchaseOrderBatchStatus.IN_TRANSIT, label: 'Vận chuyển', icon: 'local_shipping' },
+    { key: PurchaseOrderBatchStatus.RECEIVED, label: 'Chờ nhập kho', icon: 'task_alt' },
+    { key: PurchaseOrderBatchStatus.WAREHOUSED, label: 'Đã nhập kho', icon: 'warehouse' },
   ];
 
-  private getBatchStepIndex(status: string): number {
+  private getBatchStepIndex(status: PurchaseOrderBatchStatus): number {
     return this.batchSteps.findIndex(step => step.key === status);
   }
 
-  getBatchStepState(batchStatus: string, stepIndex: number): 'completed' | 'current' | 'pending' {
-    if (batchStatus === 'CANCELLED') return 'pending';
+  getBatchStepState(batchStatus: PurchaseOrderBatchStatus, stepIndex: number): 'completed' | 'current' | 'pending' {
+    if (batchStatus === PurchaseOrderBatchStatus.CANCELLED) return 'pending';
     const currentIndex = this.getBatchStepIndex(batchStatus);
     if (currentIndex === -1) return 'pending';
     if (stepIndex < currentIndex) return 'completed';
@@ -270,7 +356,7 @@ export class PurchaseOrderComponent extends BaseClass {
     return 'pending';
   }
 
-  getBatchStepCircleClass(batchStatus: string, stepIndex: number): string {
+  getBatchStepCircleClass(batchStatus: PurchaseOrderBatchStatus, stepIndex: number): string {
     const state = this.getBatchStepState(batchStatus, stepIndex);
     switch (state) {
       case 'completed':
@@ -281,13 +367,13 @@ export class PurchaseOrderComponent extends BaseClass {
     }
   }
 
-  getBatchStepLineClass(batchStatus: string, stepIndex: number): string {
-    if (batchStatus === 'CANCELLED') return 'bg-gray-200';
+  getBatchStepLineClass(batchStatus: PurchaseOrderBatchStatus, stepIndex: number): string {
+    if (batchStatus === PurchaseOrderBatchStatus.CANCELLED) return 'bg-gray-200';
     const currentIndex = this.getBatchStepIndex(batchStatus);
     return stepIndex < currentIndex ? 'bg-green-500' : 'bg-gray-200';
   }
 
-  getBatchStepLabelClass(batchStatus: string, stepIndex: number): string {
+  getBatchStepLabelClass(batchStatus: PurchaseOrderBatchStatus, stepIndex: number): string {
     const state = this.getBatchStepState(batchStatus, stepIndex);
     switch (state) {
       case 'completed':
@@ -298,8 +384,8 @@ export class PurchaseOrderComponent extends BaseClass {
     }
   }
 
-  isBatchCancelled(status: string): boolean {
-    return status === 'CANCELLED';
+  isBatchCancelled(status: PurchaseOrderBatchStatus): boolean {
+    return status === PurchaseOrderBatchStatus.CANCELLED;
   }
 
   async onGetData(page: number = 1) {
@@ -359,6 +445,10 @@ export class PurchaseOrderComponent extends BaseClass {
   }
 
   async onDelete(item: any) {
+    if (!this.canShowDeleteAction(item)) {
+      this.commonService.openSnackBarError('Không thể xóa PO đang sản xuất hoặc đã hoàn thành');
+      return;
+    }
     this.selectedItem = item;
     const dialogRef = this.injector.get(MatDialog).open(DialogNotificationComponent, {
       disableClose: true,
@@ -431,31 +521,36 @@ export class PurchaseOrderComponent extends BaseClass {
     this.injector.get(MatDialog).closeAll();
   }
 
-  async onApprove(item: any) {
+  onApprove(item: any) {
     this.selectedItem = item;
-    const dialogRef = this.injector.get(MatDialog).open(DialogNotificationComponent, {
-      disableClose: true,
+    this.approveForm.reset({ approvalNote: '' });
+    const dialogRef = this.injector.get(MatDialog).open(DialogComponent, {
       data: {
-        title: 'Xác nhận duyệt PO',
-        message: `Bạn có chắc muốn duyệt PO ${item.poNumber}?`,
+        title: `Xác nhận duyệt PO: ${item.poNumber}`,
         confirmText: 'Duyệt',
-        cancelText: 'Hủy'
-      }
+        showActions: false,
+      },
+      width: '520px'
     });
-    dialogRef.afterClosed().pipe(takeUntil(this.destroyRef)).subscribe(async result => {
-      if (result) {
-        const response = await this.injector.get(ApiService).executeMutation(
-          APPROVE_PURCHASE_ORDER,
-          { id: this.selectedItem.id }
-        );
-        if (response) {
-          this.commonService.openSnackBar('Duyệt PO thành công');
-          await this.onGetData(this.pagination.page + 1);
-        } else {
-          this.commonService.openSnackBarError('Duyệt PO thất bại');
-        }
+    dialogRef.componentInstance.content = this.approveDialogContent;
+  }
+
+  async onConfirmApprove() {
+    const approvalNote = this.approveForm.value.approvalNote?.trim() || null;
+    const response = await this.injector.get(ApiService).executeMutation(
+      APPROVE_PURCHASE_ORDER,
+      {
+        id: this.selectedItem.id,
+        approvalNote,
       }
-    });
+    );
+    if (response) {
+      this.commonService.openSnackBar('Duyệt PO thành công');
+      this.injector.get(MatDialog).closeAll();
+      await this.onGetData(this.pagination.page + 1);
+    } else {
+      this.commonService.openSnackBarError('Duyệt PO thất bại');
+    }
   }
 
   onOpenRejectDialog(item: any) {
@@ -488,6 +583,88 @@ export class PurchaseOrderComponent extends BaseClass {
     } else {
       this.commonService.openSnackBarError('Từ chối PO thất bại');
     }
+  }
+
+  onOpenCancelPurchaseOrderDialog(item: PurchaseOrder): void {
+    const validationMessage = this.getCancelValidationMessage(item);
+    if (validationMessage) {
+      this.commonService.openSnackBarError(validationMessage);
+      return;
+    }
+
+    this.selectedItem = item;
+    const dialogRef = this.injector.get(MatDialog).open(DialogNotificationComponent, {
+      disableClose: true,
+      data: {
+        title: 'Xác nhận hủy đơn đặt hàng',
+        confirmText: 'Hủy PO',
+        cancelText: 'Đóng',
+      },
+    });
+    dialogRef.componentInstance.content = this.cancelPoNotification;
+    dialogRef.afterClosed().pipe(takeUntil(this.destroyRef)).subscribe(async result => {
+      if (!result) return;
+
+      const response = await this.injector.get(ApiService).executeMutation<any>(
+        CANCEL_PURCHASE_ORDER,
+        { id: item.id }
+      );
+      if (!response?.cancelPurchaseOrder) {
+        this.commonService.openSnackBarError('Hủy đơn đặt hàng thất bại');
+        return;
+      }
+
+      this.commonService.openSnackBar('Hủy đơn đặt hàng thành công');
+      await this.onGetData(this.pagination.page + 1);
+    });
+  }
+
+  onOpenCompletePurchaseOrderDialog(item: PurchaseOrder): void {
+    const validationMessage = this.getCompleteValidationMessage(item);
+    if (validationMessage) {
+      this.commonService.openSnackBarError(validationMessage);
+      return;
+    }
+
+    this.selectedItem = item;
+    this.completePoForm.reset({ actualProcessedQuantity: null });
+    const dialogRef = this.injector.get(MatDialog).open(DialogComponent, {
+      data: {
+        title: `Hoàn thành PO: ${item.poNumber}`,
+        confirmText: 'Hoàn thành',
+        showActions: false,
+      },
+      width: '520px',
+    });
+    dialogRef.componentInstance.content = this.completePoDialogContent;
+  }
+
+  async onConfirmCompletePurchaseOrder(): Promise<void> {
+    this.completePoForm.markAllAsTouched();
+    const actualProcessedQuantity = Number(this.completePoForm.value.actualProcessedQuantity);
+    if (this.completePoForm.invalid || !Number.isInteger(actualProcessedQuantity) || actualProcessedQuantity < 0) {
+      this.commonService.openSnackBarError('Số lượng thực tế phải là số nguyên không âm');
+      return;
+    }
+
+    const validationMessage = this.getCompleteValidationMessage(this.selectedItem);
+    if (validationMessage) {
+      this.commonService.openSnackBarError(validationMessage);
+      return;
+    }
+
+    const response = await this.injector.get(ApiService).executeMutation<any>(
+      COMPLETE_PURCHASE_ORDER,
+      { id: this.selectedItem.id, actualProcessedQuantity }
+    );
+    if (!response?.completePurchaseOrder) {
+      this.commonService.openSnackBarError('Hoàn thành đơn đặt hàng thất bại');
+      return;
+    }
+
+    this.commonService.openSnackBar('Hoàn thành đơn đặt hàng thành công');
+    this.injector.get(MatDialog).closeAll();
+    await this.onGetData(this.pagination.page + 1);
   }
 
 }

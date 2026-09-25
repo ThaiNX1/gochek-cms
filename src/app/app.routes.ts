@@ -7,6 +7,10 @@ import { AuthGuardService } from './core/guards/auth-guard.guard';
 import { ConfirmOtpComponent } from './auth/confirm-otp/confirm-otp.component';
 export const routes: Routes = [
   {
+    path: 'print-label',
+    loadComponent: () => import('./pages/purchase-order/purchase-order-print-label/purchase-order-print-label.component').then(m => m.PurchaseOrderPrintLabelComponent),
+  },
+  {
     path: '',
     component: LayoutComponent,
     children: [

@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatStepperModule } from '@angular/material/stepper';
 import { RouterModule } from '@angular/router';
@@ -32,6 +33,7 @@ import {
   PartnerCredential,
   PartnerEnvironment,
   PartnerKey,
+  PaginatedStockBatchResponse,
   ShippingOrder,
   StockBatchResponse,
   StockEventType,
@@ -75,7 +77,7 @@ export class StockComponent extends BaseClass {
   batchColumns = [
     { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER },
     { name: 'Kho', field: 'warehouseName', className: 'min-w-[150px] max-w-[150px]' },
-    { name: 'Mã lô', field: 'batchCode', className: 'min-w-[120px] max-w-[120px]' },
+    { name: 'Mã lô', field: 'batchCode', className: 'min-w-[180px] max-w-[180px]' },
     { name: 'Nhà cung cấp', field: 'supplier', className: 'min-w-[130px] max-w-[130px]' },
     { name: 'SL dự kiến', field: 'expectedQuantity', className: 'min-w-[100px] max-w-[100px]', type: TableColumnType.NUMBER },
     { name: 'Đã nhập', field: 'importedQuantity', className: 'min-w-[90px] max-w-[90px]', type: TableColumnType.NUMBER },
@@ -83,7 +85,7 @@ export class StockComponent extends BaseClass {
     { name: 'Đã xuất', field: 'shippedCount', className: 'min-w-[90px] max-w-[90px]', type: TableColumnType.NUMBER },
     { name: 'Serial đầu', field: 'startSerialNumber', className: 'min-w-[120px] max-w-[120px]' },
     { name: 'Serial cuối', field: 'endSerialNumber', className: 'min-w-[120px] max-w-[120px]' },
-    { name: 'Ngày nhập', field: 'importedAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
+    // { name: 'Ngày nhập', field: 'importedAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
   ];
 
   overview: StockOverviewResponse | null = null;
@@ -192,20 +194,31 @@ export class StockComponent extends BaseClass {
     this.overview = response?.stockOverview ?? null;
   }
 
-  async onGetBatches() {
+  async onGetBatches(page: number = 1, size: number = this.batchPagination.size) {
     const response = await this.injector.get(ApiService).executeQuery<any>(GET_STOCK_BATCHES, {
-      warehouseId: this.getSelectedWarehouseId(),
+      pagination: {
+        page: page < 1 ? 1 : page,
+        size,
+        warehouseId: this.getSelectedWarehouseId(),
+      },
     });
-    this.batchDataSource = response?.stockBatches?.map((item: StockBatchResponse, index: number) => ({
+    const stockBatches = response?.stockBatches as PaginatedStockBatchResponse | undefined;
+    const currentPage = stockBatches?.pagination?.page ?? 1;
+    const pageSize = stockBatches?.pagination?.size ?? size;
+    this.batchDataSource = stockBatches?.data?.map((item: StockBatchResponse, index: number) => ({
       ...item,
-      index: index + 1,
+      index: (currentPage - 1) * pageSize + index + 1,
     })) ?? [];
     this.batchPagination = {
       ...this.batchPagination,
-      page: 0,
-      size: this.batchDataSource.length || 20,
-      total: this.batchDataSource.length,
+      page: currentPage - 1,
+      size: pageSize,
+      total: stockBatches?.pagination?.total ?? 0,
     };
+  }
+
+  async onBatchPageChange(event: PageEvent) {
+    await this.onGetBatches(event.pageIndex + 1, event.pageSize);
   }
 
   async onGetActiveWarehouses() {

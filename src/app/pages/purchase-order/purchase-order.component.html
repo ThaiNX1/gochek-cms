@@ -82,7 +82,7 @@
 
 <!-- Action buttons template -->
 <ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
-    <div class="flex items-center justify-start px-4 gap-2">
+    <div class="flex w-full items-center justify-start px-4 gap-2">
         <button class="flex items-center justify-center border-none bg-transparent" title="Xem chi tiết"
             (click)="onViewPO(item)">
             <mat-icon class="text-blue-500">visibility</mat-icon>
@@ -107,9 +107,59 @@
             </button>
         }
 
+        @if (canShowCancelAction(item)) {
+            <button *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]"
+                class="flex items-center justify-center border-none bg-transparent" title="Hủy PO"
+                (click)="onOpenCancelPurchaseOrderDialog(item)">
+                <mat-icon class="text-red-600">block</mat-icon>
+            </button>
+        }
+
+        @if (canShowCompleteAction(item)) {
+            <button *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]"
+                class="flex items-center justify-center border-none bg-transparent" title="Hoàn thành PO"
+                (click)="onOpenCompletePurchaseOrderDialog(item)">
+                <mat-icon class="text-green-600">task_alt</mat-icon>
+            </button>
+        }
+
+        @if (canShowDeleteAction(item)) {
         <button *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]"
             class="flex items-center justify-center border-none bg-transparent" title="Xóa" (click)="onDelete(item)">
             <mat-icon class="text-red-500">delete</mat-icon>
+        </button>
+        }
+    </div>
+</ng-template>
+
+<ng-template #cancelPoNotification>
+    <p>Bạn có chắc muốn hủy đơn đặt hàng <strong>{{ selectedItem?.poNumber }}</strong>?</p>
+</ng-template>
+
+<ng-template #completePoDialogContent>
+    <form [formGroup]="completePoForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label class="require">Số lượng thực tế đã xử lý:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <input matInput type="number" min="0" step="1" formControlName="actualProcessedQuantity"
+                    placeholder="Nhập số nguyên không âm">
+            </mat-form-field>
+            @if (completePoForm.get('actualProcessedQuantity')?.touched &&
+            completePoForm.get('actualProcessedQuantity')?.invalid) {
+            <span class="text-xs text-red-600">Số lượng thực tế phải là số nguyên không âm</span>
+            }
+        </div>
+    </form>
+    <div class="flex items-stretch justify-center gap-3 pt-3">
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
+            type="button" (click)="onCancelDialog()">
+            <mat-icon class="text-xl">close</mat-icon>
+            <span class="font-semibold">Đóng</span>
+        </button>
+        <button class="w-full md:w-[140px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-green-600"
+            type="button" (click)="onConfirmCompletePurchaseOrder()">
+            <mat-icon class="text-white text-xl">task_alt</mat-icon>
+            <span class="text-white font-semibold">Hoàn thành</span>
         </button>
     </div>
 </ng-template>
@@ -136,13 +186,38 @@
     <div class="flex items-stretch justify-center gap-3 pt-3">
         <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
             type="button" (click)="onCancelDialog()">
-            <mat-icon class="text-white text-xl">cancel</mat-icon>
-            <span class="text-white font-semibold">Hủy</span>
+            <mat-icon class="text-xl">cancel</mat-icon>
+            <span class="font-semibold">Hủy</span>
         </button>
         <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
             type="button" (click)="onConfirmSubmitApproval()">
             <mat-icon class="text-white text-xl">send</mat-icon>
-            <span class="text-white font-semibold">Gửi duyệt</span>
+            <span class="text-white font-semibold">Gửi</span>
+        </button>
+    </div>
+</ng-template>
+
+<!-- Approve dialog template -->
+<ng-template #approveDialogContent>
+    <form [formGroup]="approveForm" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+            <label>Ghi chú:</label>
+            <mat-form-field appearance="outline" floatLabel="auto">
+                <textarea matInput formControlName="approvalNote" rows="4"
+                    placeholder="Nhập ghi chú phê duyệt (tuỳ chọn)"></textarea>
+            </mat-form-field>
+        </div>
+    </form>
+    <div class="flex items-stretch justify-center gap-3 pt-3">
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
+            type="button" (click)="onCancelDialog()">
+            <mat-icon class="text-xl">close</mat-icon>
+            <span class="font-semibold">Hủy</span>
+        </button>
+        <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-primary"
+            type="button" (click)="onConfirmApprove()">
+            <mat-icon class="text-white text-xl">check_circle</mat-icon>
+            <span class="text-white font-semibold">Duyệt</span>
         </button>
     </div>
 </ng-template>
@@ -161,8 +236,8 @@
     <div class="flex items-stretch justify-center gap-3 pt-3">
         <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-gray-400"
             type="button" (click)="onCancelDialog()">
-            <mat-icon class="text-white text-xl">close</mat-icon>
-            <span class="text-white font-semibold">Hủy</span>
+            <mat-icon class="text-xl">close</mat-icon>
+            <span class="font-semibold">Hủy</span>
         </button>
         <button class="w-full md:w-[120px] flex items-center justify-center gap-2 p-3 rounded-md border-none bg-red-500"
             type="button" (click)="onConfirmReject()">
@@ -256,7 +331,7 @@
                                                                     </span>
                                                                 </div>
                                                                 @if (!last) {
-                                                                    <div class="flex-1 h-1 mx-1 mt-3 rounded"
+                                                                    <div class="flex-1 min-w-[16px] h-0.5 mx-1 mt-[9px] rounded self-start"
                                                                         [ngClass]="getBatchStepLineClass(batch.status, sIdx)">
                                                                     </div>
                                                                 }

@@ -1,0 +1,147 @@
+<div class="print-container" *ngIf="!isLoading">
+  <div class="label-page" *ngFor="let label of labels">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <img src="assets/images/logo_short.svg" alt="Logo" class="header-logo">
+      </div>
+      <div class="header-center">
+        <h1>PO LABEL</h1>
+        <h2>Nhãn đơn hàng / Carton Shipping Label</h2>
+      </div>
+      <div class="header-right">
+        <!-- <div class="header-text-small right-align">
+          GOOD PRODUCTS<br>
+          A BRIGHTER<br>
+          TOMORROW
+        </div> -->
+        <div class="shipping-icons">
+          <!-- Up arrows -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+          <!-- Umbrella -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7" />
+          </svg>
+          <!-- Fragile -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: PO Info -->
+    <div class="section-container">
+      <div class="section-title">THÔNG TIN PO / PURCHASE ORDER</div>
+      <table class="info-table">
+        <tr>
+          <td class="label">Mã PO / PO No.:</td>
+          <td class="value bold">{{ label.poNo }}</td>
+          <td class="label">Tổng số lượng PO / Total PO Qty:</td>
+          <td class="value bold">{{ label.totalPoQty | number }}</td>
+        </tr>
+        <tr>
+          <td class="label">Ngày đặt / Order Date:</td>
+          <td class="value bold">{{ label.orderDate }}</td>
+          <td class="label">Nhà máy / Factory:</td>
+          <td class="value bold">{{ label.factory }}</td>
+        </tr>
+        <tr>
+          <td class="label">Ngày giao dự kiến / Delivery Date:</td>
+          <td class="value bold">{{ label.deliveryDate }}</td>
+          <td class="label"></td>
+          <td class="value bold"></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Section: BATCH Info -->
+    <div class="section-container">
+      <div class="section-title">THÔNG TIN BATCH / LOT</div>
+      <table class="info-table">
+        <tr>
+          <td class="label">Mã Batch/Lot / Batch Code:</td>
+          <td class="value bold">{{ label.batchCode }}</td>
+          <td class="label">Ngày sản xuất / Production Date:</td>
+          <td class="value bold">{{ label.productionDate }}</td>
+        </tr>
+        <tr>
+          <td class="label">Số lượng đặt / Planned Qty:</td>
+          <td class="value bold">{{ label.plannedQty | number }}</td>
+          <td class="label">Model sản phẩm:</td>
+          <td class="value bold">{{ label.model }}</td>
+        </tr>
+        <tr>
+          <td class="label">Số lượng thực tế / Actual Qty:</td>
+          <td class="value bold">{{ label.actualQty | number }}</td>
+          <td class="label">Trạng thái QC / QC Status:</td>
+          <td class="value bold">{{ label.qcStatus }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Section: SHIPMENT Info -->
+    <div class="section-container">
+      <div class="section-title">THÔNG TIN VẬN CHUYỂN / SHIPMENT INFO</div>
+      <table class="info-table">
+        <tr>
+          <td class="label">Mã Shipment / Shipment No.:</td>
+          <td class="value bold">{{ label.shipmentNo }}</td>
+          <td class="label">Tracking / Container No.:</td>
+          <td class="value bold">{{ label.containerNo }}</td>
+        </tr>
+        <tr>
+          <td class="label">Ngày xuất kho / Ship Date:</td>
+          <td class="value bold">{{ label.shipDate }}</td>
+          <td class="label">Tuyến vận chuyển / Route:</td>
+          <td class="value bold">{{ label.route }}</td>
+        </tr>
+        <tr>
+          <td class="label">ETA:</td>
+          <td class="value bold">{{ label.eta }}</td>
+          <td class="label">Số pallet / Pallet No.:</td>
+          <td class="value bold">{{ label.palletNo }}</td>
+        </tr>
+        <tr>
+          <td class="label">Đơn vị vận chuyển / Carrier:</td>
+          <td class="value bold">{{ label.carrier }}</td>
+          <td class="label">Điểm đến / Destination:</td>
+          <td class="value bold">{{ label.destination }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Footer Barcodes -->
+    <div class="footer-container">
+      <div class="barcode-item">
+        <div class="barcode-title">PO QR</div>
+        <qrcode [qrdata]="label.poNo" [width]="84" [margin]="0" errorCorrectionLevel="M"
+          elementType="img" cssClass="qr-img"></qrcode>
+        <div class="barcode-text">{{ label.poNo }}</div>
+      </div>
+
+      <div class="barcode-divider"></div>
+
+      <div class="barcode-item">
+        <div class="barcode-title">Batch QR</div>
+        <qrcode [qrdata]="label.batchCode" [width]="84" [margin]="0" errorCorrectionLevel="M"
+          elementType="img" cssClass="qr-img"></qrcode>
+        <div class="barcode-text">{{ label.batchCode }}</div>
+      </div>
+
+      <!-- <div class="qr-item">
+        <div class="qr-title">QR Scan</div>
+        <img [src]="getQrCodeUrl(label.batchCode)" alt="QR Code" class="qr-img">
+      </div> -->
+    </div>
+
+  </div>
+</div>
+
+<div *ngIf="isLoading" class="loading-state">
+  Đang tải thông tin nhãn...
+</div>

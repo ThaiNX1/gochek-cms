@@ -17,21 +17,41 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { takeUntil } from 'rxjs/operators';
 import { BaseClass } from '../../../commons/base.class';
 import { ApiService } from '../../../core/services/api.service';
 import { SelectSearchComponent } from '../../../shared/components/select-search/select-search.component';
 import {
   CREATE_PURCHASE_ORDER,
   CREATE_PURCHASE_ORDER_SHIPMENT,
+  CANCEL_PURCHASE_ORDER,
+  COMPLETE_PURCHASE_ORDER,
+  DELETE_PURCHASE_ORDER_SHIPMENT,
   GET_PURCHASE_ORDER,
   GET_PURCHASE_ORDER_NUMBERS,
+  GET_PURCHASE_ORDER_SHIPMENT_CODES,
   GET_MODELS_FOR_SELECT,
   GET_SUPPLIERS_FOR_SELECT,
+  RECEIVE_PURCHASE_ORDER_SHIPMENT,
   UPDATE_PURCHASE_ORDER,
+  UPDATE_PURCHASE_ORDER_BATCH_STATUS,
+  UPDATE_PURCHASE_ORDER_SHIPMENT,
+  UPDATE_PURCHASE_ORDER_SHIPMENT_STATUS,
 } from '../../../commons/queries/purchase-order.query';
 import { GET_ACTIVE_WAREHOUSES } from '../../../commons/queries/warehouse.query';
+import { ALL_PREFIX } from '../../../commons/queries/generate-history.query';
+import {
+  PurchaseOrderBatchStatus,
+  PurchaseOrderShipmentStatus,
+  PurchaseOrderStatus,
+} from '../../../commons/types';
 import { DirectiveModule } from '../../../shared/directive.module';
+import { DialogComponent } from '../../../shared/components/dialog/dialog.component';
+import { DialogNotificationComponent } from '../../../shared/components/dialog-notification/dialog-notification.component';
 
 interface ProductRow {
   id?: string;
@@ -50,20 +70,22 @@ interface BatchRow {
   orderedQuantity: number;
   generatedQuantity?: number;
   plannedProductionDate: string;
+  serialPrefix: string;
   note: string;
-  status?: string;
+  status?: PurchaseOrderBatchStatus;
   itemId?: string;
   productIndex: number;
 }
 
 interface ShipmentRow {
+  ids?: string[];
   shipmentCode: string;
   quantity: number;
   expectedShipDate: string;
   expectedArrivalDate: string;
   carrier: string;
   trackingNumber: string;
-  status: string;
+  status: PurchaseOrderShipmentStatus;
   receivingWarehouseId: string;
   receivingWarehouseName?: string;
   batchIndexes: number[];
@@ -82,6 +104,8 @@ interface ShipmentRow {
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatCheckboxModule,
+    MatAutocompleteModule,
     RouterModule,
     SelectSearchComponent,
     DirectiveModule,
@@ -90,14 +114,21 @@ interface ShipmentRow {
   styleUrl: './purchase-order-create.component.scss'
 })
 export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
+  PurchaseOrderStatus = PurchaseOrderStatus;
+
   @ViewChild('batchDrawerContent') batchDrawerContent!: TemplateRef<any>;
   @ViewChild('shipmentDrawerContent') shipmentDrawerContent!: TemplateRef<any>;
+  @ViewChild('cancelPoNotification') cancelPoNotification!: TemplateRef<any>;
+  @ViewChild('completePoDialogContent') completePoDialogContent!: TemplateRef<any>;
 
   poForm!: FormGroup;
   batchForm!: FormGroup;
   shipmentForm!: FormGroup;
+  completePoForm!: FormGroup;
   orderDateMax: Date | null = null;
   requestedDeliveryDateMin: Date | null = null;
+  expectedShipDateMax: Date | null = null;
+  expectedArrivalDateMin: Date | null = null;
   batches: BatchRow[] = [];
   shipments: ShipmentRow[] = [];
   editingBatchIndex: number | null = null;
@@ -106,18 +137,25 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   supplierOptions: any[] = [];
   modelOptions: any[] = [];
   warehouseList: any[] = [];
+  prefixStrList: string[] = [];
 
   shipmentStatusOptions = [
-    { value: 'PENDING', label: 'Chờ vận chuyển' },
-    { value: 'IN_TRANSIT', label: 'Đang vận chuyển' },
-    { value: 'ARRIVED', label: 'Đã đến kho' },
-    { value: 'DELIVERED', label: 'Đã nhận hàng' },
-    { value: 'CANCELLED', label: 'Đã hủy' },
+    { value: PurchaseOrderShipmentStatus.PLANNED, label: 'Đã lên kế hoạch' },
+    { value: PurchaseOrderShipmentStatus.READY_TO_SHIP, label: 'Sẵn sàng xuất' },
+    { value: PurchaseOrderShipmentStatus.SHIPPED, label: 'Đã xuất' },
+    { value: PurchaseOrderShipmentStatus.IN_TRANSIT, label: 'Đang vận chuyển' },
+    { value: PurchaseOrderShipmentStatus.DELIVERED, label: 'Đã nhận hàng' },
+    { value: PurchaseOrderShipmentStatus.CANCELLED, label: 'Đã hủy' },
   ];
 
   isEditMode = false;
   poId: string | null = null;
   poData: any = null;
+  updatingBatchId: string | null = null;
+  selectedBatchIds = new Set<string>();
+  selectedShipmentIndexes: number[] = [];
+  batchRandomLetters: string = '';
+  shipmentRandomLetters: string = '';
 
   get canEditPurchaseOrder(): boolean {
     return !this.isEditMode || this.poData?.status === 'DRAFT';
@@ -127,12 +165,90 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     return this.isEditMode && !!this.poData?.status && this.poData.status !== 'DRAFT';
   }
 
-  readonly batchSteps: { key: string; label: string }[] = [
-    { key: 'DRAFT', label: 'Nháp' },
-    { key: 'CREATED', label: 'Đã tạo' },
-    { key: 'IN_PRODUCTION', label: 'Sản xuất' },
-    { key: 'IN_TRANSIT', label: 'Vận chuyển' },
-    { key: 'RECEIVED', label: 'Đã nhận' },
+  get canMoveBatchesToProduction(): boolean {
+    return this.poData?.status === 'CONFIRMED' || this.poData?.status === 'IN_PRODUCTION';
+  }
+
+  get canShowCancelPurchaseOrderAction(): boolean {
+    return this.isEditMode && this.poData?.status === PurchaseOrderStatus.CONFIRMED;
+  }
+
+  get canShowCompletePurchaseOrderAction(): boolean {
+    return this.isEditMode && this.poData?.status === PurchaseOrderStatus.IN_PRODUCTION;
+  }
+
+  getPoStatusLabel(status: string | undefined): string {
+    switch (status) {
+      case PurchaseOrderStatus.DRAFT: return 'Nháp';
+      case PurchaseOrderStatus.PENDING_APPROVAL: return 'Chờ duyệt';
+      case PurchaseOrderStatus.CONFIRMED: return 'Đã xác nhận';
+      case PurchaseOrderStatus.IN_PRODUCTION: return 'Đang sản xuất';
+      case PurchaseOrderStatus.COMPLETED: return 'Hoàn thành';
+      case PurchaseOrderStatus.CANCELLED: return 'Đã hủy';
+      default: return status || '-';
+    }
+  }
+
+  getPoStatusClass(status: string | undefined): string {
+    switch (status) {
+      case PurchaseOrderStatus.DRAFT: return 'bg-gray-50 text-gray-600 border-gray-200';
+      case PurchaseOrderStatus.PENDING_APPROVAL: return 'bg-orange-50 text-orange-600 border-orange-200';
+      case PurchaseOrderStatus.CONFIRMED: return 'bg-blue-50 text-blue-600 border-blue-200';
+      case PurchaseOrderStatus.IN_PRODUCTION: return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case PurchaseOrderStatus.COMPLETED: return 'bg-green-50 text-green-600 border-green-200';
+      case PurchaseOrderStatus.CANCELLED: return 'bg-red-50 text-red-500 border-red-200';
+      default: return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
+  }
+
+  getPoStatusIcon(status: string | undefined): string {
+    switch (status) {
+      case PurchaseOrderStatus.DRAFT: return 'edit_note';
+      case PurchaseOrderStatus.PENDING_APPROVAL: return 'pending_actions';
+      case PurchaseOrderStatus.CONFIRMED: return 'verified';
+      case PurchaseOrderStatus.IN_PRODUCTION: return 'precision_manufacturing';
+      case PurchaseOrderStatus.COMPLETED: return 'task_alt';
+      case PurchaseOrderStatus.CANCELLED: return 'cancel';
+      default: return 'help_outline';
+    }
+  }
+
+  get selectedBatches(): BatchRow[] {
+    return this.batches.filter(batch => !!batch.id && this.selectedBatchIds.has(batch.id));
+  }
+
+  get selectedBatchStatus(): PurchaseOrderBatchStatus | null {
+    return this.selectedBatches.length
+      ? (this.selectedBatches[0].status || null)
+      : null;
+  }
+
+  get canSelectSelectedBatchesForProduction(): boolean {
+    return this.selectedBatches.length > 0
+      && this.selectedBatches.every(batch => this.canSelectBatchForProduction(batch));
+  }
+
+  get canSelectSelectedBatchesForProductionCompleted(): boolean {
+    return this.selectedBatches.length > 0
+      && this.selectedBatches.every(batch => this.canSelectBatchForProductionCompleted(batch));
+  }
+
+  readonly batchSteps: { key: PurchaseOrderBatchStatus; label: string }[] = [
+    { key: PurchaseOrderBatchStatus.DRAFT, label: 'Nháp' },
+    { key: PurchaseOrderBatchStatus.CREATED, label: 'Đã tạo' },
+    { key: PurchaseOrderBatchStatus.IN_PRODUCTION, label: 'Sản xuất' },
+    { key: PurchaseOrderBatchStatus.PRODUCTION_COMPLETED, label: 'Hoàn thành SX' },
+    { key: PurchaseOrderBatchStatus.IN_TRANSIT, label: 'Vận chuyển' },
+    { key: PurchaseOrderBatchStatus.RECEIVED, label: 'Chờ nhập kho' },
+    { key: PurchaseOrderBatchStatus.WAREHOUSED, label: 'Đã nhập kho' },
+  ];
+
+  readonly shipmentSteps: { key: PurchaseOrderShipmentStatus; label: string }[] = [
+    { key: PurchaseOrderShipmentStatus.PLANNED, label: 'Kế hoạch' },
+    { key: PurchaseOrderShipmentStatus.READY_TO_SHIP, label: 'Sẵn sàng' },
+    { key: PurchaseOrderShipmentStatus.SHIPPED, label: 'Đã xuất' },
+    { key: PurchaseOrderShipmentStatus.IN_TRANSIT, label: 'Vận chuyển' },
+    { key: PurchaseOrderShipmentStatus.DELIVERED, label: 'Đã nhận' },
   ];
 
   GET_MODELS_FOR_SELECT = GET_MODELS_FOR_SELECT;
@@ -161,7 +277,7 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   override async ngOnInit(): Promise<void> {
     super.ngOnInit();
     this.initForm();
-    await Promise.all([this.loadSuppliers(), this.loadWarehouses(), this.loadModels()]);
+    await Promise.all([this.loadSuppliers(), this.loadWarehouses(), this.loadModels(), this.loadPrefixList()]);
 
     // Check if edit mode
     const route = this.injector.get(ActivatedRoute);
@@ -177,6 +293,14 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   async loadWarehouses() {
     const response = await this.injector.get(ApiService).executeQuery<any>(GET_ACTIVE_WAREHOUSES);
     this.warehouseList = response?.activeWarehouses ?? [];
+  }
+
+  async loadPrefixList() {
+    const response = await this.injector.get(ApiService).executeQuery<any>(ALL_PREFIX);
+    this.prefixStrList = (response?.allPrefix ?? [])
+      .map((item: any) => item.prefix)
+      .filter(Boolean)
+      .filter((v: string, i: number, arr: string[]) => arr.indexOf(v) === i); // unique
   }
 
   initForm() {
@@ -208,17 +332,36 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       batchCode: new FormControl('', [Validators.required]),
       orderedQuantity: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
       plannedProductionDate: new FormControl<Date | string | null>(null),
+      serialPrefix: new FormControl(''),
       note: new FormControl(''),
     });
+    this.completePoForm = new FormGroup({
+      actualProcessedQuantity: new FormControl<number | null>(null, [
+        Validators.required,
+        Validators.min(0),
+        Validators.pattern(/^\d+$/),
+      ]),
+    });
+    const expectedShipDateControl = new FormControl<Date | string | null>(null);
+    const expectedArrivalDateControl = new FormControl<Date | string | null>(null);
     this.shipmentForm = new FormGroup({
       shipmentCode: new FormControl('', [Validators.required]),
       batchIndexes: new FormControl<number[]>([], [Validators.required, Validators.minLength(1)]),
-      status: new FormControl('PENDING', [Validators.required]),
+      status: new FormControl(PurchaseOrderShipmentStatus.PLANNED, [Validators.required]),
       receivingWarehouseId: new FormControl('', [Validators.required]),
       carrier: new FormControl(''),
       trackingNumber: new FormControl(''),
-      expectedShipDate: new FormControl<Date | string | null>(null),
-      expectedArrivalDate: new FormControl<Date | string | null>(null),
+      expectedShipDate: expectedShipDateControl,
+      expectedArrivalDate: expectedArrivalDateControl,
+    }, { validators: this.arrivalDateNotBeforeShipDateValidator });
+
+    expectedShipDateControl.valueChanges.subscribe(expectedShipDate => {
+      this.expectedArrivalDateMin = this.normalizeDate(expectedShipDate);
+      expectedArrivalDateControl.updateValueAndValidity({ emitEvent: false });
+    });
+    expectedArrivalDateControl.valueChanges.subscribe(expectedArrivalDate => {
+      this.expectedShipDateMax = this.normalizeDate(expectedArrivalDate);
+      expectedShipDateControl.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -235,6 +378,21 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     return requestedDeliveryDate.getTime() > orderDate.getTime()
       ? null
       : { deliveryDateNotAfterOrderDate: true };
+  };
+
+  private readonly arrivalDateNotBeforeShipDateValidator: ValidatorFn = (
+    form: AbstractControl
+  ): ValidationErrors | null => {
+    const expectedShipDate = this.normalizeDate(form.get('expectedShipDate')?.value);
+    const expectedArrivalDate = this.normalizeDate(form.get('expectedArrivalDate')?.value);
+
+    if (!expectedShipDate || !expectedArrivalDate) {
+      return null;
+    }
+
+    return expectedArrivalDate.getTime() >= expectedShipDate.getTime()
+      ? null
+      : { arrivalDateBeforeShipDate: true };
   };
 
   private shiftDate(value: Date | string | null, days: number): Date | null {
@@ -318,6 +476,7 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       return;
     }
     this.poData = po;
+    this.selectedBatchIds.clear();
 
     // Patch form
     this.poForm.patchValue({
@@ -384,43 +543,45 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       orderedQuantity: batch.orderedQuantity,
       generatedQuantity: batch.generatedQuantity || 0,
       plannedProductionDate: batch.plannedProductionDate || '',
+      serialPrefix: batch.serialPrefix || '',
       note: batch.note || '',
-      status: batch.status || 'DRAFT',
+      status: batch.status || PurchaseOrderBatchStatus.DRAFT,
       itemId: batch.itemId,
       productIndex: batch.productIndex,
     }));
 
-    // Load shipments - map single batchId to batchIndexes
+    // Load shipments - map shipmentBatches[].batchId to batchIndexes
     const batchIdToIndex = new Map<string, number>();
     this.batches.forEach((batch, index) => {
       if (batch.id) batchIdToIndex.set(batch.id, index);
     });
-    // Group shipments by shipmentCode so multi-batch shipments consolidate
-    const groupedShipments = new Map<string, ShipmentRow>();
-    (po.shipments || []).forEach((ship: any) => {
-      const key = ship.shipmentCode;
-      const existing = groupedShipments.get(key);
-      const batchIndex = ship.batchId ? batchIdToIndex.get(ship.batchId) : undefined;
-      if (existing) {
-        if (batchIndex !== undefined && !existing.batchIndexes.includes(batchIndex)) {
-          existing.batchIndexes.push(batchIndex);
-        }
-      } else {
-        groupedShipments.set(key, {
-          shipmentCode: ship.shipmentCode,
-          quantity: ship.quantity,
-          expectedShipDate: ship.expectedShipDate || '',
-          expectedArrivalDate: ship.expectedArrivalDate || '',
-          carrier: ship.carrier || '',
-          trackingNumber: ship.trackingNumber || '',
-          status: ship.status || 'PENDING',
-          receivingWarehouseId: '',
-          receivingWarehouseName: '',
-          batchIndexes: batchIndex !== undefined ? [batchIndex] : [],
-        });
-      }
+    this.shipments = (po.shipments || []).map((ship: any) => {
+      const receivingWarehouseName = ship.warehouse?.name
+        || this.getShipmentNoteValue(ship.note, 'Kho nhận');
+      const receivingWarehouse = this.warehouseList.find(
+        warehouse => warehouse.id === ship.warehouseId || warehouse.name === receivingWarehouseName
+      );
+
+      // Resolve batch indexes from shipmentBatches[]
+      const shipmentBatches = ship.shipmentBatches || [];
+      const batchIndexes = shipmentBatches
+        .map((sb: any) => batchIdToIndex.get(sb.batchId))
+        .filter((idx: number | undefined): idx is number => idx !== undefined);
+
+      return {
+        ids: ship.id ? [ship.id] : [],
+        shipmentCode: ship.shipmentCode,
+        quantity: ship.quantity,
+        expectedShipDate: ship.expectedShipDate || '',
+        expectedArrivalDate: ship.expectedArrivalDate || '',
+        carrier: ship.carrier || '',
+        trackingNumber: ship.trackingNumber || '',
+        status: ship.status || PurchaseOrderShipmentStatus.PLANNED,
+        receivingWarehouseId: ship.warehouseId || receivingWarehouse?.id || '',
+        receivingWarehouseName,
+        batchIndexes,
+      } as ShipmentRow;
     });
-    this.shipments = Array.from(groupedShipments.values());
   }
 
   // ============ Products ============
@@ -489,6 +650,7 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       batchCode: this.generateNextBatchCode(),
       orderedQuantity: null,
       plannedProductionDate: null,
+      serialPrefix: '',
       note: '',
     });
     this.openBatchDrawer('Thêm batch/lot');
@@ -544,6 +706,7 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       plannedProductionDate: value.plannedProductionDate instanceof Date
         ? this.formatDate(value.plannedProductionDate)
         : value.plannedProductionDate || '',
+      serialPrefix: value.serialPrefix?.trim() || '',
       note: value.note?.trim() || '',
     };
 
@@ -569,13 +732,12 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     return `${product.modelName || product.modelCode}${product.version ? ' - ' + product.version : ''}`;
   }
 
-  private getBatchStepIndex(status?: string): number {
-    const normalizedStatus = status === 'CREATE' ? 'CREATED' : status;
-    return this.batchSteps.findIndex(step => step.key === normalizedStatus);
+  private getBatchStepIndex(status?: PurchaseOrderBatchStatus): number {
+    return this.batchSteps.findIndex(step => step.key === status);
   }
 
-  getBatchStepState(batchStatus: string | undefined, stepIndex: number): 'completed' | 'current' | 'pending' {
-    if (batchStatus === 'CANCELLED') return 'pending';
+  getBatchStepState(batchStatus: PurchaseOrderBatchStatus | undefined, stepIndex: number): 'completed' | 'current' | 'pending' {
+    if (batchStatus === PurchaseOrderBatchStatus.CANCELLED) return 'pending';
     const currentIndex = this.getBatchStepIndex(batchStatus);
     if (currentIndex === -1) return 'pending';
     if (stepIndex < currentIndex) return 'completed';
@@ -583,25 +745,211 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     return 'pending';
   }
 
-  getBatchStepCircleClass(batchStatus: string | undefined, stepIndex: number): string {
+  getBatchStepCircleClass(batchStatus: PurchaseOrderBatchStatus | undefined, stepIndex: number): string {
     return this.getBatchStepState(batchStatus, stepIndex) === 'pending'
       ? 'bg-gray-300 border-gray-300'
       : 'bg-green-500 border-green-500';
   }
 
-  getBatchStepLineClass(batchStatus: string | undefined, stepIndex: number): string {
-    if (batchStatus === 'CANCELLED') return 'bg-gray-200';
+  getBatchStepLineClass(batchStatus: PurchaseOrderBatchStatus | undefined, stepIndex: number): string {
+    if (batchStatus === PurchaseOrderBatchStatus.CANCELLED) return 'bg-gray-200';
     return stepIndex < this.getBatchStepIndex(batchStatus) ? 'bg-green-500' : 'bg-gray-200';
   }
 
-  getBatchStepLabelClass(batchStatus: string | undefined, stepIndex: number): string {
+  getBatchStepLabelClass(batchStatus: PurchaseOrderBatchStatus | undefined, stepIndex: number): string {
     return this.getBatchStepState(batchStatus, stepIndex) === 'pending'
       ? 'text-gray-500'
       : 'text-green-700 font-semibold';
   }
 
-  isBatchCancelled(status?: string): boolean {
-    return status === 'CANCELLED';
+  isBatchCancelled(status?: PurchaseOrderBatchStatus): boolean {
+    return status === PurchaseOrderBatchStatus.CANCELLED;
+  }
+
+  isBatchSelected(batch: BatchRow): boolean {
+    return !!batch.id && this.selectedBatchIds.has(batch.id);
+  }
+
+  isBatchSelectionDisabled(batch: BatchRow): boolean {
+    if (!batch.id || this.updatingBatchId) {
+      return true;
+    }
+    return !!this.selectedBatchStatus
+      && batch.status !== this.selectedBatchStatus;
+  }
+
+  toggleBatchSelection(batch: BatchRow, checked: boolean): void {
+    if (!batch.id) {
+      return;
+    }
+
+    if (checked) {
+      if (this.isBatchSelectionDisabled(batch)) {
+        return;
+      }
+      this.selectedBatchIds.add(batch.id);
+    } else {
+      this.selectedBatchIds.delete(batch.id);
+    }
+  }
+
+  clearBatchSelection(): void {
+    this.selectedBatchIds.clear();
+  }
+
+  editSelectedBatch(): void {
+    if (this.selectedBatches.length !== 1) {
+      return;
+    }
+    const selectedId = this.selectedBatches[0].id;
+    const index = this.batches.findIndex(batch => batch.id === selectedId);
+    if (index >= 0) {
+      this.editBatch(index);
+    }
+  }
+
+  removeSelectedBatches(): void {
+    const selectedIndexes = this.batches
+      .map((batch, index) => ({ batch, index }))
+      .filter(({ batch }) => !!batch.id && this.selectedBatchIds.has(batch.id))
+      .map(({ index }) => index)
+      .sort((a, b) => b - a);
+
+    selectedIndexes.forEach(index => this.removeBatch(index));
+    this.clearBatchSelection();
+  }
+
+  canSelectBatchForProduction(batch: BatchRow): boolean {
+    return this.canMoveBatchesToProduction
+      && !!batch.id
+      && batch.status === PurchaseOrderBatchStatus.CREATED;
+  }
+
+  canSelectBatchForProductionCompleted(batch: BatchRow): boolean {
+    return this.isEditMode
+      && !!batch.id
+      && batch.status === PurchaseOrderBatchStatus.IN_PRODUCTION;
+  }
+
+  async selectSelectedBatchesForProduction(): Promise<void> {
+    const selectedBatches = [...this.selectedBatches];
+    if (!this.canSelectSelectedBatchesForProduction || this.updatingBatchId) {
+      return;
+    }
+
+    const batchIds = selectedBatches
+      .map(batch => batch.id)
+      .filter((id): id is string => !!id);
+    this.updatingBatchId = batchIds[0];
+
+    try {
+      const response = await this.injector.get(ApiService).executeMutation<any>(
+        UPDATE_PURCHASE_ORDER_BATCH_STATUS,
+        {
+          ids: batchIds,
+          status: PurchaseOrderBatchStatus.IN_PRODUCTION,
+        }
+      );
+      const updatedBatches = response?.updatePurchaseOrderBatchStatus || [];
+      const updatedBatchById = new Map<string, any>(
+        updatedBatches.map((batch: any) => [batch.id, batch])
+      );
+
+      selectedBatches.forEach(batch => {
+        const updatedBatch = batch.id ? updatedBatchById.get(batch.id) : null;
+        if (updatedBatch) {
+          batch.status = updatedBatch.status;
+          batch.generatedQuantity = updatedBatch.generatedQuantity ?? batch.generatedQuantity;
+        }
+      });
+
+      if (updatedBatches.length !== selectedBatches.length) {
+        this.commonService.openSnackBarError(
+          `Chỉ chuyển được ${updatedBatches.length}/${selectedBatches.length} batch sang sản xuất`
+        );
+        return;
+      }
+
+      this.commonService.openSnackBar(`Đã chọn ${updatedBatches.length} batch để sản xuất`);
+
+      // Reload PO để cập nhật trạng thái mới (backend có thể tự chuyển PO sang IN_PRODUCTION)
+      if (this.poId) {
+        await this.loadPurchaseOrder(this.poId);
+      }
+    } catch {
+      this.commonService.openSnackBarError('Chuyển các batch sang sản xuất thất bại');
+    } finally {
+      this.updatingBatchId = null;
+      this.clearBatchSelection();
+    }
+  }
+
+  isBatchProductionCompleted(batch: BatchRow): boolean {
+    return batch.status === PurchaseOrderBatchStatus.PRODUCTION_COMPLETED;
+  }
+
+  async selectSelectedBatchesForProductionCompleted(): Promise<void> {
+    const selectedBatches = [...this.selectedBatches];
+    if (!this.canSelectSelectedBatchesForProductionCompleted || this.updatingBatchId) {
+      return;
+    }
+
+    const batchIds = selectedBatches
+      .map(batch => batch.id)
+      .filter((id): id is string => !!id);
+    this.updatingBatchId = batchIds[0];
+
+    try {
+      const response = await this.injector.get(ApiService).executeMutation<any>(
+        UPDATE_PURCHASE_ORDER_BATCH_STATUS,
+        {
+          ids: batchIds,
+          status: PurchaseOrderBatchStatus.PRODUCTION_COMPLETED,
+        }
+      );
+      const updatedBatches = response?.updatePurchaseOrderBatchStatus || [];
+      const updatedBatchById = new Map<string, any>(
+        updatedBatches.map((batch: any) => [batch.id, batch])
+      );
+
+      selectedBatches.forEach(batch => {
+        const updatedBatch = batch.id ? updatedBatchById.get(batch.id) : null;
+        if (updatedBatch) {
+          batch.status = updatedBatch.status;
+          batch.generatedQuantity = updatedBatch.generatedQuantity ?? batch.generatedQuantity;
+        }
+      });
+
+      if (updatedBatches.length !== selectedBatches.length) {
+        this.commonService.openSnackBarError(
+          `Chỉ cập nhật được ${updatedBatches.length}/${selectedBatches.length} batch`
+        );
+        return;
+      }
+
+      this.commonService.openSnackBar(`Đã hoàn thành sản xuất ${updatedBatches.length} batch`);
+
+      if (this.poId) {
+        await this.loadPurchaseOrder(this.poId);
+      }
+    } catch {
+      this.commonService.openSnackBarError('Cập nhật trạng thái batch thất bại');
+    } finally {
+      this.updatingBatchId = null;
+      this.clearBatchSelection();
+    }
+  }
+
+  get canCreateShipment(): boolean {
+    return this.isEditMode
+      && this.poData?.status !== 'CANCELLED'
+      && this.batches.some(batch => this.isBatchProductionCompleted(batch));
+  }
+
+  canSelectBatchForShipment(index: number): boolean {
+    const currentSelection = this.shipmentForm.get('batchIndexes')?.value as number[] | null;
+    return this.isBatchProductionCompleted(this.batches[index])
+      || (this.editingShipmentIndex !== null && !!currentSelection?.includes(index));
   }
 
   cancelBatchDrawer() {
@@ -614,24 +962,33 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   // ============ Shipments ============
-  addShipment() {
-    if (this.batches.length === 0) {
-      this.commonService.openSnackBarError('Vui lòng thêm batch/lot trước khi tạo shipment');
+  async addShipment() {
+    if (!this.isEditMode || !this.poId) {
+      this.commonService.openSnackBarError('Vận chuyển chỉ được tạo sau khi đơn đặt hàng và batch đã được lưu');
+      return;
+    }
+
+    const completedBatchIndexes = this.batches
+      .map((batch, index) => this.isBatchProductionCompleted(batch) ? index : -1)
+      .filter(index => index >= 0);
+    if (completedBatchIndexes.length === 0) {
+      this.commonService.openSnackBarError('Chỉ có thể tạo vận chuyển khi batch đã hoàn thành sản xuất');
       return;
     }
 
     this.editingShipmentIndex = null;
+    this.shipmentForm.get('batchIndexes')?.enable({ emitEvent: false });
     this.shipmentForm.reset({
-      shipmentCode: '',
+      shipmentCode: await this.generateNextShipmentCode(),
       batchIndexes: [],
-      status: 'PENDING',
+      status: PurchaseOrderShipmentStatus.PLANNED,
       receivingWarehouseId: '',
       carrier: '',
       trackingNumber: '',
       expectedShipDate: null,
       expectedArrivalDate: null,
     });
-    this.openShipmentDrawer('Thêm shipment');
+    this.openShipmentDrawer('Thêm vận chuyển');
   }
 
   editShipment(index: number) {
@@ -640,14 +997,15 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     this.shipmentForm.reset({
       shipmentCode: shipment.shipmentCode,
       batchIndexes: [...shipment.batchIndexes],
-      status: shipment.status || 'PENDING',
+      status: shipment.status || PurchaseOrderShipmentStatus.PLANNED,
       receivingWarehouseId: shipment.receivingWarehouseId || '',
       carrier: shipment.carrier || '',
       trackingNumber: shipment.trackingNumber || '',
       expectedShipDate: shipment.expectedShipDate ? new Date(shipment.expectedShipDate) : null,
       expectedArrivalDate: shipment.expectedArrivalDate ? new Date(shipment.expectedArrivalDate) : null,
     });
-    this.openShipmentDrawer('Cập nhật shipment');
+    this.shipmentForm.get('batchIndexes')?.disable({ emitEvent: false });
+    this.openShipmentDrawer('Cập nhật vận chuyển');
   }
 
   private openShipmentDrawer(title: string) {
@@ -659,10 +1017,10 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     });
   }
 
-  saveShipment() {
+  async saveShipment() {
     this.shipmentForm.markAllAsTouched();
     if (this.shipmentForm.invalid) {
-      this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin shipment bắt buộc');
+      this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin vận chuyển bắt buộc');
       return;
     }
 
@@ -673,12 +1031,23 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       return;
     }
 
+    if (this.editingShipmentIndex === null
+      && batchIndexes.some(index => !this.isBatchProductionCompleted(this.batches[index]))) {
+      this.commonService.openSnackBarError('Chỉ có thể tạo vận chuyển cho batch đã hoàn thành sản xuất');
+      return;
+    }
+
+    if (!this.poId) {
+      this.commonService.openSnackBarError('Không tìm thấy đơn đặt hàng để tạo vận chuyển');
+      return;
+    }
+
     const shipmentCode = value.shipmentCode.trim();
     const duplicated = this.shipments.some((ship, index) =>
       index !== this.editingShipmentIndex && ship.shipmentCode.trim().toLowerCase() === shipmentCode.toLowerCase()
     );
     if (duplicated) {
-      this.commonService.openSnackBarError('Mã shipment đã tồn tại trong danh sách');
+      this.commonService.openSnackBarError('Mã vận chuyển đã tồn tại trong danh sách');
       return;
     }
 
@@ -687,10 +1056,13 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     const warehouse = this.warehouseList.find(w => w.id === value.receivingWarehouseId);
 
     const shipment: ShipmentRow = {
+      ids: this.editingShipmentIndex === null
+        ? []
+        : this.shipments[this.editingShipmentIndex]?.ids,
       shipmentCode,
       batchIndexes,
       quantity,
-      status: value.status,
+      status: value.status as PurchaseOrderShipmentStatus,
       receivingWarehouseId: value.receivingWarehouseId,
       receivingWarehouseName: warehouse?.name || '',
       carrier: value.carrier?.trim() || '',
@@ -703,24 +1075,228 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
         : value.expectedArrivalDate || '',
     };
 
-    if (this.editingShipmentIndex === null) {
-      this.shipments.push(shipment);
+    const noteParts = [
+      shipment.receivingWarehouseName ? `Kho nhận: ${shipment.receivingWarehouseName}` : '',
+    ].filter(Boolean);
+    const shipmentNote = noteParts.join(' | ') || null;
+    const existingIds = shipment.ids || [];
+
+    if (this.editingShipmentIndex !== null && existingIds.length > 0) {
+      for (let index = 0; index < existingIds.length; index++) {
+        const batchIndex = batchIndexes[index] ?? batchIndexes[0];
+        const batch = this.batches[batchIndex];
+        await this.injector.get(ApiService).executeMutation(
+          UPDATE_PURCHASE_ORDER_SHIPMENT,
+          {
+            id: existingIds[index],
+            input: {
+              batches: batchIndexes.map(idx => ({
+                batchId: this.batches[idx]?.id,
+                quantity: Number(this.batches[idx]?.orderedQuantity || 0),
+              })).filter(b => !!b.batchId),
+              quantity: batchIndexes.reduce((sum, idx) => sum + Number(this.batches[idx]?.orderedQuantity || 0), 0),
+              expectedShipDate: shipment.expectedShipDate || null,
+              expectedArrivalDate: shipment.expectedArrivalDate || null,
+              carrier: shipment.carrier || null,
+              trackingNumber: shipment.trackingNumber || null,
+              warehouseId: shipment.receivingWarehouseId || null,
+              note: shipmentNote,
+            },
+          }
+        );
+      }
+
+      const previousStatus = this.shipments[this.editingShipmentIndex]?.status;
+      if (previousStatus !== shipment.status) {
+        await this.updateShipmentStatuses(existingIds, shipment.status);
+      }
     } else {
-      this.shipments[this.editingShipmentIndex] = shipment;
+      // Tạo 1 shipment duy nhất với nhiều batch thông qua batches[]
+      const batchesInput = batchIndexes
+        .map(idx => ({
+          batchId: this.batches[idx]?.id,
+          quantity: Number(this.batches[idx]?.orderedQuantity || 0),
+        }))
+        .filter(b => !!b.batchId);
+
+      const response = await this.injector.get(ApiService).executeMutation(
+        CREATE_PURCHASE_ORDER_SHIPMENT,
+        {
+          input: {
+            purchaseOrderId: this.poId,
+            shipmentCode: shipment.shipmentCode,
+            batches: batchesInput,
+            expectedShipDate: shipment.expectedShipDate || null,
+            expectedArrivalDate: shipment.expectedArrivalDate || null,
+            carrier: shipment.carrier || null,
+            trackingNumber: shipment.trackingNumber || null,
+            warehouseId: shipment.receivingWarehouseId || null,
+            note: shipmentNote,
+          },
+        }
+      );
+
+      const createdShipment = response?.createPurchaseOrderShipment;
+      if (createdShipment?.id && shipment.status !== PurchaseOrderShipmentStatus.PLANNED) {
+        await this.updateShipmentStatuses([createdShipment.id], shipment.status);
+      }
     }
+
+    const wasEditing = this.editingShipmentIndex !== null;
     this.commonService.closeRightSlideNav();
+    await this.loadPurchaseOrder(this.poId);
+    this.commonService.openSnackBar(
+      wasEditing ? 'Cập nhật vận chuyển thành công' : 'Tạo vận chuyển thành công'
+    );
   }
 
-  removeShipment(index: number) {
+  async removeShipment(index: number) {
+    const shipmentIds = this.shipments[index]?.ids || [];
+    for (const id of shipmentIds) {
+      await this.injector.get(ApiService).executeMutation(
+        DELETE_PURCHASE_ORDER_SHIPMENT,
+        { id }
+      );
+    }
     this.shipments.splice(index, 1);
+    this.commonService.openSnackBar('Xóa vận chuyển thành công');
   }
 
   cancelShipmentDrawer() {
     this.commonService.closeRightSlideNav();
   }
 
+  updatingShipmentIds: boolean = false;
+
+  get selectedShipments(): ShipmentRow[] {
+    return this.selectedShipmentIndexes.map(i => this.shipments[i]).filter(Boolean);
+  }
+
+  get selectedShipmentStatus(): PurchaseOrderShipmentStatus | null {
+    const statuses = [...new Set(this.selectedShipments.map(s => s.status))];
+    return statuses.length === 1 ? statuses[0] : null;
+  }
+
+  getNextShipmentStatus(currentStatus: PurchaseOrderShipmentStatus): PurchaseOrderShipmentStatus | null {
+    const flow: Partial<Record<PurchaseOrderShipmentStatus, PurchaseOrderShipmentStatus>> = {
+      [PurchaseOrderShipmentStatus.PLANNED]: PurchaseOrderShipmentStatus.READY_TO_SHIP,
+      [PurchaseOrderShipmentStatus.READY_TO_SHIP]: PurchaseOrderShipmentStatus.SHIPPED,
+      [PurchaseOrderShipmentStatus.SHIPPED]: PurchaseOrderShipmentStatus.IN_TRANSIT,
+      [PurchaseOrderShipmentStatus.IN_TRANSIT]: PurchaseOrderShipmentStatus.DELIVERED,
+    };
+    return flow[currentStatus] ?? null;
+  }
+
+  getNextShipmentStatusLabel(status: PurchaseOrderShipmentStatus | null): string {
+    const labels: Partial<Record<PurchaseOrderShipmentStatus, string>> = {
+      [PurchaseOrderShipmentStatus.READY_TO_SHIP]: 'Sẵn sàng xuất',
+      [PurchaseOrderShipmentStatus.SHIPPED]: 'Đã xuất',
+      [PurchaseOrderShipmentStatus.IN_TRANSIT]: 'Đang vận chuyển',
+      [PurchaseOrderShipmentStatus.DELIVERED]: 'Đã nhận hàng',
+    };
+    return status ? (labels[status] ?? status) : '';
+  }
+
+  get canAdvanceSelectedShipments(): boolean {
+    if (!this.selectedShipmentIndexes.length || !this.selectedShipmentStatus) return false;
+    return !!this.getNextShipmentStatus(this.selectedShipmentStatus);
+  }
+
+  get canCancelSelectedShipments(): boolean {
+    if (!this.selectedShipmentIndexes.length) return false;
+    return this.selectedShipments.every(s =>
+      s.status === PurchaseOrderShipmentStatus.PLANNED
+      || s.status === PurchaseOrderShipmentStatus.READY_TO_SHIP
+    );
+  }
+
+  private async updateShipmentStatuses(
+    shipmentIds: string[],
+    status: PurchaseOrderShipmentStatus
+  ): Promise<void> {
+    const uniqueIds = [...new Set(shipmentIds)];
+    await Promise.all(uniqueIds.map(id =>
+      this.injector.get(ApiService).executeMutation(
+        UPDATE_PURCHASE_ORDER_SHIPMENT_STATUS,
+        { id, status }
+      )
+    ));
+  }
+
+  isShipmentSelected(index: number): boolean {
+    return this.selectedShipmentIndexes.includes(index);
+  }
+
+  isShipmentSelectionDisabled(index: number): boolean {
+    if (this.updatingShipmentIds) return true;
+    if (!this.selectedShipmentIndexes.length) return false;
+    // same-status constraint
+    const current = this.shipments[index];
+    const firstStatus = this.shipments[this.selectedShipmentIndexes[0]]?.status;
+    return current?.status !== firstStatus;
+  }
+
+  toggleShipmentSelection(index: number, checked: boolean) {
+    if (this.isShipmentSelectionDisabled(index) && checked) return;
+    if (checked) {
+      if (!this.selectedShipmentIndexes.includes(index)) {
+        this.selectedShipmentIndexes = [...this.selectedShipmentIndexes, index];
+      }
+    } else {
+      this.selectedShipmentIndexes = this.selectedShipmentIndexes.filter(i => i !== index);
+    }
+  }
+
+  async cancelSelectedShipments() {
+    if (!this.canCancelSelectedShipments) return;
+    const allIds = this.selectedShipments.flatMap(s => s.ids || []);
+    if (!allIds.length) return;
+    this.updatingShipmentIds = true;
+    try {
+      await this.updateShipmentStatuses(allIds, PurchaseOrderShipmentStatus.CANCELLED);
+      this.selectedShipmentIndexes = [];
+      await this.loadPurchaseOrder(this.poId!);
+      this.commonService.openSnackBar('Hủy vận chuyển thành công');
+    } catch {
+      this.commonService.openSnackBarError('Hủy vận chuyển thất bại');
+    } finally {
+      this.updatingShipmentIds = false;
+    }
+  }
+
+  async advanceSelectedShipments() {
+    if (!this.canAdvanceSelectedShipments || !this.selectedShipmentStatus) return;
+    const nextStatus = this.getNextShipmentStatus(this.selectedShipmentStatus)!;
+    const allIds = this.selectedShipments.flatMap(s => s.ids || []);
+    if (!allIds.length) return;
+    this.updatingShipmentIds = true;
+    try {
+      await this.updateShipmentStatuses(allIds, nextStatus);
+
+      this.selectedShipmentIndexes = [];
+      await this.loadPurchaseOrder(this.poId!);
+      this.commonService.openSnackBar(`Chuyển trạng thái vận chuyển thành công`);
+    } catch {
+      this.commonService.openSnackBarError('Chuyển trạng thái vận chuyển thất bại');
+    } finally {
+      this.updatingShipmentIds = false;
+    }
+  }
+
+  printSelectedLabels() {
+    if (!this.selectedShipmentIndexes.length) {
+      this.commonService.openSnackBarError('Vui lòng chọn ít nhất 1 vận chuyển để in nhãn');
+      return;
+    }
+    for (const index of this.selectedShipmentIndexes) {
+      this.printLabel(index);
+    }
+  }
+
+
   private onShipmentDrawerClosed() {
     this.editingShipmentIndex = null;
+    this.shipmentForm.get('batchIndexes')?.enable({ emitEvent: false });
     this.shipmentForm.reset();
   }
 
@@ -732,19 +1308,169 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       .join(', ');
   }
 
-  getShipmentStatusLabel(status: string): string {
+  getShipmentStatusLabel(status: PurchaseOrderShipmentStatus): string {
     return this.shipmentStatusOptions.find(opt => opt.value === status)?.label || status || '-';
   }
 
-  getShipmentStatusClass(status: string): string {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'IN_TRANSIT': return 'bg-blue-100 text-blue-800';
-      case 'ARRIVED': return 'bg-cyan-100 text-cyan-800';
-      case 'DELIVERED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  private getShipmentNoteValue(note: string | null | undefined, label: string): string {
+    const part = note?.split('|').map(value => value.trim()).find(value => value.startsWith(`${label}:`));
+    return part?.slice(label.length + 1).trim() || '';
+  }
+
+  private getShipmentStepIndex(status?: PurchaseOrderShipmentStatus): number {
+    return this.shipmentSteps.findIndex(step => step.key === status);
+  }
+
+  getShipmentStepState(status: PurchaseOrderShipmentStatus | undefined, stepIndex: number): 'completed' | 'current' | 'pending' {
+    if (status === PurchaseOrderShipmentStatus.CANCELLED) return 'pending';
+    const currentIndex = this.getShipmentStepIndex(status);
+    if (currentIndex === -1) return 'pending';
+    if (stepIndex < currentIndex) return 'completed';
+    if (stepIndex === currentIndex) return 'current';
+    return 'pending';
+  }
+
+  getShipmentStepCircleClass(status: PurchaseOrderShipmentStatus | undefined, stepIndex: number): string {
+    return this.getShipmentStepState(status, stepIndex) === 'pending'
+      ? 'bg-gray-300 border-gray-300'
+      : 'bg-green-500 border-green-500';
+  }
+
+  getShipmentStepLineClass(status: PurchaseOrderShipmentStatus | undefined, stepIndex: number): string {
+    if (status === PurchaseOrderShipmentStatus.CANCELLED) return 'bg-gray-200';
+    return stepIndex < this.getShipmentStepIndex(status) ? 'bg-green-500' : 'bg-gray-200';
+  }
+
+  getShipmentStepLabelClass(status: PurchaseOrderShipmentStatus | undefined, stepIndex: number): string {
+    return this.getShipmentStepState(status, stepIndex) === 'pending'
+      ? 'text-gray-500'
+      : 'text-green-700 font-semibold';
+  }
+
+  isShipmentCancelled(status?: PurchaseOrderShipmentStatus): boolean {
+    return status === PurchaseOrderShipmentStatus.CANCELLED;
+  }
+
+  private hasInProductionBatch(): boolean {
+    return this.batches.some(batch => batch.status === PurchaseOrderBatchStatus.IN_PRODUCTION);
+  }
+
+  private hasShipmentNotReceivedAtWarehouse(): boolean {
+    return this.shipments.some(
+      shipment => shipment.status !== PurchaseOrderShipmentStatus.DELIVERED
+    );
+  }
+
+  private getCancelPurchaseOrderValidationMessage(): string | null {
+    if (this.poData?.status !== PurchaseOrderStatus.DRAFT
+      && this.poData?.status !== PurchaseOrderStatus.CONFIRMED) {
+      return 'Chỉ có thể hủy PO ở trạng thái nháp hoặc đã xác nhận';
     }
+    if (this.hasInProductionBatch()) {
+      return 'Không thể hủy PO khi còn batch đang sản xuất';
+    }
+    if (this.hasShipmentNotReceivedAtWarehouse()) {
+      return 'Không thể hủy PO khi còn shipment chưa nhập kho';
+    }
+    return null;
+  }
+
+  private getCompletePurchaseOrderValidationMessage(): string | null {
+    if (this.poData?.status !== PurchaseOrderStatus.IN_PRODUCTION) {
+      return 'Chỉ có thể hoàn thành PO đang sản xuất';
+    }
+    if (this.hasInProductionBatch()) {
+      return 'Không thể hoàn thành PO khi còn batch đang sản xuất';
+    }
+    if (this.hasShipmentNotReceivedAtWarehouse()) {
+      return 'Không thể hoàn thành PO khi còn shipment chưa nhập kho';
+    }
+    return null;
+  }
+
+  onOpenCancelPurchaseOrderDialog(): void {
+    const validationMessage = this.getCancelPurchaseOrderValidationMessage();
+    if (validationMessage) {
+      this.commonService.openSnackBarError(validationMessage);
+      return;
+    }
+
+    const dialogRef = this.injector.get(MatDialog).open(DialogNotificationComponent, {
+      disableClose: true,
+      data: {
+        title: 'Xác nhận hủy đơn đặt hàng',
+        confirmText: 'Hủy PO',
+        cancelText: 'Đóng',
+      },
+    });
+    dialogRef.componentInstance.content = this.cancelPoNotification;
+    dialogRef.afterClosed().pipe(takeUntil(this.destroyRef)).subscribe(async result => {
+      if (!result || !this.poId) return;
+
+      const response = await this.injector.get(ApiService).executeMutation<any>(
+        CANCEL_PURCHASE_ORDER,
+        { id: this.poId }
+      );
+      if (!response?.cancelPurchaseOrder) {
+        this.commonService.openSnackBarError('Hủy đơn đặt hàng thất bại');
+        return;
+      }
+
+      this.poData = { ...this.poData, ...response.cancelPurchaseOrder };
+      this.commonService.openSnackBar('Hủy đơn đặt hàng thành công');
+    });
+  }
+
+  onOpenCompletePurchaseOrderDialog(): void {
+    const validationMessage = this.getCompletePurchaseOrderValidationMessage();
+    if (validationMessage) {
+      this.commonService.openSnackBarError(validationMessage);
+      return;
+    }
+
+    this.completePoForm.reset({ actualProcessedQuantity: null });
+    const dialogRef = this.injector.get(MatDialog).open(DialogComponent, {
+      data: {
+        title: `Hoàn thành PO: ${this.poData?.poNumber || ''}`,
+        confirmText: 'Hoàn thành',
+        showActions: false,
+      },
+      width: '520px',
+    });
+    dialogRef.componentInstance.content = this.completePoDialogContent;
+  }
+
+  closePurchaseOrderActionDialog(): void {
+    this.injector.get(MatDialog).closeAll();
+  }
+
+  async onConfirmCompletePurchaseOrder(): Promise<void> {
+    this.completePoForm.markAllAsTouched();
+    const actualProcessedQuantity = Number(this.completePoForm.value.actualProcessedQuantity);
+    if (this.completePoForm.invalid || !Number.isInteger(actualProcessedQuantity) || actualProcessedQuantity < 0) {
+      this.commonService.openSnackBarError('Số lượng thực tế phải là số nguyên không âm');
+      return;
+    }
+
+    const validationMessage = this.getCompletePurchaseOrderValidationMessage();
+    if (validationMessage) {
+      this.commonService.openSnackBarError(validationMessage);
+      return;
+    }
+    if (!this.poId) return;
+
+    const response = await this.injector.get(ApiService).executeMutation<any>(
+      COMPLETE_PURCHASE_ORDER,
+      { id: this.poId, actualProcessedQuantity }
+    );
+    if (!response?.completePurchaseOrder) {
+      this.commonService.openSnackBarError('Hoàn thành đơn đặt hàng thất bại');
+      return;
+    }
+
+    this.poData = { ...this.poData, ...response.completePurchaseOrder };
+    this.commonService.openSnackBar('Hoàn thành đơn đặt hàng thành công');
+    this.closePurchaseOrderActionDialog();
   }
 
   // ============ Save ============
@@ -788,11 +1514,11 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     // Validate shipments
     for (let i = 0; i < this.shipments.length; i++) {
       if (!this.shipments[i].shipmentCode) {
-        this.commonService.openSnackBarError(`Shipment dòng ${i + 1}: chưa nhập mã shipment`);
+        this.commonService.openSnackBarError(`Vận chuyển dòng ${i + 1}: chưa có mã vận chuyển`);
         return;
       }
       if (!this.shipments[i].batchIndexes?.length) {
-        this.commonService.openSnackBarError(`Shipment dòng ${i + 1}: chưa chọn batch/lot`);
+        this.commonService.openSnackBarError(`Vận chuyển dòng ${i + 1}: chưa chọn batch/lot`);
         return;
       }
     }
@@ -817,6 +1543,7 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
           batchCode: batch.batchCode,
           orderedQuantity: Number(batch.orderedQuantity),
           plannedProductionDate: batch.plannedProductionDate || null,
+          serialPrefix: batch.serialPrefix || null,
           note: batch.note || null,
         })),
     }));
@@ -909,13 +1636,18 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
             carrier: shipment.carrier || null,
             trackingNumber: shipment.trackingNumber || null,
             batchId: linkedBatchId,
+            warehouseId: shipment.receivingWarehouseId || null,
             note: shipmentNote,
           };
 
-          await this.injector.get(ApiService).executeMutation(
+          const shipmentResponse = await this.injector.get(ApiService).executeMutation(
             CREATE_PURCHASE_ORDER_SHIPMENT,
             { input: shipmentInput }
           );
+          const createdShipmentId = shipmentResponse?.createPurchaseOrderShipment?.id;
+          if (createdShipmentId && shipment.status !== PurchaseOrderShipmentStatus.PLANNED) {
+            await this.updateShipmentStatuses([createdShipmentId], shipment.status);
+          }
         }
       }
     }
@@ -943,11 +1675,115 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   private generateNextBatchCode(): string {
-    const prefix = this.getDatedCodePrefix('BAT');
-    return this.getNextSequenceCode(prefix, this.batches.map(batch => batch.batchCode));
+    if (!this.batchRandomLetters) {
+      // Try to extract from existing batches to maintain sequence in edit mode
+      const existingFormatBatch = this.batches.find(b => b.batchCode && b.batchCode.match(/^BAT-\d{8}[A-Z]{3}-\d{3}$/));
+      if (existingFormatBatch) {
+        this.batchRandomLetters = existingFormatBatch.batchCode.substring(12, 15);
+      } else {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let randomStr = '';
+        for (let i = 0; i < 3; i++) {
+          randomStr += letters.charAt(Math.floor(Math.random() * letters.length));
+        }
+        this.batchRandomLetters = randomStr;
+      }
+    }
+
+    const date = new Date();
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+    const dateStr = `${day}${month}${year}`;
+
+    const prefix = `BAT-${dateStr}${this.batchRandomLetters}-`;
+    const existingBatches = this.batches.map(b => b.batchCode);
+    return this.getNextSequenceCode(prefix, existingBatches);
   }
 
-  private getDatedCodePrefix(type: 'PO' | 'BAT', date: Date = new Date()): string {
+  printLabel(index: number) {
+    const shipment = this.shipments[index];
+    if (shipment && this.poData) {
+      // Map batches to include product and model info
+      const enrichedBatches = this.batches
+        .filter((_, i) => shipment.batchIndexes.includes(i))
+        .map(b => {
+          const product = this.products[b.productIndex];
+          return {
+            ...b,
+            product: product?.modelName || product?.modelCode || '-',
+            modelCode: product?.modelCode || '-'
+          };
+        });
+
+      // Collect necessary data to pass to print-label
+      const printData = {
+        poData: this.poData,
+        shipment: shipment,
+        batches: enrichedBatches,
+        totalPoQty: this.batches.reduce((sum, b) => sum + (b.orderedQuantity || 0), 0)
+      };
+
+      // Generate a unique ID for this print session to support multiple tabs if needed
+      const printId = `print_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem(printId, JSON.stringify(printData));
+
+      const url = this.injector.get(Router).serializeUrl(
+        this.injector.get(Router).createUrlTree(['/print-label'], {
+          queryParams: { session: printId }
+        })
+      );
+      window.open(url, '_blank');
+    } else {
+       this.commonService.openSnackBarError('Vui lòng tải đầy đủ dữ liệu PO trước khi in nhãn');
+    }
+  }
+
+  private async generateNextShipmentCode(): Promise<string> {
+    if (!this.shipmentRandomLetters) {
+      const existingFormatShipment = this.shipments.find(s => s.shipmentCode && s.shipmentCode.match(/^SHP-\d{8}[A-Z]{3}-\d{3}$/));
+      if (existingFormatShipment) {
+        this.shipmentRandomLetters = existingFormatShipment.shipmentCode.substring(12, 15);
+      } else {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let randomStr = '';
+        for (let i = 0; i < 3; i++) {
+          randomStr += letters.charAt(Math.floor(Math.random() * letters.length));
+        }
+        this.shipmentRandomLetters = randomStr;
+      }
+    }
+
+    const date = new Date();
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+    const dateStr = `${day}${month}${year}`;
+
+    const prefix = `SHP-${dateStr}${this.shipmentRandomLetters}-`;
+    const existingCodes = this.shipments.map(shipment => shipment.shipmentCode);
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const response = await this.injector.get(ApiService).executeQuery(
+        GET_PURCHASE_ORDER_SHIPMENT_CODES,
+        { pagination: { page, size: 100 } }
+      );
+      const result = response?.purchaseOrders;
+      existingCodes.push(
+        ...(result?.data || []).flatMap((purchaseOrder: any) =>
+          (purchaseOrder.shipments || []).map((shipment: any) => shipment.shipmentCode)
+        )
+      );
+      totalPages = Math.max(Number(result?.pagination?.totalPages || 1), 1);
+      page++;
+    } while (page <= totalPages);
+
+    return this.getNextSequenceCode(prefix, existingCodes);
+  }
+
+  private getDatedCodePrefix(type: 'PO' | 'BAT' | 'SHP', date: Date = new Date()): string {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear().toString().slice(-2);
@@ -957,7 +1793,7 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   private getNextSequenceCode(prefix: string, existingCodes: string[]): string {
     const maxSequence = existingCodes.reduce((max, code) => {
       if (!code?.startsWith(prefix)) return max;
-      const sequence = Number(code.slice(prefix.length));
+      const sequence = Number(code.slice(prefix.length).match(/^\d+/)?.[0]);
       return Number.isInteger(sequence) ? Math.max(max, sequence) : max;
     }, 0);
     return `${prefix}${(maxSequence + 1).toString().padStart(3, '0')}`;
