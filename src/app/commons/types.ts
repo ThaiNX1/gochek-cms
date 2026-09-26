@@ -732,6 +732,8 @@ export type GenerateHistory = {
   organizationId?: Maybe<Scalars['String']['output']>;
   pdfLinkDownload?: Maybe<Scalars['String']['output']>;
   pdfLinkDownloadPath?: Maybe<Scalars['String']['output']>;
+  pdfThaiLinkDownload?: Maybe<Scalars['String']['output']>;
+  pdfThaiLinkDownloadPath?: Maybe<Scalars['String']['output']>;
   prefix?: Maybe<Scalars['String']['output']>;
   purchaseOrder?: Maybe<PurchaseOrder>;
   purchaseOrderBatch?: Maybe<PurchaseOrderBatch>;
