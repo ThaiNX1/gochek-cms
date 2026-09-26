@@ -730,6 +730,8 @@ export type GenerateHistory = {
   model?: Maybe<Model>;
   modelId?: Maybe<Scalars['String']['output']>;
   organizationId?: Maybe<Scalars['String']['output']>;
+  pdfLinkDownload?: Maybe<Scalars['String']['output']>;
+  pdfLinkDownloadPath?: Maybe<Scalars['String']['output']>;
   prefix?: Maybe<Scalars['String']['output']>;
   purchaseOrder?: Maybe<PurchaseOrder>;
   purchaseOrderBatch?: Maybe<PurchaseOrderBatch>;

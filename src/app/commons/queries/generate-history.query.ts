@@ -14,6 +14,7 @@ query GenerateHistories($pagination: GenerateHistorySearchInput) {
             id
             linkDownload
             linkDownloadPath
+            pdfLinkDownloadPath
             prefix
             startSerialNumber
             supplierId

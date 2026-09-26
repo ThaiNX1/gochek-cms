@@ -42,23 +42,30 @@
             (click)="onDownload(item)">
             <mat-icon class="text-gray-500">sim_card_download</mat-icon>
         </button>
+        @if (item.pdfLinkDownloadPath) {
+        <button class="flex items-center justify-center border-none bg-transparent" title="Tải PDF"
+            (click)="onDownloadPdf(item)">
+            <mat-icon class="text-red-600">picture_as_pdf</mat-icon>
+        </button>
+        }
     </div>
 </ng-template>
 
-<!-- Dialog assign organization Template -->
-<ng-template #generateSerialDialogContent>
-    @if(dialogData.type === 'default'){
+<ng-template #generateSerialDrawerContent>
     <form [formGroup]="generateSerialForm" class="flex flex-col gap-4">
         <div class="flex flex-col gap-1">
             <label class="require">Tiền tố:</label>
             <mat-form-field appearance="outline" floatLabel="auto">
-                <input type="text" placeholder="Chọn tiền tố (2 ký tự)" matInput formControlName="prefix" minlength="2"
-                    maxlength="2" [matAutocomplete]="auto">
+                <input type="text" placeholder="Chọn tiền tố (2-3 ký tự)" matInput formControlName="prefix"
+                    [matAutocomplete]="auto" (blur)="normalizePrefix()">
                 <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
                     @for (option of prefixStrList; track option) {
                     <mat-option [value]="option">{{option}}</mat-option>
                     }
                 </mat-autocomplete>
+                @if (generateSerialForm.get('prefix')?.touched && generateSerialForm.get('prefix')?.invalid) {
+                    <mat-error>Tiền tố phải có từ 2 đến 3 ký tự sau khi bỏ khoảng trắng</mat-error>
+                }
             </mat-form-field>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -104,20 +111,15 @@
         </div>
     </form>
 
-    <div class="flex items-center justify-center gap-4 pt-3">
-        <button class="flex items-center justify-center bg-white border border-gray-400 rounded px-3 py-2"
+    <div class="flex items-center justify-end gap-3 pt-5">
+        <button type="button" class="flex items-center justify-center bg-white border border-gray-400 rounded px-4 py-2"
             (click)="onCancel()">
             Hủy
         </button>
-        <button
-            class="flex items-center justify-center border border-transparent rounded text-white px-3 py-2 bg-primary"
+        <button type="button"
+            class="flex items-center justify-center border border-transparent rounded text-white px-4 py-2 bg-primary"
             (click)="onSave()">
             Lưu
         </button>
     </div>
-    }@else if (dialogData.type === 'error'){
-    <p class="w-full text-center">
-        Bạn có chắc chắn muốn xóa hóa đơn này không?
-    </p>
-    }
 </ng-template>

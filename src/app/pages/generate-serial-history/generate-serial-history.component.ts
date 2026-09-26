@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
+import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -13,7 +12,6 @@ import { ALL_PREFIX, GENERATE_SERIAL_NUMBER_HISTORY } from '../../commons/querie
 import { GenerateHistory, PaginatedGenerateHistoryResponse } from '../../commons/types';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
-import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
 import { TableComponent } from '../../shared/components/table/table.component';
 import { DirectiveModule } from '../../shared/directive.module';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -42,23 +40,13 @@ import { format } from 'date-fns';
   styleUrl: './generate-serial-history.component.scss'
 })
 export class GenerateSerialHistoryComponent extends BaseClass {
-  @ViewChild('generateSerialDialogContent') generateSerialDialogContent!: TemplateRef<any>;
+  @ViewChild('generateSerialDrawerContent') generateSerialDrawerContent!: TemplateRef<any>;
   generateSerialForm!: FormGroup;
-  dialogData: DialogData = {
-    title: 'Sinh mã cho sản phẩm',
-    showActions: false,
-    showCloseButton: true,
-    width: '700px',
-    align: 'center',
-    type: 'default',
-    confirmText: 'Lưu',
-    cancelText: 'Hủy',
-  }
   prefixList: GenerateHistory[] = [];
   prefixStrList: string[] = [];
   modelList: any[] = [];
   modelSearchQuery = GET_MODELS;
-  constructor(private dialog: MatDialog) {
+  constructor() {
     super();
     this.columns = [
       { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER, },
@@ -72,7 +60,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       { name: 'Serial cuối', field: 'endSerialNumber', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Người thực hiện', field: 'createdByName', className: 'min-w-[150px] max-w-[150px]' },
       { name: 'Mô tả', field: 'descriptor', className: 'min-w-[200px] max-w-[200px]' },
-      { name: 'Hành động', field: 'action', className: 'min-w-[80px] max-w-[80px]', templateCode: 'actionColumnTemplate' },
+      { name: 'Hành động', field: 'action', className: 'min-w-[100px] max-w-[100px]', templateCode: 'actionColumnTemplate' },
     ]
   }
   override async ngOnInit(): Promise<void> {
@@ -81,7 +69,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       keyword: new FormControl('')
     });
     this.generateSerialForm = new FormGroup({
-      prefix: new FormControl('', [Validators.required, Validators.minLength(2), Validators.maxLength(2)]),
+      prefix: new FormControl('', [Validators.required, this.trimmedLengthValidator(2, 3)]),
       count: new FormControl(1, [Validators.required, Validators.min(1)]),
       batchCode: new FormControl(''),
       expectedQuantity: new FormControl(null, [Validators.min(1)]),
@@ -153,19 +141,17 @@ export class GenerateSerialHistoryComponent extends BaseClass {
   }
 
   async onGenerate() {
-    this.generateSerialForm.reset()
-    this.dialogData.type = 'default';
-    const dialogRef = this.dialog.open(DialogComponent, {
-      data: {
-        ...this.dialogData,
-      },
-      width: this.dialogData.width
+    this.generateSerialForm.reset({ count: 1 });
+    this.commonService.openRightSlideNav({
+      title: 'Sinh mã cho sản phẩm',
+      content: this.generateSerialDrawerContent,
+      width: '660px',
+      onClose: () => this.onGenerateDrawerClosed(),
     });
-
-    dialogRef.componentInstance.content = this.generateSerialDialogContent;
   }
 
   async onSave() {
+    this.normalizePrefix();
     this.generateSerialForm.markAllAsTouched();
     if (this.generateSerialForm.invalid) {
       this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin');
@@ -194,7 +180,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       }
     });
 
-    this.dialog.closeAll();
+    this.commonService.closeRightSlideNav();
   }
 
   async onDownload(item: GenerateHistory) {
@@ -202,7 +188,39 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     this.injector.get(DownloadService).downloadFileByURL(item.linkDownloadPath);
   }
 
+  async onDownloadPdf(item: GenerateHistory) {
+    if (!item.pdfLinkDownloadPath) return;
+    this.injector.get(DownloadService).downloadFileByURL(item.pdfLinkDownloadPath);
+  }
+
   onCancel() {
-    this.injector.get(MatDialog).closeAll();
+    this.commonService.closeRightSlideNav();
+  }
+
+  normalizePrefix(): void {
+    const prefixControl = this.generateSerialForm.get('prefix');
+    const normalizedPrefix = String(prefixControl?.value ?? '').trim();
+    if (prefixControl?.value !== normalizedPrefix) {
+      prefixControl?.setValue(normalizedPrefix);
+    }
+    prefixControl?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private trimmedLengthValidator(minLength: number, maxLength: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const trimmedValue = String(control.value ?? '').trim();
+      return trimmedValue.length >= minLength && trimmedValue.length <= maxLength
+        ? null
+        : { trimmedLength: { minLength, maxLength, actualLength: trimmedValue.length } };
+    };
+  }
+
+  private onGenerateDrawerClosed(): void {
+    this.generateSerialForm.reset({ count: 1 });
+  }
+
+  override ngOnDestroy(): void {
+    this.commonService.closeRightSlideNav();
+    super.ngOnDestroy();
   }
 }

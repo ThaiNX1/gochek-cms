@@ -3,15 +3,16 @@
         <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
             <h1 class="text-xl font-bold">Danh sách thiết bị</h1>
             <form [formGroup]="filterForm"
+                (ngSubmit)="onGetDevice()"
                 class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-3">
                 <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
                     <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
                 </mat-form-field>
-                <app-select-search *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]"
+                <!-- <app-select-search *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]"
                     class="w-full md:w-[200px] bg-white" [options]="deviceTypeList" formControlName="deviceTypeId"
                     [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="deviceTypeSearchQuery"
                     [searchDataKey]="'deviceTypes'" placeholder="Loại thiết bị">
-                </app-select-search>
+                </app-select-search> -->
                 <!-- <app-select-search *permission="[PermissionEnum.ORGANIZATIONS_MANAGE]"
                     class="w-full md:w-[200px] bg-white" [options]="organizationList" formControlName="organizationId"
                     [valueKey]="'id'" [labelKey]="'name'" [searchQuery]="orgSearchQuery"
