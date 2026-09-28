@@ -722,6 +722,10 @@ export type GenerateHistory = {
   descriptor?: Maybe<Scalars['String']['output']>;
   endSerialNumber?: Maybe<Scalars['String']['output']>;
   expectedQuantity?: Maybe<Scalars['Float']['output']>;
+  fileAttempts: Scalars['Float']['output'];
+  fileLastError?: Maybe<Scalars['String']['output']>;
+  fileStartedAt?: Maybe<Scalars['Float']['output']>;
+  fileStatus: SerialFileStatus;
   id: Scalars['ID']['output'];
   importedAt?: Maybe<Scalars['Float']['output']>;
   importedQuantity?: Maybe<Scalars['Float']['output']>;
@@ -1015,7 +1019,7 @@ export type Mutation = {
   extendWarranty: WarrantyHistory;
   forgotPassword: Scalars['Boolean']['output'];
   generateComponents: Array<DeviceComponent>;
-  generateSerialNumber: Scalars['String']['output'];
+  generateSerialNumber: GenerateHistory;
   importDevice: Scalars['String']['output'];
   importPermissions: Array<Permission>;
   importProvince: Array<Province>;
@@ -1041,6 +1045,7 @@ export type Mutation = {
   resendFirmwareVersionWebhook: ResendFirmwareVersionWebhookResponse;
   resendOtp: Scalars['Boolean']['output'];
   resetPassword: User;
+  retrySerialFiles: GenerateHistory;
   returnDevice: WarrantyHistory;
   sellComponent: WarrantyHistory;
   setRobotFacialExpression: Scalars['Boolean']['output'];
@@ -1459,6 +1464,11 @@ export type MutationResendFirmwareVersionWebhookArgs = {
 
 export type MutationResetPasswordArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationRetrySerialFilesArgs = {
+  generateHistoryId: Scalars['ID']['input'];
 };
 
 
@@ -2738,6 +2748,14 @@ export type SellComponentInput = {
   serialNumber: Scalars['String']['input'];
 };
 
+/** Trạng thái sinh file Excel/PDF của một lần sinh serial */
+export enum SerialFileStatus {
+  FAILED = 'FAILED',
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  READY = 'READY'
+}
+
 export type ShipDeviceBatchInput = {
   items: Array<ShipDeviceInput>;
 };
@@ -2939,14 +2957,8 @@ export type SubmitConsultationFormResponse = {
 };
 
 export type Subscription = {
-  generateSerialNumberProgress: ExportProgress;
   imageConvertProgress: ImageConvertProgress;
   importDeviceProgress: ExportProgress;
-};
-
-
-export type SubscriptionGenerateSerialNumberProgressArgs = {
-  exportId?: InputMaybe<Scalars['String']['input']>;
 };
 
 

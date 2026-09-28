@@ -227,7 +227,30 @@ query DevicesByOrganization {
 
 export const GENERATE_SERIAL_NUMBER = gql`
 mutation GenerateSerialNumber($input: DeviceGenerateSerialNumberInput!) {
-    generateSerialNumber(input: $input)
+    generateSerialNumber(input: $input) {
+        id
+        batchCode
+        prefix
+        descriptor
+        modelId
+        supplier
+        supplierId
+        supplierName
+        expectedQuantity
+        importedQuantity
+        remainingQuantity
+        startSerialNumber
+        endSerialNumber
+        fileStatus
+        linkDownload
+        linkDownloadPath
+        pdfLinkDownload
+        pdfLinkDownloadPath
+        purchaseOrderId
+        purchaseOrderBatchId
+        createdAt
+        updatedAt
+    }
 }
 `;
 

@@ -167,7 +167,7 @@ export class GenerateSerialHistoryComponent extends BaseClass {
     //   'generateSerialNumberProgress'
     // );
 
-    await this.injector.get(ApiService).executeMutation<string>(GENERATE_SERIAL_NUMBER, {
+    const response = await this.injector.get(ApiService).executeMutation(GENERATE_SERIAL_NUMBER, {
       input: {
         prefix: this.generateSerialForm.value.prefix,
         count: this.generateSerialForm.value.count,
@@ -180,7 +180,13 @@ export class GenerateSerialHistoryComponent extends BaseClass {
       }
     });
 
-    this.commonService.closeRightSlideNav();
+    if (response?.generateSerialNumber) {
+      this.commonService.openSnackBar('Sinh mã sản phẩm thành công');
+      this.commonService.closeRightSlideNav();
+      await this.onReload();
+    } else {
+      this.commonService.openSnackBarError('Sinh mã sản phẩm thất bại');
+    }
   }
 
   async onDownload(item: GenerateHistory) {
