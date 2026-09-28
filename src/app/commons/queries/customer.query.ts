@@ -17,6 +17,25 @@ export const GET_CUSTOMERS = gql`
         updatedAt
         description
         note
+        warrantyHistories {
+          id
+          serialNumber
+          componentSerial
+          eventType
+          eventAt
+          description
+          performedById
+          createdAt
+          updatedAt
+          device {
+            expiredAt
+            model {
+              id
+              code
+              name
+            }
+          }
+        }
       }
       pagination {
         page

@@ -10,7 +10,7 @@ import { RouterModule } from '@angular/router';
 import { takeUntil } from 'rxjs';
 import { BaseClass } from '../../commons/base.class';
 import { GET_CUSTOMERS, UPDATE_CUSTOMER_STATUS } from '../../commons/queries/customer.query';
-import { Customer, CustomerStatus, PaginatedCustomerResponse, UpdateCustomerStatusInput } from '../../commons/types';
+import { Customer, CustomerStatus, PaginatedCustomerResponse, UpdateCustomerStatusInput, WarrantyEventType } from '../../commons/types';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -76,7 +76,6 @@ export class CustomerComponent extends BaseClass {
       { name: 'Nguồn', field: 'source', className: 'min-w-[120px] max-w-[120px]' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[120px] max-w-[120px]', type: TableColumnType.DATE },
       { name: 'CSKH', field: 'assignedToId', className: 'min-w-[150px] max-w-[150px]', type: TableColumnType.DATE },
-      { name: 'Trạng thái', field: 'status', className: 'min-w-[120px] max-w-[120px]', templateCode: 'statusColumnTemplate' },
       { name: 'Hành động', field: 'action', className: 'min-w-[80px] max-w-[80px]', templateCode: 'actionColumnTemplate' },
     ];
   }
@@ -141,6 +140,85 @@ export class CustomerComponent extends BaseClass {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getWarrantyEventTypeLabel(eventType: WarrantyEventType): string {
+    switch (eventType) {
+      case WarrantyEventType.ACTIVATED:
+        return 'Kích hoạt bảo hành';
+      case WarrantyEventType.CLAIM:
+        return 'Yêu cầu bảo hành';
+      case WarrantyEventType.COMPONENT_REPLACED:
+        return 'Thay thế linh kiện';
+      case WarrantyEventType.COMPONENT_SOLD:
+        return 'Bán linh kiện';
+      case WarrantyEventType.EXTENDED:
+        return 'Gia hạn bảo hành';
+      case WarrantyEventType.REPAIRED:
+        return 'Sửa chữa';
+      case WarrantyEventType.REPAIRED_PAID:
+        return 'Sửa chữa tính phí';
+      case WarrantyEventType.REPLACED:
+        return 'Đổi thiết bị';
+      case WarrantyEventType.RETURNED:
+        return 'Trả thiết bị';
+      case WarrantyEventType.VOIDED:
+        return 'Hủy bảo hành';
+      default:
+        return eventType;
+    }
+  }
+
+  getWarrantyEventTypeClass(eventType: WarrantyEventType): string {
+    switch (eventType) {
+      case WarrantyEventType.ACTIVATED:
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+      case WarrantyEventType.CLAIM:
+        return 'border-amber-200 bg-amber-50 text-amber-700';
+      case WarrantyEventType.COMPONENT_REPLACED:
+      case WarrantyEventType.REPLACED:
+        return 'border-cyan-200 bg-cyan-50 text-cyan-700';
+      case WarrantyEventType.COMPONENT_SOLD:
+      case WarrantyEventType.REPAIRED_PAID:
+        return 'border-violet-200 bg-violet-50 text-violet-700';
+      case WarrantyEventType.EXTENDED:
+        return 'border-indigo-200 bg-indigo-50 text-indigo-700';
+      case WarrantyEventType.REPAIRED:
+        return 'border-blue-200 bg-blue-50 text-blue-700';
+      case WarrantyEventType.RETURNED:
+        return 'border-gray-300 bg-gray-100 text-gray-700';
+      case WarrantyEventType.VOIDED:
+        return 'border-red-200 bg-red-50 text-red-700';
+      default:
+        return 'border-gray-300 bg-gray-50 text-gray-700';
+    }
+  }
+
+  getWarrantyEventTypeIcon(eventType: WarrantyEventType): string {
+    switch (eventType) {
+      case WarrantyEventType.ACTIVATED:
+        return 'verified_user';
+      case WarrantyEventType.CLAIM:
+        return 'assignment_late';
+      case WarrantyEventType.COMPONENT_REPLACED:
+        return 'settings_suggest';
+      case WarrantyEventType.COMPONENT_SOLD:
+        return 'shopping_cart';
+      case WarrantyEventType.EXTENDED:
+        return 'update';
+      case WarrantyEventType.REPAIRED:
+        return 'build';
+      case WarrantyEventType.REPAIRED_PAID:
+        return 'price_check';
+      case WarrantyEventType.REPLACED:
+        return 'swap_horiz';
+      case WarrantyEventType.RETURNED:
+        return 'keyboard_return';
+      case WarrantyEventType.VOIDED:
+        return 'block';
+      default:
+        return 'history';
     }
   }
 

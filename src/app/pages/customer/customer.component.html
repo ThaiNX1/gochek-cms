@@ -47,7 +47,8 @@
     </div>
 </ng-template>
 
-<ng-template #expandTemplate let-item="item">
+<!-- Expanded row cũ - tạm thời giữ lại
+<ng-template #legacyExpandTemplate let-item="item">
     <div class="flex flex-col gap-4 w-full p-4">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold">Thông tin chi tiết</h3>
@@ -77,6 +78,102 @@
                 </button>
             </div>
         </form>
+    </div>
+</ng-template>
+-->
+
+<ng-template #expandTemplate let-item="item">
+    <div class="flex w-full flex-col gap-5 bg-slate-50 px-4 py-5 md:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                    <mat-icon>history</mat-icon>
+                </div>
+                <div>
+                    <h3 class="m-0 text-lg font-semibold text-gray-900">Lịch sử bảo hành</h3>
+                    <p class="m-0 mt-1 text-sm text-gray-500">Các hoạt động bảo hành của khách hàng</p>
+                </div>
+            </div>
+            <span class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+                {{ item.warrantyHistories?.length || 0 }} sự kiện
+            </span>
+        </div>
+
+        @if (item.warrantyHistories?.length) {
+            <div class="flex w-full flex-col">
+                @for (history of item.warrantyHistories; track history.id; let last = $last) {
+                    <div class="flex gap-3 md:gap-4">
+                        <div class="flex w-10 shrink-0 flex-col items-center">
+                            <div class="z-10 flex h-10 w-10 items-center justify-center rounded-full border"
+                                [ngClass]="getWarrantyEventTypeClass(history.eventType)">
+                                <mat-icon class="!h-5 !w-5 !text-xl !leading-5">
+                                    {{ getWarrantyEventTypeIcon(history.eventType) }}
+                                </mat-icon>
+                            </div>
+                            @if (!last) {
+                                <div class="my-1 min-h-5 w-px flex-1 bg-gray-300"></div>
+                            }
+                        </div>
+
+                        <article class="mb-4 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                            <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
+                                <span class="rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                                    [ngClass]="getWarrantyEventTypeClass(history.eventType)">
+                                    {{ getWarrantyEventTypeLabel(history.eventType) }}
+                                </span>
+                                <span class="h-4 w-px shrink-0 bg-gray-300"></span>
+                                <span class="flex shrink-0 items-center gap-1 text-xs text-gray-500">
+                                    <mat-icon class="!h-4 !w-4 !text-base !leading-4">schedule</mat-icon>
+                                    Ngày: <strong class="font-medium text-gray-700">{{ history.eventAt | date:'dd/MM/yyyy HH:mm' }}</strong>
+                                </span>
+                            </div>
+
+                            <div class="mt-3 flex flex-wrap items-stretch gap-2">
+                                <div class="flex min-w-[180px] items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1.5">
+                                    <span class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-gray-500">Serial:</span>
+                                    <span class="break-all text-sm font-semibold text-gray-900">{{ history.serialNumber || '-' }}</span>
+                                </div>
+                                <div class="flex min-w-[160px] items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1.5">
+                                    <span class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-gray-500">Model:</span>
+                                    <span class="break-words text-sm font-semibold text-gray-900">
+                                        {{ history.device?.model?.name || history.device?.model?.code || '-' }}
+                                    </span>
+                                </div>
+                                <div class="flex min-w-[180px] items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1.5">
+                                    <span class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-gray-500">Hết hạn:</span>
+                                    <span class="text-sm font-semibold text-gray-900">
+                                        @if (history.device?.expiredAt) {
+                                            {{ history.device.expiredAt | date:'dd/MM/yyyy' }}
+                                        } @else {
+                                            -
+                                        }
+                                    </span>
+                                </div>
+                                @if (history.componentSerial) {
+                                    <div class="flex min-w-[180px] items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1.5">
+                                        <span class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-gray-500">Linh kiện:</span>
+                                        <span class="break-all text-sm font-semibold text-gray-900">{{ history.componentSerial }}</span>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (history.description) {
+                                <div class="mt-3 flex items-start gap-2 rounded-md border-l-4 border-blue-300 bg-blue-50 px-3 py-2 text-sm text-gray-700">
+                                    <mat-icon class="mt-0.5 !h-4 !w-4 !text-base !leading-4 text-blue-600">notes</mat-icon>
+                                    <span class="whitespace-pre-line">{{ history.description }}</span>
+                                </div>
+                            }
+                        </article>
+                    </div>
+                }
+            </div>
+        } @else {
+            <div class="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 py-8 text-center text-gray-500">
+                <mat-icon class="mb-2 !h-10 !w-10 !text-4xl !leading-10 text-gray-400">history_toggle_off</mat-icon>
+                <span class="font-medium text-gray-700">Chưa có lịch sử bảo hành</span>
+                <span class="mt-1 text-sm">Các hoạt động bảo hành sẽ được hiển thị tại đây</span>
+            </div>
+        }
     </div>
 </ng-template>
 

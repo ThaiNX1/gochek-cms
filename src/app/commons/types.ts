@@ -380,6 +380,7 @@ export type Customer = {
   source?: Maybe<Scalars['String']['output']>;
   status: CustomerStatus;
   updatedAt: Scalars['DateTime']['output'];
+  warrantyHistories?: Maybe<Array<WarrantyHistory>>;
 };
 
 export type CustomerSearchInput = {
@@ -3377,6 +3378,7 @@ export type WarrantyHistory = {
   eventType: WarrantyEventType;
   id: Scalars['ID']['output'];
   metadata?: Maybe<Scalars['JSON']['output']>;
+  modelId?: Maybe<Scalars['String']['output']>;
   performedById?: Maybe<Scalars['String']['output']>;
   serialNumber: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
