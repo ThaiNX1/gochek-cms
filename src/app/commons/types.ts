@@ -215,6 +215,7 @@ export type CreateLogManufacturingInput = {
 export type CreateModelInput = {
   attributes?: InputMaybe<Scalars['JSON']['input']>;
   code: Scalars['String']['input'];
+  componentCount?: InputMaybe<Scalars['Float']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   deviceTypeId: Scalars['String']['input'];
   discountPrice?: InputMaybe<Scalars['Float']['input']>;
@@ -222,6 +223,7 @@ export type CreateModelInput = {
   isActive: Scalars['Boolean']['input'];
   name: Scalars['String']['input'];
   price?: InputMaybe<Scalars['Float']['input']>;
+  warrantyMonth?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type CreateOrganizationInput = {
@@ -582,9 +584,13 @@ export type DeviceType = {
   isActive: Scalars['Boolean']['output'];
   models?: Maybe<Array<Model>>;
   name: Scalars['String']['output'];
+  nhanhPartnerCredential?: Maybe<PartnerCredential>;
+  nhanhPartnerCredentialId?: Maybe<Scalars['String']['output']>;
+  nhanhProductId?: Maybe<Scalars['String']['output']>;
   raFirmware?: Maybe<Firmware>;
   raFirmwareId?: Maybe<Scalars['String']['output']>;
   shortDescription?: Maybe<Scalars['String']['output']>;
+  source: RecordSource;
   switchCount?: Maybe<Scalars['Float']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   warrantyMonth?: Maybe<Scalars['Float']['output']>;
@@ -949,6 +955,7 @@ export type LoginResponse = {
 export type Model = {
   attributes?: Maybe<Scalars['JSON']['output']>;
   code: Scalars['String']['output'];
+  componentCount?: Maybe<Scalars['Float']['output']>;
   createdAt: Scalars['DateTime']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
   description?: Maybe<Scalars['String']['output']>;
@@ -965,7 +972,9 @@ export type Model = {
   price?: Maybe<Scalars['Float']['output']>;
   raFirmware?: Maybe<Firmware>;
   raFirmwareId?: Maybe<Scalars['String']['output']>;
+  source: RecordSource;
   updatedAt: Scalars['DateTime']['output'];
+  warrantyMonth?: Maybe<Scalars['Float']['output']>;
 };
 
 export type Mutation = {
@@ -1027,6 +1036,7 @@ export type Mutation = {
   importWard: Array<Ward>;
   login: LoginResponse;
   logout: Scalars['String']['output'];
+  nhanhStockIn: NhanhStockInResult;
   orgAdminForgotPassword: Scalars['Boolean']['output'];
   printBatchLabels: PrintBatchLabelsResponse;
   printViettelPostOrder: ShippingOrder;
@@ -1046,6 +1056,7 @@ export type Mutation = {
   resendFirmwareVersionWebhook: ResendFirmwareVersionWebhookResponse;
   resendOtp: Scalars['Boolean']['output'];
   resetPassword: User;
+  retryNhanhStockIn: NhanhStockInRecord;
   retrySerialFiles: GenerateHistory;
   returnDevice: WarrantyHistory;
   sellComponent: WarrantyHistory;
@@ -1058,6 +1069,7 @@ export type Mutation = {
   submitPurchaseOrderForApproval: PurchaseOrder;
   subscribeNotification: User;
   syncNhanhProductMappings: NhanhProductMappingSyncResponse;
+  syncNhanhProducts: SyncReport;
   syncViettelPostProvinces: Array<Province>;
   transferDevice: Device;
   transferDeviceBatch: Array<Device>;
@@ -1372,6 +1384,11 @@ export type MutationLogoutArgs = {
 };
 
 
+export type MutationNhanhStockInArgs = {
+  input: NhanhStockInInput;
+};
+
+
 export type MutationOrgAdminForgotPasswordArgs = {
   email: Scalars['String']['input'];
 };
@@ -1468,6 +1485,11 @@ export type MutationResetPasswordArgs = {
 };
 
 
+export type MutationRetryNhanhStockInArgs = {
+  batchCode: Scalars['String']['input'];
+};
+
+
 export type MutationRetrySerialFilesArgs = {
   generateHistoryId: Scalars['ID']['input'];
 };
@@ -1529,6 +1551,11 @@ export type MutationSubscribeNotificationArgs = {
 
 export type MutationSyncNhanhProductMappingsArgs = {
   input: SyncNhanhProductMappingsInput;
+};
+
+
+export type MutationSyncNhanhProductsArgs = {
+  input: SyncNhanhProductsInput;
 };
 
 
@@ -1723,6 +1750,7 @@ export type NhanhProductMapping = {
   partnerCredentialId: Scalars['String']['output'];
   productCode?: Maybe<Scalars['String']['output']>;
   productName?: Maybe<Scalars['String']['output']>;
+  source: RecordSource;
   updatedAt: Scalars['DateTime']['output'];
 };
 
@@ -1758,6 +1786,58 @@ export type NhanhPurchaseDocumentSearchResponse = {
 export enum NhanhPurchaseDocumentType {
   ORDER = 'ORDER',
   RETAIL_BILL = 'RETAIL_BILL'
+}
+
+export type NhanhStockInInput = {
+  actualQuantity: Scalars['Int']['input'];
+  batchCode: Scalars['String']['input'];
+  expectedQuantity: Scalars['Int']['input'];
+  modelId: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+  prefix: Scalars['String']['input'];
+  warehouseId: Scalars['ID']['input'];
+};
+
+export type NhanhStockInRecord = {
+  attemptCount: Scalars['Int']['output'];
+  batchCode: Scalars['String']['output'];
+  businessId: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  lastAttemptAt?: Maybe<Scalars['Float']['output']>;
+  lastError?: Maybe<Scalars['String']['output']>;
+  nhanhDepotId: Scalars['String']['output'];
+  nhanhProductId: Scalars['String']['output'];
+  nhanhStockInId?: Maybe<Scalars['String']['output']>;
+  nhanhSupplierId: Scalars['String']['output'];
+  partnerCredentialId: Scalars['String']['output'];
+  performedById: Scalars['String']['output'];
+  quantity: Scalars['Int']['output'];
+  syncStatus: NhanhSyncStatus;
+  updatedAt: Scalars['DateTime']['output'];
+  warehouseId?: Maybe<Scalars['String']['output']>;
+};
+
+export type NhanhStockInRecordSearchInput = {
+  fromAt?: InputMaybe<Scalars['Float']['input']>;
+  syncStatus?: InputMaybe<NhanhSyncStatus>;
+  toAt?: InputMaybe<Scalars['Float']['input']>;
+  warehouseId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type NhanhStockInResult = {
+  batchCode: Scalars['String']['output'];
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  nhanhStockInId?: Maybe<Scalars['String']['output']>;
+  quantity: Scalars['Int']['output'];
+  syncStatus: NhanhSyncStatus;
+};
+
+export enum NhanhSyncStatus {
+  FAILED = 'FAILED',
+  PENDING = 'PENDING',
+  SYNCED = 'SYNCED'
 }
 
 export type Organization = {
@@ -1915,6 +1995,7 @@ export type PartnerCredential = {
   lastOwnerConnectAt?: Maybe<Scalars['Float']['output']>;
   lastVerifiedAt?: Maybe<Scalars['Float']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
+  nhanhSupplierId?: Maybe<Scalars['String']['output']>;
   ownerTokenExpiresAt?: Maybe<Scalars['Float']['output']>;
   partnerKey: PartnerKey;
   permissions?: Maybe<Scalars['JSON']['output']>;
@@ -2005,11 +2086,13 @@ export type Province = {
 };
 
 export type PublicDeviceInfoResponse = {
+  componentCount?: Maybe<Scalars['Float']['output']>;
   message?: Maybe<Scalars['String']['output']>;
   modelName?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   serialNumber?: Maybe<Scalars['String']['output']>;
   state?: Maybe<DeviceStateEnum>;
+  warrantyMonth?: Maybe<Scalars['Float']['output']>;
 };
 
 export type PublicModelSearchInput = {
@@ -2231,6 +2314,7 @@ export type Query = {
   nhanhDepots: Array<NhanhDepotResponse>;
   nhanhProductMappings: Array<NhanhProductMapping>;
   nhanhProducts: Scalars['JSON']['output'];
+  nhanhStockInRecords: Array<NhanhStockInRecord>;
   organization: Organization;
   organizations: PaginatedOrganizationResponse;
   partnerCredentials: Array<PartnerCredential>;
@@ -2455,6 +2539,11 @@ export type QueryNhanhProductsArgs = {
 };
 
 
+export type QueryNhanhStockInRecordsArgs = {
+  input?: InputMaybe<NhanhStockInRecordSearchInput>;
+};
+
+
 export type QueryOrganizationArgs = {
   id: Scalars['ID']['input'];
 };
@@ -2661,6 +2750,12 @@ export type ReceivePurchaseOrderShipmentInput = {
   shipmentCode: Scalars['String']['input'];
   warehouseId: Scalars['ID']['input'];
 };
+
+/** Nguồn gốc bản ghi (nhập tay hoặc đồng bộ từ Nhanh) */
+export enum RecordSource {
+  MANUAL = 'MANUAL',
+  NHANH_SYNC = 'NHANH_SYNC'
+}
 
 export type RefreshPartnerTokenInput = {
   partnerCredentialId: Scalars['ID']['input'];
@@ -2995,6 +3090,30 @@ export type SyncNhanhProductMappingsInput = {
   partnerCredentialId: Scalars['ID']['input'];
 };
 
+export type SyncNhanhProductsInput = {
+  dryRun?: InputMaybe<Scalars['Boolean']['input']>;
+  partnerCredentialId: Scalars['ID']['input'];
+};
+
+export type SyncReport = {
+  createdDeviceTypes: Scalars['Float']['output'];
+  createdMappings: Scalars['Float']['output'];
+  createdModels: Scalars['Float']['output'];
+  deactivatedDeviceTypes: Scalars['Float']['output'];
+  duplicateProductCodes: Array<Scalars['String']['output']>;
+  errors: Array<SyncReportError>;
+  failed: Scalars['Float']['output'];
+  partial: Scalars['Boolean']['output'];
+  skipped: Scalars['Float']['output'];
+  updatedDeviceTypes: Scalars['Float']['output'];
+};
+
+export type SyncReportError = {
+  message: Scalars['String']['output'];
+  nhanhProductId?: Maybe<Scalars['String']['output']>;
+  productCode?: Maybe<Scalars['String']['output']>;
+};
+
 export type TransferDeviceBatchInput = {
   items: Array<TransferDeviceInput>;
 };
@@ -3083,6 +3202,7 @@ export type UpdateFirmwareInput = {
 export type UpdateModelInput = {
   attributes?: InputMaybe<Scalars['JSON']['input']>;
   code?: InputMaybe<Scalars['String']['input']>;
+  componentCount?: InputMaybe<Scalars['Float']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   deviceTypeId?: InputMaybe<Scalars['String']['input']>;
   discountPrice?: InputMaybe<Scalars['Float']['input']>;
@@ -3090,6 +3210,7 @@ export type UpdateModelInput = {
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   price?: InputMaybe<Scalars['Float']['input']>;
+  warrantyMonth?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type UpdateOrganizationInput = {

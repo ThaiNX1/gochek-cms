@@ -38,6 +38,57 @@
     }
 }
 
+:host::ng-deep .layout-left-sidenav {
+    background-color: #0c2e69 !important;
+
+    .menu-item {
+        color: #ffffff !important;
+        font-size: 13px !important;
+
+        span,
+        .mdc-list-item__primary-text {
+            color: #ffffff !important;
+            font-size: 13px !important;
+        }
+
+        mat-icon {
+            color: #ffffff !important;
+        }
+
+        &:hover {
+            background-color: #344a7c !important;
+            border-radius: 8px !important;
+
+            mat-icon,
+            span,
+            .mdc-list-item__primary-text {
+                color: #ffffff !important;
+                font-weight: 700 !important;
+            }
+        }
+    }
+
+    .menu-item.active {
+        background-color: #344a7c !important;
+        border-radius: 8px !important;
+
+        mat-icon,
+        span,
+        .mdc-list-item__primary-text {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+    }
+
+    .sidebar-toggle {
+        color: #ffffff !important;
+
+        &:hover {
+            background-color: #344a7c !important;
+        }
+    }
+}
+
 :host::ng-deep .download-menu {
     .mat-mdc-menu-panel {
         min-width: 600px !important;

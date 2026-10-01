@@ -29,6 +29,8 @@ query GetDeviceTypes($pagination: PaginationInput) {
                 description
                 price
                 discountPrice
+                warrantyMonth
+                componentCount
                 attributes
                 isActive
                 imageUrl
@@ -115,6 +117,8 @@ export const GET_MODELS = gql`
         description
         price
         discountPrice
+        warrantyMonth
+        componentCount
         attributes
         isActive
         deviceTypeId
@@ -134,6 +138,8 @@ export const CREATE_MODEL = gql`
       description
       price
       discountPrice
+      warrantyMonth
+      componentCount
       attributes
       isActive
       deviceTypeId
@@ -152,6 +158,8 @@ export const UPDATE_MODEL = gql`
       description
       price
       discountPrice
+      warrantyMonth
+      componentCount
       attributes
       isActive
       deviceTypeId
@@ -165,5 +173,26 @@ export const UPDATE_MODEL = gql`
 export const REMOVE_MODEL = gql`
   mutation DeleteModel($id: ID!) {
     deleteModel(id: $id)
+  }
+`;
+
+export const SYNC_NHANH_PRODUCTS = gql`
+  mutation SyncNhanhProducts($input: SyncNhanhProductsInput!) {
+    syncNhanhProducts(input: $input) {
+      createdDeviceTypes
+      createdMappings
+      createdModels
+      deactivatedDeviceTypes
+      duplicateProductCodes
+      errors {
+        message
+        nhanhProductId
+        productCode
+      }
+      failed
+      partial
+      skipped
+      updatedDeviceTypes
+    }
   }
 `;

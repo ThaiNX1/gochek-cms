@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { BaseClass } from '../../commons/base.class';
 import { TableComponent } from '../../shared/components/table/table.component';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { CreateDeviceTypeInput, CreateModelInput, PaginatedDeviceTypeResponse, UpdateDeviceTypeInput, UpdateModelInput } from '../../commons/types';
-import { CREATE_DEVICE_TYPE, CREATE_MODEL, DELETE_DEVICE_TYPE, GET_DEVICE_TYPES, REMOVE_MODEL, UPDATE_DEVICE_TYPE, UPDATE_MODEL } from '../../commons/queries/device-type.query';
+import { CreateDeviceTypeInput, CreateModelInput, PaginatedDeviceTypeResponse, PartnerCredential, SyncReport, UpdateDeviceTypeInput, UpdateModelInput } from '../../commons/types';
+import { CREATE_DEVICE_TYPE, CREATE_MODEL, DELETE_DEVICE_TYPE, GET_DEVICE_TYPES, REMOVE_MODEL, SYNC_NHANH_PRODUCTS, UPDATE_DEVICE_TYPE, UPDATE_MODEL } from '../../commons/queries/device-type.query';
 import { UPLOAD_FILE } from '../../commons/queries/common.query';
+import { GET_NHANH_CREDENTIALS } from '../../commons/queries/partner-credential.query';
 import { TableColumnType } from '../../core/constants/enum';
 import { PageEvent } from '@angular/material/paginator';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -27,6 +30,8 @@ import { constant } from '../../core/constants/constant';
     MatIconModule,
     MatInputModule,
     MatFormFieldModule,
+    MatProgressSpinnerModule,
+    MatSelectModule,
     TableComponent,
     ReactiveFormsModule,
     DirectiveModule,
@@ -49,7 +54,14 @@ export class DeviceTypeComponent extends BaseClass {
     ['align_left', 'align_center', 'align_right', 'align_justify'],
   ];
   @ViewChild('deviceTypeDialogContent') deviceTypeDialogContent!: TemplateRef<any>;
+  @ViewChild('syncNhanhProductsDialogContent') syncNhanhProductsDialogContent!: TemplateRef<any>;
   @ViewChild('modelDrawerContent') modelDrawerContent!: TemplateRef<any>;
+
+  nhanhCredentials: PartnerCredential[] = [];
+  isSyncingNhanhProducts = false;
+  syncNhanhProductsForm = new FormGroup({
+    partnerCredentialId: new FormControl('', [Validators.required]),
+  });
   dialogData: DialogData = {
     title: 'Thêm loại thiết bị',
     showActions: true,
@@ -92,11 +104,14 @@ export class DeviceTypeComponent extends BaseClass {
       id: new FormControl(''),
       deviceTypeId: new FormControl(''),
       deviceTypeName: new FormControl({ value: '', disabled: true }),
+      deviceTypeWarrantyMonth: new FormControl<number | null>(null),
       name: new FormControl('', [Validators.required]),
       code: new FormControl('', [Validators.required]),
       description: new FormControl(''),
       price: new FormControl(null, [Validators.min(0)]),
       discountPrice: new FormControl(null, [Validators.min(0)]),
+      warrantyMonth: new FormControl<number | null>(null, [Validators.min(0)]),
+      componentCount: new FormControl<number | null>(null, [Validators.min(0)]),
       attributes: new FormControl('', [jsonValidator]),
       imageUrl: new FormControl(''),
       imageFile: new FormControl<File | null>(null),
@@ -136,6 +151,72 @@ export class DeviceTypeComponent extends BaseClass {
 
   onPageChange(event: PageEvent) {
     this.onGetDeviceType(event.pageIndex + 1);
+  }
+
+  async onOpenSyncNhanhProductsDialog(): Promise<void> {
+    this.syncNhanhProductsForm.reset();
+    const response = await this.injector.get(ApiService).executeQuery<any>(GET_NHANH_CREDENTIALS);
+    this.nhanhCredentials = (response?.nhanhCredentials ?? [])
+      .slice()
+      .sort((first: PartnerCredential, second: PartnerCredential) =>
+        first.environment.localeCompare(second.environment)
+        || (first.businessId ?? '').localeCompare(second.businessId ?? '')
+        || (first.appId ?? '').localeCompare(second.appId ?? ''));
+
+    const defaultCredential = this.nhanhCredentials.find((credential) => credential.isActive);
+    if (defaultCredential) {
+      this.syncNhanhProductsForm.patchValue({ partnerCredentialId: defaultCredential.id });
+    }
+
+    const dialogRef = this.dialog.open(DialogComponent, {
+      disableClose: true,
+      data: {
+        title: 'Đồng bộ sản phẩm Nhanh.vn',
+        showActions: false,
+        showCloseButton: false,
+      },
+      width: '520px',
+    });
+    dialogRef.componentInstance.content = this.syncNhanhProductsDialogContent;
+  }
+
+  async onSyncNhanhProducts(): Promise<void> {
+    this.syncNhanhProductsForm.markAllAsTouched();
+    if (this.syncNhanhProductsForm.invalid || this.isSyncingNhanhProducts) {
+      this.commonService.openSnackBarError('Vui lòng chọn tài khoản Nhanh.vn');
+      return;
+    }
+
+    this.isSyncingNhanhProducts = true;
+    const response = await this.injector.get(ApiService).executeMutation<any>(SYNC_NHANH_PRODUCTS, {
+      input: {
+        partnerCredentialId: this.syncNhanhProductsForm.value.partnerCredentialId,
+      },
+    });
+    this.isSyncingNhanhProducts = false;
+
+    const report = response?.syncNhanhProducts as SyncReport | undefined;
+    if (!report) {
+      this.commonService.openSnackBarError('Đồng bộ sản phẩm Nhanh.vn thất bại');
+      return;
+    }
+
+    this.dialog.closeAll();
+    await this.onGetDeviceType();
+
+    const summary = `${report.createdModels} model mới, ${report.createdDeviceTypes} loại thiết bị mới, ${report.updatedDeviceTypes} loại thiết bị cập nhật`;
+    if (report.partial || report.failed > 0) {
+      this.commonService.openSnackBarError(`Đồng bộ một phần: ${summary}, ${report.failed} lỗi`);
+      return;
+    }
+
+    this.commonService.openSnackBar(`Đồng bộ thành công: ${summary}`);
+  }
+
+  onCancelSyncNhanhProducts(): void {
+    if (!this.isSyncingNhanhProducts) {
+      this.dialog.closeAll();
+    }
   }
 
   onAddEditDeviceType(item: any = null) {
@@ -248,6 +329,9 @@ export class DeviceTypeComponent extends BaseClass {
       id: '',
       deviceTypeId: deviceType.id,
       deviceTypeName: deviceType.name,
+      deviceTypeWarrantyMonth: deviceType.warrantyMonth ?? null,
+      warrantyMonth: deviceType.warrantyMonth || null,
+      componentCount: null,
       imageUrl: '',
       imageFile: null,
       isActive: true,
@@ -261,11 +345,14 @@ export class DeviceTypeComponent extends BaseClass {
       id: model.id,
       deviceTypeId: deviceType.id,
       deviceTypeName: deviceType.name,
+      deviceTypeWarrantyMonth: deviceType.warrantyMonth ?? null,
       name: model.name,
       code: model.code,
       description: model.description || '',
       price: model.price ?? null,
       discountPrice: model.discountPrice ?? null,
+      warrantyMonth: model.warrantyMonth || deviceType.warrantyMonth || null,
+      componentCount: model.componentCount ?? null,
       attributes: model.attributes ? JSON.stringify(model.attributes, null, 2) : '',
       imageUrl: model.imageUrl || '',
       imageFile: null,
@@ -299,6 +386,8 @@ export class DeviceTypeComponent extends BaseClass {
       description: formValue.description || '',
       price: this.toOptionalNumber(formValue.price),
       discountPrice: this.toOptionalNumber(formValue.discountPrice),
+      warrantyMonth: this.toOptionalNumber(formValue.warrantyMonth || formValue.deviceTypeWarrantyMonth),
+      componentCount: this.toOptionalNumber(formValue.componentCount),
       attributes: formValue.attributes ? JSON.parse(formValue.attributes) : undefined,
       imageUrl: formValue.imageUrl || '',
       isActive: formValue.isActive,

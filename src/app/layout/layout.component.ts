@@ -1,7 +1,7 @@
 import { Component, effect, inject, Injector, OnInit, signal } from '@angular/core';
 import { BaseModule } from '../commons/base.module';
 import { LayoutRoutingModule } from './layout-routing.module';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Params, Router } from '@angular/router';
 import { CommonService } from '../core/services/common.service';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
@@ -17,7 +17,7 @@ import { ApiService } from '../core/services/api.service';
 import { storageKey } from '../core/constants/storage-key';
 import { MatMenuModule } from '@angular/material/menu';
 import { DownloadService, DownloadItem } from '../core/services/download.service';
-import { takeUntil, Subject } from 'rxjs';
+import { filter, takeUntil, Subject } from 'rxjs';
 import { BrandingService } from '../core/services/branding.service';
 @Component({
   selector: 'app-layout',
@@ -81,6 +81,7 @@ export class LayoutComponent implements OnInit {
     this.menus = JSON.parse(localStorage.getItem(storageKey.menus) || '[]');
     this.ensureDefaultSettingsMenu();
     this.getActiveMenu();
+    this.subscribeToRouteHeader();
     this.subscribeToDownloads();
   }
 
@@ -185,8 +186,42 @@ export class LayoutComponent implements OnInit {
       return {
         ...prev,
         title: menu.name,
+        subtitle: null,
       }
     });
+  }
+
+  private subscribeToRouteHeader(): void {
+    const router = this.injector.get(Router);
+    router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(() => {
+        const activeMenu = this.findActiveMenu(this.menus, router.url);
+        if (activeMenu) {
+          this.onUpdateHeaderInfo(activeMenu);
+        }
+        this.updateHeaderFromRouteData();
+      });
+
+    this.updateHeaderFromRouteData();
+  }
+
+  private updateHeaderFromRouteData(): void {
+    let route = this.injector.get(ActivatedRoute);
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+
+    const headerTitle = route.snapshot.data['headerTitle'];
+    const headerSubtitle = route.snapshot.data['headerSubtitle'];
+    this.commonService.headerInfo.update((prev) => ({
+      ...prev,
+      ...(headerTitle ? { title: headerTitle } : {}),
+      subtitle: headerSubtitle ?? null,
+    }));
   }
 
   toggleSidenav() {

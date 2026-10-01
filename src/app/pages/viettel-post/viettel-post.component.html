@@ -1,11 +1,4 @@
 <div class="h-full min-h-0 flex-1 flex flex-col items-stretch justify-start overflow-hidden gap-4">
-    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 px-4">
-        <div class="flex flex-col gap-1">
-            <h1 class="text-xl font-bold">Vận chuyển</h1>
-            <span class="text-sm text-gray-500">Theo dõi đơn vận chuyển và cập nhật hoàn hàng về kho</span>
-        </div>
-    </div>
-
     <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 items-stretch gap-3 px-4">
         <mat-form-field appearance="outline" floatLabel="auto" class="w-full bg-white">
             <input matInput formControlName="keyword" placeholder="Tìm kiếm">

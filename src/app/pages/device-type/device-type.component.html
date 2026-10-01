@@ -1,19 +1,26 @@
 <div class="flex-1 flex flex-col items-stretch justify-start overflow-auto gray-500-scroll gap-3">
-    <div class="flex items-center justify-between px-4">
-        <div class="flex-1 flex flex-col md:flex-row items-center justify-start gap-3">
-            <h1 class="text-2xl font-bold">Danh sách loại thiết bị</h1>
+    <div class="flex flex-wrap items-center justify-between gap-3 px-4">
+        <div class="flex min-w-0 flex-1 flex-col items-center justify-start gap-3 md:flex-row">
             <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-center justify-start gap-3">
                 <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
                     <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
                 </mat-form-field>
             </form>
         </div>
-        <button *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]"
-            class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400"
-            (click)="onAddEditDeviceType()">
-            <mat-icon class="text-white">add</mat-icon>
-            Thêm loại thiết bị
-        </button>
+        <div class="flex flex-wrap items-center justify-end gap-2">
+            <button *permission="[PermissionEnum.NHANH_MANAGE]" type="button"
+                class="flex items-center justify-center gap-2 bg-blue-600 px-3 font-semibold text-white"
+                (click)="onOpenSyncNhanhProductsDialog()">
+                <mat-icon class="text-white">sync</mat-icon>
+                Đồng bộ sản phẩm
+            </button>
+            <button *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]"
+                class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400"
+                (click)="onAddEditDeviceType()">
+                <mat-icon class="text-white">add</mat-icon>
+                Thêm loại thiết bị
+            </button>
+        </div>
     </div>
     <app-table
         class="flex-1 flex flex-col items-stretch justify-start overflow-auto bg-white rounded-md border border-gray-400 p-4"
@@ -113,6 +120,53 @@
         </div>
         }
     </div>
+</ng-template>
+
+<ng-template #syncNhanhProductsDialogContent>
+    <form [formGroup]="syncNhanhProductsForm" (ngSubmit)="onSyncNhanhProducts()"
+        class="flex min-w-0 flex-col gap-4">
+        @if(nhanhCredentials.length) {
+            <div class="flex flex-col gap-1">
+                <label class="require">Tài khoản Nhanh.vn</label>
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+                    <mat-select formControlName="partnerCredentialId" placeholder="Chọn tài khoản Nhanh.vn">
+                        @for(credential of nhanhCredentials; track credential.id) {
+                            <mat-option [value]="credential.id" [disabled]="!credential.isActive">
+                                {{ credential.businessId || 'Chưa có Business ID' }} - App {{ credential.appId || '--' }}
+                                ({{ credential.environment }}){{ credential.isActive ? '' : ' - Ngừng hoạt động' }}
+                            </mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <p class="text-sm text-gray-500">
+                Sản phẩm sẽ được đồng bộ theo đúng tài khoản Nhanh.vn đã chọn.
+            </p>
+        } @else {
+            <div class="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 text-amber-800">
+                Chưa có tài khoản Nhanh.vn. Vui lòng cấu hình tài khoản trong màn Cài đặt trước khi đồng bộ.
+            </div>
+        }
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" [disabled]="isSyncingNhanhProducts"
+                class="flex items-center justify-center rounded border border-gray-400 bg-white px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                (click)="onCancelSyncNhanhProducts()">
+                Hủy
+            </button>
+            <button type="submit"
+                [disabled]="syncNhanhProductsForm.invalid || isSyncingNhanhProducts || !nhanhCredentials.length"
+                class="flex items-center justify-center gap-2 rounded border border-blue-600 bg-blue-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+                @if(isSyncingNhanhProducts) {
+                    <mat-spinner diameter="18"></mat-spinner>
+                    Đang đồng bộ...
+                } @else {
+                    <mat-icon class="text-white">sync</mat-icon>
+                    Đồng bộ
+                }
+            </button>
+        </div>
+    </form>
 </ng-template>
 
 <!-- Dialog Template -->
@@ -256,6 +310,27 @@
                     <input matInput type="number" min="0" formControlName="discountPrice" placeholder="Nhập giá khuyến mại">
                     @if(modelForm.get('discountPrice')?.hasError('min')) {
                         <mat-error>Giá khuyến mại không được nhỏ hơn 0</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label>Thời gian bảo hành (tháng)</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput type="number" min="0" formControlName="warrantyMonth"
+                        [placeholder]="'Mặc định: ' + (modelForm.get('deviceTypeWarrantyMonth')?.value || 0) + ' tháng'">
+                    @if(modelForm.get('warrantyMonth')?.hasError('min')) {
+                        <mat-error>Thời gian bảo hành không được nhỏ hơn 0</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label>Số lượng linh kiện</label>
+                <mat-form-field appearance="outline" floatLabel="auto">
+                    <input matInput type="number" min="0" formControlName="componentCount" placeholder="Nhập số lượng linh kiện">
+                    @if(modelForm.get('componentCount')?.hasError('min')) {
+                        <mat-error>Số lượng linh kiện không được nhỏ hơn 0</mat-error>
                     }
                 </mat-form-field>
             </div>

@@ -1,10 +1,25 @@
 <div class="h-full min-h-0 flex-1 flex flex-col items-stretch justify-start overflow-hidden gap-4">
-            <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 px-4">
-                <div class="flex flex-col gap-1">
-                    <h1 class="text-xl font-bold">Xuất/Nhập kho</h1>
-                    <span class="text-sm text-gray-500">Theo dõi tồn kho, nhập lô và xuất thiết bị theo serial</span>
-                </div>
-                <div *permission="[PermissionEnum.STOCK_MANAGE]" class="flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-4">
+                <form [formGroup]="filterForm" class="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+                    <mat-form-field appearance="outline" floatLabel="auto"
+                        class="min-w-[220px] flex-1 bg-white sm:w-[220px] sm:flex-none">
+                        <mat-select formControlName="warehouseId" placeholder="Tất cả kho"
+                            (selectionChange)="onReload()">
+                            <mat-option value="">Tất cả kho</mat-option>
+                            @for(warehouse of warehouses; track warehouse.id) {
+                                <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    <button type="button"
+                        class="flex shrink-0 items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+                        (click)="onReload()">
+                        <mat-icon class="text-white">filter_alt</mat-icon>
+                        Lọc
+                    </button>
+                </form>
+
+                <div *permission="[PermissionEnum.STOCK_MANAGE]" class="flex flex-wrap items-center justify-end gap-2">
                     <button type="button"
                         class="flex items-center justify-center gap-2 px-3 bg-green-600 text-white font-semibold"
                         (click)="onOpenCreateBatchDialog()">
@@ -38,68 +53,69 @@
                 </div>
             </div>
 
-            <div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 px-4">
-                <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-                    <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[280px] bg-white">
-                        <mat-select formControlName="warehouseId" placeholder="Tất cả kho">
-                            <mat-option value="">Tất cả kho</mat-option>
-                            @for(warehouse of warehouses; track warehouse.id) {
-                                <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
-                            }
-                        </mat-select>
-                    </mat-form-field>
-                    <button type="button"
-                        class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
-                        (click)="onReload()">
-                        <mat-icon class="text-white">filter_alt</mat-icon>
-                        Lọc
-                    </button>
-                </form>
+            <mat-accordion class="shrink-0 px-4">
+                <mat-expansion-panel [expanded]="false"
+                    class="!rounded-md !shadow-none border border-gray-300">
+                    <mat-expansion-panel-header class="!h-12">
+                        <mat-panel-title class="flex items-center gap-2 font-semibold">
+                            <mat-icon>analytics</mat-icon>
+                            Thống kê tồn kho
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
 
-                <div class="flex flex-wrap items-center justify-start xl:justify-end gap-x-6 gap-y-2 text-sm font-semibold">
-                    <span class="text-green-700">
-                        Tổng tồn: <strong class="text-lg">{{ overview?.totalInStock || 0 | number }}</strong>
-                    </span>
-                    <span class="text-blue-700">
-                        Đã xuất: <strong class="text-lg">{{ overview?.totalShipped || 0 | number }}</strong>
-                    </span>
-                    <span class="text-orange-700">
-                        Lô sắp hết: <strong class="text-lg">{{ overview?.lowStockBatches?.length || 0 | number }}</strong>
-                    </span>
-                </div>
-            </div>
-
-            @if(overview?.byWarehouse?.length) {
-                <div class="flex flex-wrap gap-2 px-4">
-                    @for(warehouse of overview?.byWarehouse; track warehouse.warehouseId) {
-                        <div class="bg-white border border-gray-300 rounded-md px-3 py-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
-                            <span class="font-semibold text-gray-700">{{ warehouse.warehouseName || warehouse.warehouseId }}</span>
+                    <div class="flex max-h-[260px] flex-col gap-4 overflow-auto pb-1 gray-500-scroll">
+                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-semibold">
                             <span class="text-green-700">
-                                Tồn: <strong>{{ warehouse.inStock || 0 | number }}</strong>
+                                Tổng tồn: <strong class="text-lg">{{ overview?.totalInStock || 0 | number }}</strong>
                             </span>
                             <span class="text-blue-700">
-                                Xuất: <strong>{{ warehouse.shipped || 0 | number }}</strong>
+                                Đã xuất: <strong class="text-lg">{{ overview?.totalShipped || 0 | number }}</strong>
+                            </span>
+                            <span class="text-orange-700">
+                                Lô sắp hết: <strong class="text-lg">{{ overview?.lowStockBatches?.length || 0 | number }}</strong>
                             </span>
                         </div>
-                    }
-                </div>
-            }
 
-            @if(overview?.byModel?.length) {
-                <div class="flex flex-wrap gap-2 px-4">
-                    @for(model of overview?.byModel; track model.modelId) {
-                        <div class="bg-white border border-gray-300 rounded-md px-3 py-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
-                            <span class="font-semibold text-gray-700">Model: {{ model.modelName || model.modelId }}</span>
-                            <span class="text-green-700">
-                                Tồn: <strong>{{ model.inStock || 0 | number }}</strong>
-                            </span>
-                            <span class="text-blue-700">
-                                Xuất: <strong>{{ model.shipped || 0 | number }}</strong>
-                            </span>
-                        </div>
-                    }
-                </div>
-            }
+                        @if(overview?.byWarehouse?.length) {
+                            <div class="flex flex-col gap-2">
+                                <span class="font-semibold text-gray-700">Theo kho</span>
+                                <div class="flex flex-wrap gap-2">
+                                    @for(warehouse of overview?.byWarehouse; track warehouse.warehouseId) {
+                                        <div class="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
+                                            <span class="font-semibold text-gray-700">{{ warehouse.warehouseName || warehouse.warehouseId }}</span>
+                                            <span class="text-green-700">
+                                                Tồn: <strong>{{ warehouse.inStock || 0 | number }}</strong>
+                                            </span>
+                                            <span class="text-blue-700">
+                                                Xuất: <strong>{{ warehouse.shipped || 0 | number }}</strong>
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if(overview?.byModel?.length) {
+                            <div class="flex flex-col gap-2">
+                                <span class="font-semibold text-gray-700">Theo model</span>
+                                <div class="flex flex-wrap gap-2">
+                                    @for(model of overview?.byModel; track model.modelId) {
+                                        <div class="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
+                                            <span class="font-semibold text-gray-700">{{ model.modelName || model.modelId }}</span>
+                                            <span class="text-green-700">
+                                                Tồn: <strong>{{ model.inStock || 0 | number }}</strong>
+                                            </span>
+                                            <span class="text-blue-700">
+                                                Xuất: <strong>{{ model.shipped || 0 | number }}</strong>
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </mat-expansion-panel>
+            </mat-accordion>
 
             <section class="flex flex-col gap-3 px-4 flex-1 min-h-0">
                 <div class="flex items-center justify-between">

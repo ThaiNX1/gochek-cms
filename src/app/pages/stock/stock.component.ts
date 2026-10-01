@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -54,6 +55,7 @@ type StockDrawerMode = 'create' | 'ship' | 'transfer';
   imports: [
     CommonModule,
     MatAutocompleteModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -65,6 +67,7 @@ type StockDrawerMode = 'create' | 'ship' | 'transfer';
     SelectSearchComponent,
     TableComponent,
     DirectiveModule,
+    MatExpansionModule
   ],
   templateUrl: './stock.component.html',
   styleUrl: './stock.component.scss'

@@ -18,6 +18,15 @@ query GetWarehouses($pagination: WarehouseSearchInput) {
             managerName
             phone
             isActive
+            nhanhDepotId
+            nhanhPartnerCredentialId
+            nhanhPartnerCredential {
+                id
+                appId
+                businessId
+                environment
+                isActive
+            }
             createdAt
             updatedAt
             deletedAt
@@ -77,5 +86,34 @@ mutation UpdateWarehouse($id: ID!, $input: UpdateWarehouseInput!) {
 export const DELETE_WAREHOUSE = gql`
 mutation DeleteWarehouse($id: ID!) {
     deleteWarehouse(id: $id)
+}
+`;
+
+export const GET_NHANH_DEPOTS = gql`
+query NhanhDepots($input: NhanhCredentialInput!) {
+    nhanhDepots(input: $input) {
+        id
+        name
+        raw
+    }
+}
+`;
+
+export const CONFIGURE_WAREHOUSE_NHANH = gql`
+mutation ConfigureWarehouseNhanh($input: ConfigureWarehouseNhanhInput!) {
+    configureWarehouseNhanh(input: $input) {
+        id
+        name
+        code
+        nhanhDepotId
+        nhanhPartnerCredentialId
+        nhanhPartnerCredential {
+            id
+            appId
+            businessId
+            environment
+            isActive
+        }
+    }
 }
 `;

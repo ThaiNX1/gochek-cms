@@ -1,7 +1,6 @@
 <div class="h-full min-h-0 flex-1 flex flex-col items-stretch justify-start overflow-hidden gap-3">
     <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 px-4">
         <div class="flex-1 flex flex-col md:flex-row md:items-center justify-start gap-3">
-            <h1 class="text-2xl font-bold">Kho</h1>
             <form [formGroup]="filterForm" class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-3">
                 <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[300px] bg-white">
                     <input matInput formControlName="keyword" placeholder="Nhập để tìm kiếm" />
@@ -14,12 +13,20 @@
                 </button>
             </form>
         </div>
-        <button *permission="[PermissionEnum.WAREHOUSE_MANAGE]"
-            class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400"
-            (click)="onAddEditWarehouse()">
-            <mat-icon class="text-white">add</mat-icon>
-            Thêm kho
-        </button>
+        <div class="flex flex-wrap items-center justify-end gap-2">
+            <button *permission="[PermissionEnum.WAREHOUSE_MANAGE, PermissionEnum.NHANH_MANAGE]" type="button"
+                class="flex items-center justify-center gap-2 bg-blue-600 px-3 font-semibold text-white"
+                (click)="onOpenSyncNhanhWarehouseDialog()">
+                <mat-icon class="text-white">sync</mat-icon>
+                Đồng bộ kho
+            </button>
+            <button *permission="[PermissionEnum.WAREHOUSE_MANAGE]"
+                class="p-3 flex items-center justify-center gap-2 px-3 bg-primary text-white rounded border border-gray-400"
+                (click)="onAddEditWarehouse()">
+                <mat-icon class="text-white">add</mat-icon>
+                Thêm kho
+            </button>
+        </div>
     </div>
 
     <app-table
@@ -55,6 +62,101 @@
             <mat-icon class="text-red-500">delete</mat-icon>
         </button>
     </div>
+</ng-template>
+
+<ng-template #syncNhanhWarehouseDialogContent>
+    <form [formGroup]="syncNhanhWarehouseForm" (ngSubmit)="onSyncNhanhWarehouse()"
+        class="flex min-w-0 flex-col gap-4">
+        @if(warehouseOptions.length) {
+            <div class="flex flex-col gap-1">
+                <label class="require">Kho GoChek</label>
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+                    <mat-select formControlName="warehouseId" placeholder="Chọn kho GoChek"
+                        [disabled]="isSyncingNhanhWarehouse"
+                        (selectionChange)="onSyncWarehouseSelectionChange($event.value)">
+                        @for(warehouse of warehouseOptions; track warehouse.id) {
+                            <mat-option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        } @else {
+            <div class="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 text-amber-800">
+                Chưa có kho GoChek để đồng bộ.
+            </div>
+        }
+
+        @if(selectedWarehouse?.nhanhPartnerCredentialId && selectedWarehouse?.nhanhDepotId) {
+            <div class="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                Liên kết hiện tại: tài khoản {{ selectedWarehouse?.nhanhPartnerCredential?.businessId || selectedWarehouse?.nhanhPartnerCredentialId }},
+                kho Nhanh.vn {{ selectedWarehouse?.nhanhDepotId }}.
+            </div>
+        }
+
+        @if(nhanhCredentials.length) {
+            <div class="flex flex-col gap-1">
+                <label class="require">Tài khoản Nhanh.vn</label>
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+                    <mat-select formControlName="partnerCredentialId" placeholder="Chọn tài khoản Nhanh.vn"
+                        [disabled]="isSyncingNhanhWarehouse"
+                        (selectionChange)="onNhanhCredentialChange($event.value)">
+                        @for(credential of nhanhCredentials; track credential.id) {
+                            <mat-option [value]="credential.id" [disabled]="!credential.isActive">
+                                {{ credential.businessId || 'Chưa có Business ID' }} - App {{ credential.appId || '--' }}
+                                ({{ credential.environment }}){{ credential.isActive ? '' : ' - Ngừng hoạt động' }}
+                            </mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="require">Kho Nhanh.vn</label>
+                @if(isLoadingNhanhDepots) {
+                    <div class="flex min-h-12 items-center justify-center gap-2 text-gray-500">
+                        <mat-spinner diameter="20"></mat-spinner>
+                        Đang tải danh sách kho...
+                    </div>
+                } @else if(nhanhDepots.length) {
+                    <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+                        <mat-select formControlName="nhanhDepotId" placeholder="Chọn kho Nhanh.vn"
+                            [disabled]="isSyncingNhanhWarehouse">
+                            @for(depot of nhanhDepots; track depot.id) {
+                                <mat-option [value]="depot.id">{{ depot.name }} ({{ depot.id }})</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                } @else {
+                    <div class="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800">
+                        Tài khoản đã chọn không có kho Nhanh.vn khả dụng.
+                    </div>
+                }
+            </div>
+        } @else {
+            <div class="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 text-amber-800">
+                Chưa có tài khoản Nhanh.vn. Vui lòng cấu hình tài khoản trong màn Cài đặt trước khi đồng bộ.
+            </div>
+        }
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" [disabled]="isSyncingNhanhWarehouse"
+                class="flex items-center justify-center rounded border border-gray-400 bg-white px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                (click)="onCancelSyncNhanhWarehouse()">
+                Hủy
+            </button>
+            <button type="submit"
+                [disabled]="syncNhanhWarehouseForm.invalid || isLoadingNhanhDepots || isSyncingNhanhWarehouse"
+                class="flex items-center justify-center gap-2 rounded border border-blue-600 bg-blue-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+                @if(isSyncingNhanhWarehouse) {
+                    <mat-spinner diameter="18"></mat-spinner>
+                    Đang đồng bộ...
+                } @else {
+                    <mat-icon class="text-white">sync</mat-icon>
+                    Đồng bộ
+                }
+            </button>
+        </div>
+    </form>
 </ng-template>
 
 <ng-template #warehouseDialogContent>

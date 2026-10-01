@@ -4,6 +4,21 @@ module.exports = {
     "./src/**/*.{html,ts,scss}",
   ],
   theme: {
+    fontSize: {
+      xs: ['10px', { lineHeight: '14px' }],
+      sm: ['11.5px', { lineHeight: '17px' }],
+      base: ['12.5px', { lineHeight: '19px' }],
+      lg: ['14px', { lineHeight: '21px' }],
+      xl: ['16px', { lineHeight: '23px' }],
+      '2xl': ['18px', { lineHeight: '25px' }],
+      '3xl': ['22px', { lineHeight: '28px' }],
+      '4xl': ['26px', { lineHeight: '31px' }],
+      '5xl': ['34px', { lineHeight: '1' }],
+      '6xl': ['42px', { lineHeight: '1' }],
+      '7xl': ['50px', { lineHeight: '1' }],
+      '8xl': ['68px', { lineHeight: '1' }],
+      '9xl': ['90px', { lineHeight: '1' }],
+    },
     extend: {
       colors: {
         primary: 'var(--primary-color)',
@@ -37,4 +52,3 @@ module.exports = {
   },
   plugins: [],
 }
-

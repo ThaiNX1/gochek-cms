@@ -123,6 +123,8 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+      headerTitle: 'Xuất/Nhập kho',
+      headerSubtitle: 'Theo dõi tồn kho, nhập lô và xuất thiết bị theo serial',
     },
   },
   {
@@ -131,6 +133,8 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+      headerTitle: 'Lịch sử kho',
+      headerSubtitle: 'Theo dõi các lần nhập kho, xuất kho và điều chỉnh tồn kho',
     },
   },
   {
@@ -147,6 +151,8 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+      headerTitle: 'Vận chuyển',
+      headerSubtitle: 'Theo dõi đơn vận chuyển và cập nhật hoàn hàng về kho',
     },
   },
   {

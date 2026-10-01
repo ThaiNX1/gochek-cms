@@ -6,10 +6,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { PageEvent } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { takeUntil } from 'rxjs';
 import { BaseClass } from '../../commons/base.class';
-import { CREATE_WAREHOUSE, DELETE_WAREHOUSE, GET_WAREHOUSES, UPDATE_WAREHOUSE } from '../../commons/queries/warehouse.query';
-import { PaginatedWarehouseResponse } from '../../commons/types';
+import { GET_NHANH_CREDENTIALS } from '../../commons/queries/partner-credential.query';
+import { CONFIGURE_WAREHOUSE_NHANH, CREATE_WAREHOUSE, DELETE_WAREHOUSE, GET_NHANH_DEPOTS, GET_WAREHOUSES, UPDATE_WAREHOUSE } from '../../commons/queries/warehouse.query';
+import { NhanhDepotResponse, PaginatedWarehouseResponse, PartnerCredential, Warehouse } from '../../commons/types';
 import { TableColumnType } from '../../core/constants/enum';
 import { ApiService } from '../../core/services/api.service';
 import { DialogComponent, DialogData } from '../../shared/components/dialog/dialog.component';
@@ -24,6 +27,8 @@ import { DirectiveModule } from '../../shared/directive.module';
     MatIconModule,
     MatInputModule,
     MatFormFieldModule,
+    MatProgressSpinnerModule,
+    MatSelectModule,
     ReactiveFormsModule,
     TableComponent,
     DirectiveModule,
@@ -33,8 +38,20 @@ import { DirectiveModule } from '../../shared/directive.module';
 })
 export class WarehouseComponent extends BaseClass {
   @ViewChild('warehouseDialogContent') warehouseDialogContent!: TemplateRef<any>;
+  @ViewChild('syncNhanhWarehouseDialogContent') syncNhanhWarehouseDialogContent!: TemplateRef<any>;
 
   warehouseForm!: FormGroup;
+  warehouseOptions: Warehouse[] = [];
+  nhanhCredentials: PartnerCredential[] = [];
+  nhanhDepots: NhanhDepotResponse[] = [];
+  selectedWarehouse: Warehouse | null = null;
+  isLoadingNhanhDepots = false;
+  isSyncingNhanhWarehouse = false;
+  syncNhanhWarehouseForm = new FormGroup({
+    warehouseId: new FormControl('', [Validators.required]),
+    partnerCredentialId: new FormControl('', [Validators.required]),
+    nhanhDepotId: new FormControl('', [Validators.required]),
+  });
   dialogData: DialogData = {
     title: 'Thêm kho',
     showActions: false,
@@ -101,6 +118,133 @@ export class WarehouseComponent extends BaseClass {
 
   async onPageChange(event: PageEvent) {
     await this.onGetWarehouses(event.pageIndex + 1);
+  }
+
+  async onOpenSyncNhanhWarehouseDialog(warehouse?: Warehouse): Promise<void> {
+    this.selectedWarehouse = null;
+    this.warehouseOptions = [];
+    this.nhanhDepots = [];
+    this.syncNhanhWarehouseForm.reset();
+
+    const [credentialResponse, warehouseResponse] = await Promise.all([
+      this.injector.get(ApiService).executeQuery<any>(GET_NHANH_CREDENTIALS),
+      this.injector.get(ApiService).executeQuery<any>(GET_WAREHOUSES, {
+        pagination: { page: 1, size: 100 },
+      }),
+    ]);
+    this.nhanhCredentials = (credentialResponse?.nhanhCredentials ?? [])
+      .slice()
+      .sort((first: PartnerCredential, second: PartnerCredential) =>
+        first.environment.localeCompare(second.environment)
+        || (first.businessId ?? '').localeCompare(second.businessId ?? '')
+        || (first.appId ?? '').localeCompare(second.appId ?? ''));
+    this.warehouseOptions = warehouseResponse?.warehouses?.data ?? [];
+    if (warehouse && !this.warehouseOptions.some((item) => item.id === warehouse.id)) {
+      this.warehouseOptions.unshift(warehouse);
+    }
+
+    const defaultWarehouse = warehouse ?? this.warehouseOptions[0];
+    if (defaultWarehouse) {
+      await this.onSyncWarehouseSelectionChange(defaultWarehouse.id);
+    }
+
+    const dialogRef = this.dialog.open(DialogComponent, {
+      disableClose: true,
+      data: {
+        title: warehouse ? `Đồng bộ kho "${warehouse.name}" với Nhanh.vn` : 'Đồng bộ kho với Nhanh.vn',
+        showActions: false,
+        showCloseButton: false,
+      },
+      width: '560px',
+    });
+    dialogRef.componentInstance.content = this.syncNhanhWarehouseDialogContent;
+  }
+
+  async onSyncWarehouseSelectionChange(warehouseId: string): Promise<void> {
+    this.selectedWarehouse = this.warehouseOptions.find((warehouse) => warehouse.id === warehouseId) ?? null;
+    this.nhanhDepots = [];
+    this.syncNhanhWarehouseForm.patchValue({
+      warehouseId,
+      partnerCredentialId: '',
+      nhanhDepotId: '',
+    });
+    if (!this.selectedWarehouse) {
+      return;
+    }
+
+    const defaultCredential = this.nhanhCredentials.find((credential) =>
+      credential.id === this.selectedWarehouse?.nhanhPartnerCredentialId && credential.isActive)
+      ?? this.nhanhCredentials.find((credential) => credential.isActive);
+    if (defaultCredential) {
+      const preferredDepotId = defaultCredential.id === this.selectedWarehouse.nhanhPartnerCredentialId
+        ? this.selectedWarehouse.nhanhDepotId ?? undefined
+        : undefined;
+      await this.onNhanhCredentialChange(defaultCredential.id, preferredDepotId);
+    }
+  }
+
+  async onNhanhCredentialChange(partnerCredentialId: string, preferredDepotId?: string): Promise<void> {
+    this.syncNhanhWarehouseForm.patchValue({
+      partnerCredentialId,
+      nhanhDepotId: '',
+    });
+    this.nhanhDepots = [];
+    if (!partnerCredentialId) {
+      return;
+    }
+
+    this.isLoadingNhanhDepots = true;
+    const response = await this.injector.get(ApiService).executeQuery<any>(GET_NHANH_DEPOTS, {
+      input: { partnerCredentialId },
+    });
+    this.isLoadingNhanhDepots = false;
+    this.nhanhDepots = (response?.nhanhDepots ?? [])
+      .slice()
+      .sort((first: NhanhDepotResponse, second: NhanhDepotResponse) => first.name.localeCompare(second.name));
+
+    const selectedDepot = this.nhanhDepots.find((depot) => depot.id === preferredDepotId)
+      ?? this.nhanhDepots[0];
+    if (selectedDepot) {
+      this.syncNhanhWarehouseForm.patchValue({ nhanhDepotId: selectedDepot.id });
+    }
+  }
+
+  async onSyncNhanhWarehouse(): Promise<void> {
+    this.syncNhanhWarehouseForm.markAllAsTouched();
+    if (!this.selectedWarehouse || this.syncNhanhWarehouseForm.invalid || this.isSyncingNhanhWarehouse) {
+      this.commonService.openSnackBarError('Vui lòng chọn đầy đủ tài khoản và kho Nhanh.vn');
+      return;
+    }
+
+    const formValue = this.syncNhanhWarehouseForm.getRawValue();
+    const selectedDepot = this.nhanhDepots.find((depot) => depot.id === formValue.nhanhDepotId);
+    this.isSyncingNhanhWarehouse = true;
+    const response = await this.injector.get(ApiService).executeMutation<any>(CONFIGURE_WAREHOUSE_NHANH, {
+      input: {
+        warehouseId: this.selectedWarehouse.id,
+        partnerCredentialId: formValue.partnerCredentialId,
+        nhanhDepotId: formValue.nhanhDepotId,
+      },
+    });
+    this.isSyncingNhanhWarehouse = false;
+
+    if (!response?.configureWarehouseNhanh) {
+      this.commonService.openSnackBarError('Đồng bộ kho với Nhanh.vn thất bại');
+      return;
+    }
+
+    const warehouseName = this.selectedWarehouse.name;
+    this.dialog.closeAll();
+    this.selectedWarehouse = null;
+    await this.onGetWarehouses(this.pagination.page + 1);
+    this.commonService.openSnackBar(`Đã liên kết kho "${warehouseName}" với "${selectedDepot?.name ?? formValue.nhanhDepotId}"`);
+  }
+
+  onCancelSyncNhanhWarehouse(): void {
+    if (!this.isSyncingNhanhWarehouse) {
+      this.selectedWarehouse = null;
+      this.dialog.closeAll();
+    }
   }
 
   onAddEditWarehouse(item: any = null) {
