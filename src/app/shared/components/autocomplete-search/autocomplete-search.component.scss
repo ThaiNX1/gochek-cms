@@ -1,0 +1,11 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+// Highlight invalid state giống select-search
+.form-field-invalid {
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    border-color: var(--mdc-outlined-text-field-error-outline-color, #f44336) !important;
+  }
+}

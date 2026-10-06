@@ -70,7 +70,7 @@ export class LayoutComponent implements OnInit {
         this.sidenavMode = 'side';
         this.isSidenavOpen = true;
       }
-    });
+    }, { allowSignalWrites: true });
     this.commonService.showGlobalLoading.subscribe((isShow) => {
       this.isLoading.set(isShow);
     });

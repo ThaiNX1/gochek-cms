@@ -608,7 +608,7 @@ export class PurchaseOrderComponent extends BaseClass {
       const response = await this.injector.get(ApiService).executeMutation<any>(
         CANCEL_PURCHASE_ORDER,
         { id: item.id }
-      );
+      ) as any;
       if (!response?.cancelPurchaseOrder) {
         this.commonService.openSnackBarError('Hủy đơn đặt hàng thất bại');
         return;
@@ -656,7 +656,7 @@ export class PurchaseOrderComponent extends BaseClass {
     const response = await this.injector.get(ApiService).executeMutation<any>(
       COMPLETE_PURCHASE_ORDER,
       { id: this.selectedItem.id, actualProcessedQuantity }
-    );
+    ) as any;
     if (!response?.completePurchaseOrder) {
       this.commonService.openSnackBarError('Hoàn thành đơn đặt hàng thất bại');
       return;

@@ -11,6 +11,8 @@ import { FirmwareComponent } from '../pages/firmware/firmware.component';
 import { GenerateSerialHistoryComponent } from '../pages/generate-serial-history/generate-serial-history.component';
 import { HomeComponent } from '../pages/home/home.component';
 import { ImageConvertComponent } from '../pages/image-convert/image-convert.component';
+import { InventoryDashboardComponent } from '../pages/inventory-dashboard/inventory-dashboard.component';
+import { ManufacturingDashboardComponent } from '../pages/manufacturing-dashboard/manufacturing-dashboard.component';
 import { OrganizationCreateComponent } from '../pages/organization/organization-create/organization-create.component';
 import { OrganizationComponent } from '../pages/organization/organization.component';
 import { PermissionComponent } from '../pages/permission/permission.component';
@@ -27,6 +29,7 @@ import { WebsiteBannerCreateComponent } from '../pages/website/website-banner/we
 import { WebsiteBannerComponent } from '../pages/website/website-banner/website-banner.component';
 import { PurchaseOrderComponent } from '../pages/purchase-order/purchase-order.component';
 import { PurchaseOrderCreateComponent } from '../pages/purchase-order/purchase-order-create/purchase-order-create.component';
+import { PurchaseOrderShipmentComponent } from '../pages/purchase-order-shipment/purchase-order-shipment.component';
 const routes: Routes = [
   {
     path: '',
@@ -36,6 +39,23 @@ const routes: Routes = [
   {
     path: 'home',
     component: HomeComponent,
+    data: {
+      headerSubtitle: 'Tổng quan hoạt động hệ thống và các chỉ số quản lý',
+    },
+  },
+  {
+    path: 'inventory-dashboard',
+    component: InventoryDashboardComponent,
+    data: {
+      headerSubtitle: 'Tổng quan tồn kho, rủi ro và sức khỏe kho hàng',
+    },
+  },
+  {
+    path: 'manufacturing-dashboard',
+    component: ManufacturingDashboardComponent,
+    data: {
+      headerSubtitle: 'Theo dõi tiến độ sản xuất và chất lượng thiết bị',
+    },
   },
   {
     path: 'error/403',
@@ -47,6 +67,7 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE],
+      headerSubtitle: 'Quản lý danh sách tổ chức và thông tin hoạt động',
     },
   },
   {
@@ -55,6 +76,7 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE],
+      headerSubtitle: 'Cập nhật thông tin, người dùng và cấu hình tổ chức',
     },
   },
   {
@@ -63,11 +85,15 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE],
+      headerSubtitle: 'Quản lý danh mục quyền truy cập trong hệ thống',
     },
   },
   {
     path: 'device',
     component: DeviceComponent,
+    data: {
+      headerSubtitle: 'Quản lý thiết bị, trạng thái và thông tin gán tổ chức',
+    },
   },
   {
     path: 'device-type',
@@ -75,6 +101,7 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+      headerSubtitle: 'Quản lý loại thiết bị, model và đồng bộ sản phẩm',
     },
   },
   {
@@ -83,31 +110,50 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE],
+      headerSubtitle: 'Theo dõi và tạo các đợt sinh serial cho sản phẩm',
     },
   },
   {
     path: 'user',
     component: UserComponent,
+    data: {
+      headerSubtitle: 'Quản lý tài khoản người dùng và trạng thái hoạt động',
+    },
   },
   {
     path: 'user/:id',
     component: UserCreateComponent,
+    data: {
+      headerSubtitle: 'Cập nhật thông tin và phân quyền cho người dùng',
+    },
   },
   {
     path: 'role',
     component: RoleComponent,
+    data: {
+      headerSubtitle: 'Quản lý vai trò và quyền truy cập của người dùng',
+    },
   },
   {
     path: 'firmware',
     component: FirmwareComponent,
+    data: {
+      headerSubtitle: 'Quản lý firmware và phiên bản phần mềm thiết bị',
+    },
   },
   {
     path: 'firmware/:id',
     component: FirmwareCreateComponent,
+    data: {
+      headerSubtitle: 'Cập nhật thông tin, tệp và cấu hình firmware',
+    },
   },
   {
     path: 'customer',
     component: CustomerComponent,
+    data: {
+      headerSubtitle: 'Quản lý khách hàng và lịch sử bảo hành thiết bị',
+    },
   },
   {
     path: 'warehouse',
@@ -115,6 +161,7 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+      headerSubtitle: 'Quản lý kho và cấu hình đồng bộ với Nhanh.vn',
     },
   },
   {
@@ -143,6 +190,7 @@ const routes: Routes = [
     canActivate: [PageGuard],
     data: {
       permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+      headerSubtitle: 'Quản lý nhà cung cấp phục vụ đơn đặt hàng',
     },
   },
   {
@@ -158,34 +206,67 @@ const routes: Routes = [
   {
     path: 'settings',
     component: SettingsComponent,
+    data: {
+      headerSubtitle: 'Quản lý kết nối đối tác và cấu hình thanh toán',
+    },
   },
   {
     path: 'website/banner',
     component: WebsiteBannerComponent,
+    data: {
+      headerSubtitle: 'Quản lý banner hiển thị trên website',
+    },
   },
   {
     path: 'website/banner/:id',
     component: WebsiteBannerCreateComponent,
+    data: {
+      headerSubtitle: 'Cập nhật nội dung và hình ảnh banner',
+    },
   },
   {
     path: 'purchase-order',
     component: PurchaseOrderComponent,
+    data: {
+      headerSubtitle: 'Theo dõi đơn đặt hàng, sản xuất và trạng thái hoàn thành',
+    },
   },
   {
     path: 'purchase-order/create',
     component: PurchaseOrderCreateComponent,
+    data: {
+      headerSubtitle: 'Khởi tạo thông tin sản phẩm, batch/lot và vận chuyển',
+    },
   },
   {
     path: 'purchase-order/:id',
     component: PurchaseOrderCreateComponent,
+    data: {
+      headerSubtitle: 'Xem và cập nhật sản phẩm, batch/lot và vận chuyển',
+    },
+  },
+  {
+    path: 'purchase-order-shipment',
+    component: PurchaseOrderShipmentComponent,
+    canActivate: [PageGuard],
+    data: {
+      permissions: [PermissionAction.MANAGE, PermissionAction.READ],
+      headerSubtitle: 'Theo dõi các đơn vận chuyển của đơn đặt hàng',
+    },
   },
   {
     path: 'image_convert',
     component: ImageConvertComponent,
+    data: {
+      headerSubtitle: 'Quản lý cấu hình và lịch sử chuyển đổi hình ảnh',
+    },
   },
   {
     path: 'image_convert/create',
     loadComponent: () => import('../pages/image-convert/image-convert-create/image-convert-create.component').then(m => m.ImageConvertCreateComponent),
+    data: {
+      headerSubtitle: 'Tạo cấu hình chuyển đổi hình ảnh mới',
+    },
   },
   // {
   //   path: 'model-ai',

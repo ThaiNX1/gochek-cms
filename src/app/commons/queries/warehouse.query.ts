@@ -27,6 +27,13 @@ query GetWarehouses($pagination: WarehouseSearchInput) {
                 environment
                 isActive
             }
+            nhanhInfo {
+                credentialId
+                depotId
+                depotName
+                businessId
+                appId
+            }
             createdAt
             updatedAt
             deletedAt

@@ -88,6 +88,7 @@ export class SettingsComponent extends BaseClass {
   ]);
 
   credentialForm = new FormGroup({
+    name: new FormControl(''),
     username: new FormControl('', [Validators.required]),
     password: new FormControl(''),
     environment: new FormControl(PartnerEnvironment.PROD, [Validators.required]),
@@ -95,6 +96,7 @@ export class SettingsComponent extends BaseClass {
   });
 
   nhanhCredentialForm = new FormGroup({
+    name: new FormControl(''),
     environment: new FormControl(PartnerEnvironment.PROD, [Validators.required]),
     appId: new FormControl('', [Validators.required]),
     businessId: new FormControl('', [Validators.required]),
@@ -153,6 +155,7 @@ export class SettingsComponent extends BaseClass {
     this.selectedCredentialId = credential.id;
     this.showPassword = false;
     this.credentialForm.reset({
+      name: credential.name || '',
       username: credential.username,
       password: '',
       environment: credential.environment,
@@ -164,6 +167,7 @@ export class SettingsComponent extends BaseClass {
     this.selectedCredentialId = null;
     this.showPassword = false;
     this.credentialForm.reset({
+      name: '',
       username: '',
       password: '',
       environment: PartnerEnvironment.PROD,
@@ -182,6 +186,7 @@ export class SettingsComponent extends BaseClass {
 
     const input: Record<string, unknown> = {
       id: this.selectedCredentialId || undefined,
+      name: formValue.name?.trim() || undefined,
       partnerKey: PartnerKey.VIETTEL_POST,
       username: formValue.username?.trim(),
       environment: formValue.environment,
@@ -254,6 +259,7 @@ export class SettingsComponent extends BaseClass {
     this.showNhanhWebhookVerifyToken = false;
     this.verifiedNhanhDepots = [];
     this.nhanhCredentialForm.reset({
+      name: credential.name || '',
       environment: credential.environment,
       appId: credential.appId ?? '',
       businessId: credential.businessId ?? '',
@@ -269,6 +275,7 @@ export class SettingsComponent extends BaseClass {
     this.showNhanhWebhookVerifyToken = false;
     this.verifiedNhanhDepots = [];
     this.nhanhCredentialForm.reset({
+      name: '',
       environment: PartnerEnvironment.PROD,
       appId: '',
       businessId: '',
@@ -289,6 +296,7 @@ export class SettingsComponent extends BaseClass {
 
     const input: UpsertNhanhCredentialInput = {
       id: this.selectedNhanhCredentialId || undefined,
+      name: formValue.name?.trim() || undefined,
       environment: formValue.environment ?? PartnerEnvironment.PROD,
       appId: formValue.appId?.trim(),
       businessId: formValue.businessId?.trim(),

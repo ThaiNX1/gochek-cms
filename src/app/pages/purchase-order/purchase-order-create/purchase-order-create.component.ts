@@ -158,7 +158,34 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   shipmentRandomLetters: string = '';
 
   get canEditPurchaseOrder(): boolean {
+    return !this.isEditMode || ![PurchaseOrderStatus.CANCELLED, PurchaseOrderStatus.COMPLETED].includes(this.poData?.status);
+  }
+
+  get canEditProduct(): boolean {
+    // Cho phép edit sản phẩm (sửa model, số lượng, đơn giá) chỉ khi:
+    // - Đang tạo mới, HOẶC
+    // - Đang edit và status = DRAFT
     return !this.isEditMode || this.poData?.status === 'DRAFT';
+  }
+
+  get canSavePurchaseOrder(): boolean {
+    // Cho phép lưu khi:
+    // 1. Đang tạo mới
+    // 2. Đang edit và có thể edit full PO (DRAFT)
+    // 3. Đang edit và có thể thêm batch (CONFIRMED/IN_PRODUCTION)
+    return !this.isEditMode 
+      || this.poData?.status === 'DRAFT'
+      || this.canAddBatch;
+  }
+
+  get canAddBatch(): boolean {
+    return !this.isEditMode
+      || (!!this.poData?.status && !this.isPurchaseOrderTerminal);
+  }
+
+  private get isPurchaseOrderTerminal(): boolean {
+    return this.poData?.status === PurchaseOrderStatus.COMPLETED
+      || this.poData?.status === PurchaseOrderStatus.CANCELLED;
   }
 
   get showProductionProgress(): boolean {
@@ -170,7 +197,10 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   get canShowCancelPurchaseOrderAction(): boolean {
-    return this.isEditMode && this.poData?.status === PurchaseOrderStatus.CONFIRMED;
+    return this.isEditMode 
+      && (this.poData?.status === PurchaseOrderStatus.DRAFT 
+        || this.poData?.status === PurchaseOrderStatus.PENDING_APPROVAL
+        || this.poData?.status === PurchaseOrderStatus.CONFIRMED);
   }
 
   get canShowCompletePurchaseOrderAction(): boolean {
@@ -231,6 +261,16 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   get canSelectSelectedBatchesForProductionCompleted(): boolean {
     return this.selectedBatches.length > 0
       && this.selectedBatches.every(batch => this.canSelectBatchForProductionCompleted(batch));
+  }
+
+  get canEditSelectedBatch(): boolean {
+    return this.selectedBatches.length === 1
+      && this.canEditBatch(this.selectedBatches[0]);
+  }
+
+  get canRemoveSelectedBatches(): boolean {
+    return this.selectedBatches.length > 0
+      && this.selectedBatches.every(batch => this.canEditBatch(batch));
   }
 
   readonly batchSteps: { key: PurchaseOrderBatchStatus; label: string }[] = [
@@ -590,12 +630,17 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   removeProduct(index: number) {
-    if (this.batches.some(batch => batch.productIndex === index)) {
-      this.commonService.openSnackBarError('Vui lòng xóa batch/lot của sản phẩm trước');
+    if (!this.canRemoveProduct(index)) {
+      this.commonService.openSnackBarError('Không thể xóa sản phẩm có batch đã qua trạng thái CREATED');
       return;
     }
 
     this.productFormArray.removeAt(index);
+    
+    // Xóa các batch thuộc sản phẩm này
+    this.batches = this.batches.filter(batch => batch.productIndex !== index);
+    
+    // Cập nhật lại productIndex cho các batch còn lại
     this.batches = this.batches.map(batch => ({
       ...batch,
       productIndex: batch.productIndex > index ? batch.productIndex - 1 : batch.productIndex,
@@ -645,9 +690,14 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
 
     this.editingBatchIndex = null;
     const firstProductIndex = this.products.findIndex(product => product.modelId);
+    const batchCode = this.generateNextBatchCode();
+    if (!batchCode) {
+      this.commonService.openSnackBarError('Vui lòng nhập mã PO trước khi thêm batch/lot');
+      return;
+    }
     this.batchForm.reset({
       productIndex: firstProductIndex,
-      batchCode: this.generateNextBatchCode(),
+      batchCode,
       orderedQuantity: null,
       plannedProductionDate: null,
       serialPrefix: '',
@@ -658,12 +708,57 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
 
   editBatch(index: number) {
     const batch = this.batches[index];
+    
+    // Kiểm tra batch có thể edit không
+    if (!this.canEditBatch(batch)) {
+      this.commonService.openSnackBarError('Không thể chỉnh sửa batch đang sản xuất hoặc đã hoàn thành sản xuất');
+      return;
+    }
+    
     this.editingBatchIndex = index;
     this.batchForm.reset({
       ...batch,
       plannedProductionDate: batch.plannedProductionDate ? new Date(batch.plannedProductionDate) : null,
     });
     this.openBatchDrawer('Cập nhật batch/lot');
+  }
+
+  canEditBatch(batch: BatchRow): boolean {
+    // Không cho edit batch đã ở trạng thái IN_PRODUCTION hoặc PRODUCTION_COMPLETED trở lên
+    const lockedStatuses = [
+      PurchaseOrderBatchStatus.IN_PRODUCTION,
+      PurchaseOrderBatchStatus.PRODUCTION_COMPLETED,
+      PurchaseOrderBatchStatus.IN_TRANSIT,
+      PurchaseOrderBatchStatus.RECEIVED,
+      PurchaseOrderBatchStatus.WAREHOUSED,
+    ];
+    return !batch.status || !lockedStatuses.includes(batch.status);
+  }
+
+  canRemoveProduct(productIndex: number): boolean {
+    // Luôn cho phép xóa khi đang tạo mới hoặc DRAFT
+    if (!this.isEditMode || this.poData?.status === 'DRAFT') {
+      return true;
+    }
+
+    // Khi PO ở CONFIRMED hoặc IN_PRODUCTION:
+    // - Cho phép xóa item nếu KHÔNG có batch nào
+    // - Cho phép xóa item nếu TẤT CẢ batch đều ở DRAFT (chưa qua CREATED)
+    // - KHÔNG cho phép xóa item nếu có ít nhất 1 batch đã qua CREATED
+
+    const productBatches = this.batches.filter(batch => batch.productIndex === productIndex);
+
+    // Không có batch nào -> cho phép xóa
+    if (productBatches.length === 0) {
+      return true;
+    }
+
+    // Có batch -> kiểm tra tất cả batch phải ở DRAFT (hoặc không có status)
+    const allBatchesAreDraft = productBatches.every(
+      batch => !batch.status || batch.status === PurchaseOrderBatchStatus.DRAFT
+    );
+
+    return allBatchesAreDraft;
   }
 
   private openBatchDrawer(title: string) {
@@ -710,6 +805,25 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       note: value.note?.trim() || '',
     };
 
+    // Kiểm tra tổng số lượng batch của model không vượt quá số lượng PO
+    const productIndex = batch.productIndex;
+    const product = this.products[productIndex];
+    if (product) {
+      const totalBatchQuantity = this.batches
+        .filter((b, index) => 
+          b.productIndex === productIndex && index !== this.editingBatchIndex
+        )
+        .reduce((sum, b) => sum + b.orderedQuantity, 0) + batch.orderedQuantity;
+
+      if (totalBatchQuantity > product.quantity) {
+        const productLabel = product.modelName || product.modelCode;
+        this.commonService.openSnackBarError(
+          `Tổng số lượng batch (${totalBatchQuantity.toLocaleString()}) vượt quá số lượng đặt của sản phẩm "${productLabel}" (${product.quantity.toLocaleString()})`
+        );
+        return;
+      }
+    }
+
     // KHÔNG gọi CREATE/UPDATE batch API tại đây.
     // Danh sách batches sẽ được gửi kèm qua input.items[].batches
     // khi bấm "Lưu PO" (createPurchaseOrder / updatePurchaseOrder).
@@ -722,6 +836,14 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   removeBatch(index: number) {
+    const batch = this.batches[index];
+    
+    // Kiểm tra batch có thể xóa không
+    if (!this.canEditBatch(batch)) {
+      this.commonService.openSnackBarError('Không thể xóa batch đang sản xuất hoặc đã hoàn thành sản xuất');
+      return;
+    }
+    
     // KHÔNG gọi DELETE batch API. Batches sẽ được đồng bộ khi save PO.
     this.batches.splice(index, 1);
   }
@@ -746,9 +868,12 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   getBatchStepCircleClass(batchStatus: PurchaseOrderBatchStatus | undefined, stepIndex: number): string {
-    return this.getBatchStepState(batchStatus, stepIndex) === 'pending'
-      ? 'bg-gray-300 border-gray-300'
-      : 'bg-green-500 border-green-500';
+    const state = this.getBatchStepState(batchStatus, stepIndex);
+    if (state === 'pending') {
+      return 'bg-white border-gray-400 text-gray-400';
+    }
+    // Both 'completed' and 'current' get green background with white check icon
+    return 'bg-green-500 border-green-500 text-white';
   }
 
   getBatchStepLineClass(batchStatus: PurchaseOrderBatchStatus | undefined, stepIndex: number): string {
@@ -760,6 +885,26 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     return this.getBatchStepState(batchStatus, stepIndex) === 'pending'
       ? 'text-gray-500'
       : 'text-green-700 font-semibold';
+  }
+
+  getBatchProgressBarClass(batchStatus?: PurchaseOrderBatchStatus): string {
+    if (batchStatus === PurchaseOrderBatchStatus.CANCELLED) {
+      return 'bg-red-300';
+    }
+    return 'bg-green-500';
+  }
+
+  getBatchProgressWidth(batchStatus?: PurchaseOrderBatchStatus): string {
+    if (batchStatus === PurchaseOrderBatchStatus.CANCELLED) {
+      return '0%';
+    }
+    const currentIndex = this.getBatchStepIndex(batchStatus);
+    if (currentIndex === -1) {
+      return '0%';
+    }
+    const totalSteps = this.batchSteps.length;
+    const percentage = (currentIndex / (totalSteps - 1)) * 100;
+    return `${percentage}%`;
   }
 
   isBatchCancelled(status?: PurchaseOrderBatchStatus): boolean {
@@ -826,9 +971,12 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   canSelectBatchForProductionCompleted(batch: BatchRow): boolean {
-    return this.isEditMode
+    return this.canMoveBatchesToProduction
       && !!batch.id
-      && batch.status === PurchaseOrderBatchStatus.IN_PRODUCTION;
+      && (
+        batch.status === PurchaseOrderBatchStatus.CREATED
+        || batch.status === PurchaseOrderBatchStatus.IN_PRODUCTION
+      );
   }
 
   async selectSelectedBatchesForProduction(): Promise<void> {
@@ -942,8 +1090,12 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
 
   get canCreateShipment(): boolean {
     return this.isEditMode
-      && this.poData?.status !== 'CANCELLED'
-      && this.batches.some(batch => this.isBatchProductionCompleted(batch));
+      && !!this.poData?.status
+      && !this.isPurchaseOrderTerminal;
+  }
+
+  get hasCompletedBatchForShipment(): boolean {
+    return this.batches.some(batch => this.isBatchProductionCompleted(batch));
   }
 
   canSelectBatchForShipment(index: number): boolean {
@@ -1119,13 +1271,14 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
         }))
         .filter(b => !!b.batchId);
 
-      const response = await this.injector.get(ApiService).executeMutation(
+      await this.injector.get(ApiService).executeMutation(
         CREATE_PURCHASE_ORDER_SHIPMENT,
         {
           input: {
             purchaseOrderId: this.poId,
             shipmentCode: shipment.shipmentCode,
             batches: batchesInput,
+            status: shipment.status,
             expectedShipDate: shipment.expectedShipDate || null,
             expectedArrivalDate: shipment.expectedArrivalDate || null,
             carrier: shipment.carrier || null,
@@ -1135,11 +1288,6 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
           },
         }
       );
-
-      const createdShipment = response?.createPurchaseOrderShipment;
-      if (createdShipment?.id && shipment.status !== PurchaseOrderShipmentStatus.PLANNED) {
-        await this.updateShipmentStatuses([createdShipment.id], shipment.status);
-      }
     }
 
     const wasEditing = this.editingShipmentIndex !== null;
@@ -1331,9 +1479,12 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   getShipmentStepCircleClass(status: PurchaseOrderShipmentStatus | undefined, stepIndex: number): string {
-    return this.getShipmentStepState(status, stepIndex) === 'pending'
-      ? 'bg-gray-300 border-gray-300'
-      : 'bg-green-500 border-green-500';
+    const state = this.getShipmentStepState(status, stepIndex);
+    if (state === 'pending') {
+      return 'bg-white border-gray-300 text-gray-400';
+    }
+    // Both 'completed' and 'current' get green background with white check icon
+    return 'bg-green-500 border-green-500 text-white';
   }
 
   getShipmentStepLineClass(status: PurchaseOrderShipmentStatus | undefined, stepIndex: number): string {
@@ -1345,6 +1496,26 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
     return this.getShipmentStepState(status, stepIndex) === 'pending'
       ? 'text-gray-500'
       : 'text-green-700 font-semibold';
+  }
+
+  getShipmentProgressBarClass(status?: PurchaseOrderShipmentStatus): string {
+    if (status === PurchaseOrderShipmentStatus.CANCELLED) {
+      return 'bg-red-300';
+    }
+    return 'bg-green-500';
+  }
+
+  getShipmentProgressWidth(status?: PurchaseOrderShipmentStatus): string {
+    if (status === PurchaseOrderShipmentStatus.CANCELLED) {
+      return '0%';
+    }
+    const currentIndex = this.getShipmentStepIndex(status);
+    if (currentIndex === -1) {
+      return '0%';
+    }
+    const totalSteps = this.shipmentSteps.length;
+    const percentage = (currentIndex / (totalSteps - 1)) * 100;
+    return `${percentage}%`;
   }
 
   isShipmentCancelled(status?: PurchaseOrderShipmentStatus): boolean {
@@ -1578,7 +1749,9 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       }
 
       this.commonService.openSnackBar('Cập nhật đơn đặt hàng thành công');
-      this.injector.get(Router).navigate(['/purchase-order']);
+      
+      // Reload lại màn chi tiết thay vì back về listing
+      await this.loadPurchaseOrder(this.poId);
       return;
     }
 
@@ -1617,7 +1790,6 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       for (const shipment of this.shipments) {
         const batchIndexes = shipment.batchIndexes || [];
         const noteParts = [
-          shipment.status ? `Trạng thái: ${this.getShipmentStatusLabel(shipment.status)}` : '',
           shipment.receivingWarehouseName ? `Kho nhận: ${shipment.receivingWarehouseName}` : '',
         ].filter(Boolean);
         const shipmentNote = noteParts.join(' | ') || null;
@@ -1631,6 +1803,7 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
               ? `${shipment.shipmentCode}-${this.batches[batchIdx]?.batchCode}`
               : shipment.shipmentCode,
             quantity: Number(batchQuantity),
+            status: shipment.status,
             expectedShipDate: shipment.expectedShipDate || null,
             expectedArrivalDate: shipment.expectedArrivalDate || null,
             carrier: shipment.carrier || null,
@@ -1640,14 +1813,10 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
             note: shipmentNote,
           };
 
-          const shipmentResponse = await this.injector.get(ApiService).executeMutation(
+          await this.injector.get(ApiService).executeMutation(
             CREATE_PURCHASE_ORDER_SHIPMENT,
             { input: shipmentInput }
           );
-          const createdShipmentId = shipmentResponse?.createPurchaseOrderShipment?.id;
-          if (createdShipmentId && shipment.status !== PurchaseOrderShipmentStatus.PLANNED) {
-            await this.updateShipmentStatuses([createdShipmentId], shipment.status);
-          }
         }
       }
     }
@@ -1675,11 +1844,28 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
   }
 
   private generateNextBatchCode(): string {
+    const rawPoCode = String(
+      this.poForm.get('poNumber')?.value || this.poData?.poNumber || ''
+    ).trim().toUpperCase();
+    const poCode = rawPoCode.replace(/^PO-/, '');
+    if (!poCode) {
+      return '';
+    }
+
+    const date = new Date();
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const datedPoPrefix = `BAT-${poCode}-${day}${month}`;
+
     if (!this.batchRandomLetters) {
-      // Try to extract from existing batches to maintain sequence in edit mode
-      const existingFormatBatch = this.batches.find(b => b.batchCode && b.batchCode.match(/^BAT-\d{8}[A-Z]{3}-\d{3}$/));
-      if (existingFormatBatch) {
-        this.batchRandomLetters = existingFormatBatch.batchCode.substring(12, 15);
+      const existingRandom = this.batches
+        .map(batch => batch.batchCode)
+        .find(code => code?.startsWith(datedPoPrefix))
+        ?.slice(datedPoPrefix.length)
+        .match(/^([A-Z]{3})\d+$/)?.[1];
+
+      if (existingRandom) {
+        this.batchRandomLetters = existingRandom;
       } else {
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         let randomStr = '';
@@ -1690,15 +1876,11 @@ export class PurchaseOrderCreateComponent extends BaseClass implements OnInit {
       }
     }
 
-    const date = new Date();
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear().toString();
-    const dateStr = `${day}${month}${year}`;
-
-    const prefix = `BAT-${dateStr}${this.batchRandomLetters}-`;
-    const existingBatches = this.batches.map(b => b.batchCode);
-    return this.getNextSequenceCode(prefix, existingBatches);
+    const maxSequence = this.batches.reduce((max, batch) => {
+      const sequence = Number(batch.batchCode?.match(/(\d{3})$/)?.[1]);
+      return Number.isInteger(sequence) ? Math.max(max, sequence) : max;
+    }, 0);
+    return `${datedPoPrefix}${this.batchRandomLetters}${(maxSequence + 1).toString().padStart(3, '0')}`;
   }
 
   printLabel(index: number) {

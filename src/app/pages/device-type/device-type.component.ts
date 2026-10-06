@@ -5,12 +5,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { BaseClass } from '../../commons/base.class';
 import { TableComponent } from '../../shared/components/table/table.component';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { CreateDeviceTypeInput, CreateModelInput, PaginatedDeviceTypeResponse, PartnerCredential, SyncReport, UpdateDeviceTypeInput, UpdateModelInput } from '../../commons/types';
-import { CREATE_DEVICE_TYPE, CREATE_MODEL, DELETE_DEVICE_TYPE, GET_DEVICE_TYPES, REMOVE_MODEL, SYNC_NHANH_PRODUCTS, UPDATE_DEVICE_TYPE, UPDATE_MODEL } from '../../commons/queries/device-type.query';
+import { CreateDeviceTypeInput, CreateModelInput, NhanhProductMapping, PaginatedDeviceTypeResponse, PartnerCredential, SyncReport, UpdateDeviceTypeInput, UpdateModelInput, UpsertNhanhProductMappingInput } from '../../commons/types';
+import { CREATE_DEVICE_TYPE, CREATE_MODEL, DELETE_DEVICE_TYPE, GET_DEVICE_TYPES, GET_NHANH_PRODUCTS, GET_NHANH_PRODUCT_MAPPINGS, REMOVE_MODEL, SYNC_NHANH_PRODUCTS, UPDATE_DEVICE_TYPE, UPDATE_MODEL, UPSERT_NHANH_PRODUCT_MAPPING } from '../../commons/queries/device-type.query';
 import { UPLOAD_FILE } from '../../commons/queries/common.query';
 import { GET_NHANH_CREDENTIALS } from '../../commons/queries/partner-credential.query';
 import { TableColumnType } from '../../core/constants/enum';
@@ -21,6 +22,7 @@ import { DirectiveModule } from '../../shared/directive.module';
 import { takeUntil } from 'rxjs';
 import { Editor, NgxEditorModule, Toolbar } from 'ngx-editor';
 import { constant } from '../../core/constants/constant';
+import { AutocompleteSearchComponent } from '../../shared/components/autocomplete-search/autocomplete-search.component';
 
 @Component({
   selector: 'app-device-type',
@@ -32,10 +34,12 @@ import { constant } from '../../core/constants/constant';
     MatFormFieldModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatAutocompleteModule,
     TableComponent,
     ReactiveFormsModule,
     DirectiveModule,
     NgxEditorModule,
+    AutocompleteSearchComponent,
   ],
   templateUrl: './device-type.component.html',
   styleUrl: './device-type.component.scss'
@@ -55,12 +59,25 @@ export class DeviceTypeComponent extends BaseClass {
   ];
   @ViewChild('deviceTypeDialogContent') deviceTypeDialogContent!: TemplateRef<any>;
   @ViewChild('syncNhanhProductsDialogContent') syncNhanhProductsDialogContent!: TemplateRef<any>;
+  @ViewChild('nhanhProductMappingDialogContent') nhanhProductMappingDialogContent!: TemplateRef<any>;
   @ViewChild('modelDrawerContent') modelDrawerContent!: TemplateRef<any>;
 
   nhanhCredentials: PartnerCredential[] = [];
   isSyncingNhanhProducts = false;
   syncNhanhProductsForm = new FormGroup({
     partnerCredentialId: new FormControl('', [Validators.required]),
+  });
+  selectedMappingModel: { id: string; name: string; code: string } | null = null;
+  nhanhProductMappings: NhanhProductMapping[] = [];
+  // Map modelId → NhanhProductMapping[] dùng để hiển thị badge trong expanded row
+  nhanhMappingByModelId = new Map<string, NhanhProductMapping[]>();
+  nhanhProductOptions: NhanhProductOption[] = [];
+  isLoadingNhanhMapping = false;
+  isLoadingNhanhProducts = false;
+  isSavingNhanhMapping = false;
+  nhanhProductMappingForm = new FormGroup({
+    partnerCredentialId: new FormControl('', [Validators.required]),
+    nhanhProductId: new FormControl('', [Validators.required]),
   });
   dialogData: DialogData = {
     title: 'Thêm loại thiết bị',
@@ -126,14 +143,28 @@ export class DeviceTypeComponent extends BaseClass {
   }
 
   async onGetDeviceType(page: number = 1) {
-    const response = await this.injector.get(ApiService).executeQuery<PaginatedDeviceTypeResponse>(GET_DEVICE_TYPES, {
-      pagination: {
-        page: page,
-        size: 20,
-        keyword: this.filterForm.value.keyword ?? '',
-      },
-    });
-    this.dataSource = response?.deviceTypes?.data?.reduce((acc: any, item: any, index: number) => {
+    const [deviceTypeResponse, mappingResponse] = await Promise.all([
+      this.injector.get(ApiService).executeQuery<PaginatedDeviceTypeResponse>(GET_DEVICE_TYPES, {
+        pagination: {
+          page: page,
+          size: 20,
+          keyword: this.filterForm.value.keyword ?? '',
+        },
+      }),
+      this.injector.get(ApiService).executeQuery<any>(GET_NHANH_PRODUCT_MAPPINGS, {}),
+    ]);
+
+    // Build map modelId → mappings
+    const allMappings: NhanhProductMapping[] = mappingResponse?.nhanhProductMappings ?? [];
+    this.nhanhMappingByModelId = new Map<string, NhanhProductMapping[]>();
+    for (const mapping of allMappings) {
+      if (!mapping.isActive) continue;
+      const list = this.nhanhMappingByModelId.get(mapping.modelId) ?? [];
+      list.push(mapping);
+      this.nhanhMappingByModelId.set(mapping.modelId, list);
+    }
+
+    this.dataSource = deviceTypeResponse?.deviceTypes?.data?.reduce((acc: any, item: any, index: number) => {
       acc.push({
         ...item,
         index: index + 1,
@@ -143,10 +174,26 @@ export class DeviceTypeComponent extends BaseClass {
     }, []) ?? [];
     this.pagination = {
       ...this.pagination,
-      page: (response?.deviceTypes?.pagination?.page ?? 1) - 1,
-      size: response?.deviceTypes?.pagination?.size ?? 20,
-      total: response?.deviceTypes?.pagination?.total ?? 0,
+      page: (deviceTypeResponse?.deviceTypes?.pagination?.page ?? 1) - 1,
+      size: deviceTypeResponse?.deviceTypes?.pagination?.size ?? 20,
+      total: deviceTypeResponse?.deviceTypes?.pagination?.total ?? 0,
     };
+  }
+
+  getNhanhMappingsForModel(modelId: string): NhanhProductMapping[] {
+    return this.nhanhMappingByModelId.get(modelId) ?? [];
+  }
+
+  private async reloadNhanhMappings(): Promise<void> {
+    const response = await this.injector.get(ApiService).executeQuery<any>(GET_NHANH_PRODUCT_MAPPINGS, {});
+    const allMappings: NhanhProductMapping[] = response?.nhanhProductMappings ?? [];
+    this.nhanhMappingByModelId = new Map<string, NhanhProductMapping[]>();
+    for (const mapping of allMappings) {
+      if (!mapping.isActive) continue;
+      const list = this.nhanhMappingByModelId.get(mapping.modelId) ?? [];
+      list.push(mapping);
+      this.nhanhMappingByModelId.set(mapping.modelId, list);
+    }
   }
 
   onPageChange(event: PageEvent) {
@@ -217,6 +264,157 @@ export class DeviceTypeComponent extends BaseClass {
     if (!this.isSyncingNhanhProducts) {
       this.dialog.closeAll();
     }
+  }
+
+  async onOpenNhanhProductMapping(model: { id: string; name: string; code: string }): Promise<void> {
+    this.selectedMappingModel = model;
+    this.nhanhCredentials = [];
+    this.nhanhProductMappings = [];
+    this.nhanhProductOptions = [];
+    this.nhanhProductMappingForm.reset();
+
+    const dialogRef = this.dialog.open(DialogComponent, {
+      disableClose: true,
+      data: {
+        title: 'Liên kết sản phẩm Nhanh.vn',
+        showActions: false,
+        showCloseButton: false,
+      },
+      width: '620px',
+    });
+    dialogRef.componentInstance.content = this.nhanhProductMappingDialogContent;
+
+    this.isLoadingNhanhMapping = true;
+    const [credentialResponse, mappingResponse] = await Promise.all([
+      this.injector.get(ApiService).executeQuery(GET_NHANH_CREDENTIALS),
+      this.injector.get(ApiService).executeQuery(GET_NHANH_PRODUCT_MAPPINGS, {
+        input: { modelId: model.id },
+      }),
+    ]);
+    this.nhanhCredentials = (credentialResponse?.nhanhCredentials ?? [])
+      .slice()
+      .sort((first: PartnerCredential, second: PartnerCredential) =>
+        first.environment.localeCompare(second.environment)
+        || (first.businessId ?? '').localeCompare(second.businessId ?? '')
+        || (first.appId ?? '').localeCompare(second.appId ?? ''));
+    this.nhanhProductMappings = mappingResponse?.nhanhProductMappings ?? [];
+
+    const defaultCredential = this.nhanhCredentials.find((credential) =>
+      credential.isActive
+      && this.nhanhProductMappings.some((mapping) => mapping.partnerCredentialId === credential.id))
+      ?? this.nhanhCredentials.find((credential) => credential.isActive);
+
+    if (defaultCredential) {
+      this.nhanhProductMappingForm.patchValue({ partnerCredentialId: defaultCredential.id });
+      await this.onNhanhMappingCredentialChange(defaultCredential.id);
+    }
+    this.isLoadingNhanhMapping = false;
+  }
+
+  async onNhanhMappingCredentialChange(partnerCredentialId: string): Promise<void> {
+    this.nhanhProductOptions = [];
+    this.nhanhProductMappingForm.patchValue({ nhanhProductId: '' });
+    if (!partnerCredentialId) return;
+
+    this.isLoadingNhanhProducts = true;
+    const response = await this.injector.get(ApiService).executeQuery(GET_NHANH_PRODUCTS, {
+      input: { partnerCredentialId },
+    });
+    this.nhanhProductOptions = this.normalizeNhanhProducts(response?.nhanhProducts);
+    this.isLoadingNhanhProducts = false;
+
+    const currentMapping = this.getCurrentNhanhProductMapping(partnerCredentialId);
+    if (currentMapping && this.nhanhProductOptions.some(p => p.id === currentMapping.nhanhProductId)) {
+      this.nhanhProductMappingForm.patchValue({ nhanhProductId: currentMapping.nhanhProductId });
+    }
+  }
+
+  async saveNhanhProductMapping(): Promise<void> {
+    this.nhanhProductMappingForm.markAllAsTouched();
+    if (this.nhanhProductMappingForm.invalid || !this.selectedMappingModel || this.isSavingNhanhMapping) {
+      this.commonService.openSnackBarError('Vui lòng chọn đầy đủ tài khoản và sản phẩm Nhanh.vn');
+      return;
+    }
+
+    const formValue = this.nhanhProductMappingForm.getRawValue();
+    const selectedProduct = this.nhanhProductOptions.find((product) => product.id === formValue.nhanhProductId);
+    if (!selectedProduct || !formValue.partnerCredentialId) {
+      this.commonService.openSnackBarError('Sản phẩm Nhanh.vn đã chọn không hợp lệ');
+      return;
+    }
+
+    const currentMapping = this.getCurrentNhanhProductMapping(formValue.partnerCredentialId);
+    const input: UpsertNhanhProductMappingInput = {
+      id: currentMapping?.id,
+      modelId: this.selectedMappingModel.id,
+      partnerCredentialId: formValue.partnerCredentialId,
+      nhanhProductId: selectedProduct.id,
+      productCode: selectedProduct.code || undefined,
+      productName: selectedProduct.name || undefined,
+      isActive: true,
+    };
+
+    this.isSavingNhanhMapping = true;
+    const response = await this.injector.get(ApiService).executeMutation(UPSERT_NHANH_PRODUCT_MAPPING, { input });
+    this.isSavingNhanhMapping = false;
+    if (!response?.upsertNhanhProductMapping) {
+      this.commonService.openSnackBarError('Liên kết sản phẩm Nhanh.vn thất bại');
+      return;
+    }
+
+    this.commonService.openSnackBar('Liên kết sản phẩm Nhanh.vn thành công');
+    this.dialog.closeAll();
+    this.resetNhanhProductMapping();
+    // Reload mappings để cập nhật badge trong expanded row
+    await this.reloadNhanhMappings();
+  }
+
+  onCancelNhanhProductMapping(): void {
+    if (this.isSavingNhanhMapping) return;
+    this.dialog.closeAll();
+    this.resetNhanhProductMapping();
+  }
+
+  get currentNhanhProductMapping(): NhanhProductMapping | undefined {
+    return this.getCurrentNhanhProductMapping(this.nhanhProductMappingForm.value.partnerCredentialId ?? '');
+  }
+
+  private getCurrentNhanhProductMapping(partnerCredentialId: string): NhanhProductMapping | undefined {
+    return this.nhanhProductMappings.find((mapping) => mapping.partnerCredentialId === partnerCredentialId);
+  }
+
+  private normalizeNhanhProducts(value: unknown): NhanhProductOption[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.reduce<NhanhProductOption[]>((products, item) => {
+      if (!item || typeof item !== 'object') return products;
+      const product = item as Record<string, unknown>;
+      const id = this.readNhanhProductValue(product, ['id', 'productId']);
+      if (!id) return products;
+      products.push({
+        id,
+        code: this.readNhanhProductValue(product, ['code', 'productCode', 'sku']),
+        name: this.readNhanhProductValue(product, ['name', 'productName']),
+      });
+      return products;
+    }, []).sort((first, second) =>
+      first.code.localeCompare(second.code) || first.name.localeCompare(second.name));
+  }
+
+  private readNhanhProductValue(product: Record<string, unknown>, keys: string[]): string {
+    for (const key of keys) {
+      const value = product[key];
+      if (typeof value === 'string' && value.trim()) return value.trim();
+      if (typeof value === 'number') return String(value);
+    }
+    return '';
+  }
+
+  private resetNhanhProductMapping(): void {
+    this.selectedMappingModel = null;
+    this.nhanhProductMappings = [];
+    this.nhanhProductOptions = [];
+    this.nhanhProductMappingForm.reset();
   }
 
   onAddEditDeviceType(item: any = null) {
@@ -524,4 +722,10 @@ function jsonValidator(control: AbstractControl): ValidationErrors | null {
   } catch {
     return { invalidJson: true };
   }
+}
+
+interface NhanhProductOption {
+  id: string;
+  code: string;
+  name: string;
 }

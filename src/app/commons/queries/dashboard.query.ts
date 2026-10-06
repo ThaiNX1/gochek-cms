@@ -125,3 +125,81 @@ query LogManufacturingDashboard($input: LogManufacturingDashboardInput) {
     }
 }
 `;
+
+export const GET_NHANH_DASHBOARD = gql`
+query NhanhDashboard($input: NhanhDashboardInput!) {
+    nhanhDashboard(input: $input) {
+        businessId
+        partnerCredentialId
+        updatedAt
+        excludedGiftCategoryIds
+        inventory {
+            totalProducts
+            totalRemain
+            totalAvailable
+            totalHolding
+            totalShipping
+            totalDamaged
+        }
+        inventoryByDepot {
+            depotId
+            depotName
+            totalProducts
+            totalRemain
+            totalAvailable
+            totalHolding
+            totalShipping
+            totalDamaged
+        }
+        topInventoryProducts {
+            productId
+            name
+            code
+            categoryId
+            remain
+            available
+        }
+        inventoryRisks {
+            type
+            productId
+            name
+            code
+            remain
+            available
+            soldQuantity
+            averageDailySales
+            daysOfCover
+            message
+        }
+        orders {
+            lookbackDays
+            totalOrders
+            averageOrdersPerDay
+            byChannel {
+                channel
+                channelName
+                totalOrders
+                averageOrdersPerDay
+            }
+        }
+        todayOrders {
+            totalOrders
+            byStatus {
+                status
+                statusName
+                count
+            }
+            byChannel {
+                channel
+                channelName
+                totalOrders
+                byStatus {
+                    status
+                    statusName
+                    count
+                }
+            }
+        }
+    }
+}
+`;

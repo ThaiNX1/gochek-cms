@@ -1,0 +1,43 @@
+mat-sidenav-container {
+  height: 100%;
+}
+
+mat-sidenav {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.require::after {
+  content: ' *';
+  color: red;
+}
+
+table {
+  border-collapse: collapse;
+
+  th,
+  td {
+    font-size: 0.875rem;
+  }
+
+  thead {
+    border-color: var(--gray-200) !important;
+
+    th {
+      font-weight: 600;
+      background-color: #ffffff;
+    }
+  }
+
+  tbody {
+
+    border-color: var(--gray-200) !important;
+
+    tr {
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #ffffff;
+      }
+    }
+  }
+}

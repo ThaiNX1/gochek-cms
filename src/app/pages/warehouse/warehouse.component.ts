@@ -68,7 +68,7 @@ export class WarehouseComponent extends BaseClass {
     this.columns = [
       { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER },
       { name: 'Mã kho', field: 'code', className: 'min-w-[120px] max-w-[120px]' },
-      { name: 'Tên kho', field: 'name', className: 'min-w-[180px] max-w-[180px]' },
+      { name: 'Tên kho', field: 'name', className: 'min-w-[200px] max-w-[200px]', tdClassName: '!h-auto min-h-[60px] py-2', templateCode: 'warehouseNameColumnTemplate' },
       { name: 'Quản lý', field: 'managerName', className: 'min-w-[140px] max-w-[140px]' },
       { name: 'Số điện thoại', field: 'phone', className: 'min-w-[130px] max-w-[130px]' },
       { name: 'Địa chỉ', field: 'address', className: 'min-w-[220px] max-w-[220px]' },

@@ -87,9 +87,18 @@
                             <span class="text-gray-500">-</span>
                         }
                     </td>
-                    <td class="border border-gray-400 px-4 py-2">{{ model.name }}</td>
-                    <td class="border border-gray-400 px-4 py-2">{{ model.code }}</td>
                     <td class="border border-gray-400 px-4 py-2">
+                        <div class="flex flex-col gap-1">
+                            <span>{{ model.name }}</span>
+                            @for(mapping of getNhanhMappingsForModel(model.id); track mapping.id) {
+                                <span class="inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium whitespace-nowrap">
+                                    <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">link</mat-icon>
+                                    {{ mapping.productCode ? mapping.productCode + ' - ' : '' }}{{ mapping.productName || mapping.nhanhProductId }}
+                                </span>
+                            }
+                        </div>
+                    </td>
+                    <td class="border border-gray-400 px-4 py-2">{{ model.code }}</td>                    <td class="border border-gray-400 px-4 py-2">
                         <div class="model-description-preview" [innerHTML]="model.description || '-'"></div>
                     </td>
                     <td class="border border-gray-400 px-4 py-2">
@@ -99,14 +108,23 @@
                         </span>
                     </td>
                     <td class="border border-gray-400 px-4 py-2">
-                        <div *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]" class="flex items-center justify-center gap-2">
-                            <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
-                                title="Sửa model" (click)="onEditModel(item, model)">
-                                <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
-                            </button>
-                            <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
-                                (click)="onDeleteModel(item, model)">
-                                <mat-icon class="text-red-500">delete</mat-icon>
+                        <div class="flex items-center justify-center gap-2">
+                            <ng-container *permission="[PermissionEnum.DEVICE_TYPES_MANAGE]">
+                                <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
+                                    title="Sửa model" (click)="onEditModel(item, model)">
+                                    <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+                                </button>
+                                <button class="flex items-center justify-center border-none bg-transparent !min-h-0 !h-fit"
+                                    title="Xóa model" (click)="onDeleteModel(item, model)">
+                                    <mat-icon class="text-red-500">delete</mat-icon>
+                                </button>
+                            </ng-container>
+                            <button *permission="[PermissionEnum.NHANH_MANAGE]" type="button"
+                                class="flex items-center justify-center gap-1 rounded border border-blue-500 bg-blue-50 px-2 py-1 text-blue-700 !min-h-0 !h-fit"
+                                title="Liên kết model với sản phẩm Nhanh.vn"
+                                (click)="onOpenNhanhProductMapping(model)">
+                                <mat-icon class="text-blue-600">link</mat-icon>
+                                Nhanh.vn
                             </button>
                         </div>
                     </td>
@@ -122,6 +140,92 @@
     </div>
 </ng-template>
 
+<ng-template #nhanhProductMappingDialogContent>
+    <form [formGroup]="nhanhProductMappingForm" (ngSubmit)="saveNhanhProductMapping()"
+        class="flex min-w-0 flex-col gap-4">
+        <div class="rounded-md border border-gray-300 bg-gray-50 px-3 py-2">
+            <div class="text-xs text-gray-500">Model GoChek</div>
+            <div class="font-semibold">{{ selectedMappingModel?.code }} - {{ selectedMappingModel?.name }}</div>
+        </div>
+
+        @if(isLoadingNhanhMapping) {
+            <div class="flex min-h-28 items-center justify-center">
+                <mat-spinner diameter="32"></mat-spinner>
+            </div>
+        } @else if(nhanhCredentials.length) {
+            <div class="flex flex-col gap-1">
+                <label class="require">Tài khoản Nhanh.vn</label>
+                <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+                    <mat-select formControlName="partnerCredentialId" placeholder="Chọn tài khoản Nhanh.vn"
+                        [disabled]="isSavingNhanhMapping"
+                        (selectionChange)="onNhanhMappingCredentialChange($event.value)">
+                        @for(credential of nhanhCredentials; track credential.id) {
+                            <mat-option [value]="credential.id" [disabled]="!credential.isActive">
+                                {{ credential.name || credential.businessId || 'Chưa có tên' }} - {{ credential.businessId }}
+                                ({{ credential.environment }}){{ credential.isActive ? '' : ' - Ngừng hoạt động' }}
+                            </mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="require">Sản phẩm Nhanh.vn</label>
+                <app-autocomplete-search
+                    formControlName="nhanhProductId"
+                    [options]="nhanhProductOptions"
+                    valueKey="id"
+                    labelKey="name"
+                    [searchKeys]="['code', 'id']"
+                    placeholder="Tìm theo mã hoặc tên sản phẩm"
+                    [loading]="isLoadingNhanhProducts">
+                    <ng-template #optionTemplate let-option>
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium text-sm">{{ option.code || option.id }}</span>
+                            @if(option.name) {
+                                <span class="text-xs text-gray-500 truncate">{{ option.name }}</span>
+                            }
+                        </div>
+                    </ng-template>
+                </app-autocomplete-search>
+                @if(!isLoadingNhanhProducts && nhanhProductMappingForm.value.partnerCredentialId && !nhanhProductOptions.length) {
+                    <span class="text-sm text-amber-700">Tài khoản này chưa có sản phẩm để liên kết.</span>
+                }
+            </div>
+
+            @if(currentNhanhProductMapping) {
+                <div class="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                    Liên kết hiện tại: {{ currentNhanhProductMapping.productCode || currentNhanhProductMapping.nhanhProductId }}
+                    {{ currentNhanhProductMapping.productName ? ' - ' + currentNhanhProductMapping.productName : '' }}
+                </div>
+            }
+        } @else {
+            <div class="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 text-amber-800">
+                Chưa có tài khoản Nhanh.vn. Vui lòng cấu hình tài khoản trong màn Cài đặt trước khi liên kết.
+            </div>
+        }
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" [disabled]="isSavingNhanhMapping"
+                class="flex items-center justify-center rounded border border-gray-400 bg-white px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                (click)="onCancelNhanhProductMapping()">
+                Hủy
+            </button>
+            <button type="submit"
+                [disabled]="nhanhProductMappingForm.invalid || isLoadingNhanhMapping || isLoadingNhanhProducts || isSavingNhanhMapping || !nhanhCredentials.length"
+                class="flex items-center justify-center gap-2 rounded border border-blue-600 bg-blue-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+                @if(isSavingNhanhMapping) {
+                    <mat-spinner diameter="18"></mat-spinner>
+                    Đang lưu...
+                } @else {
+                    <mat-icon class="text-white">link</mat-icon>
+                    Lưu liên kết
+                }
+            </button>
+        </div>
+    </form>
+</ng-template>
+
 <ng-template #syncNhanhProductsDialogContent>
     <form [formGroup]="syncNhanhProductsForm" (ngSubmit)="onSyncNhanhProducts()"
         class="flex min-w-0 flex-col gap-4">
@@ -132,7 +236,7 @@
                     <mat-select formControlName="partnerCredentialId" placeholder="Chọn tài khoản Nhanh.vn">
                         @for(credential of nhanhCredentials; track credential.id) {
                             <mat-option [value]="credential.id" [disabled]="!credential.isActive">
-                                {{ credential.businessId || 'Chưa có Business ID' }} - App {{ credential.appId || '--' }}
+                                {{ credential.name || credential.businessId || 'Chưa có tên' }} - {{ credential.businessId }}
                                 ({{ credential.environment }}){{ credential.isActive ? '' : ' - Ngừng hoạt động' }}
                             </mat-option>
                         }

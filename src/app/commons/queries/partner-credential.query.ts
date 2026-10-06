@@ -4,6 +4,7 @@ export const GET_PARTNER_CREDENTIALS = gql`
 query PartnerCredentials($input: PartnerCredentialSearchInput) {
     partnerCredentials(input: $input) {
         id
+        name
         environment
         isActive
         lastLoginAt
@@ -22,6 +23,7 @@ export const UPSERT_PARTNER_CREDENTIAL = gql`
 mutation UpsertPartnerCredential($input: UpsertPartnerCredentialInput!) {
     upsertPartnerCredential(input: $input) {
         id
+        name
         environment
         isActive
         lastLoginAt
@@ -40,6 +42,7 @@ export const REFRESH_VIETTEL_POST_TOKEN = gql`
 mutation RefreshViettelPostToken($input: RefreshPartnerTokenInput!) {
     refreshViettelPostToken(input: $input) {
         id
+        name
         environment
         isActive
         lastLoginAt
@@ -58,6 +61,7 @@ export const GET_NHANH_CREDENTIALS = gql`
 query NhanhCredentials {
     nhanhCredentials {
         id
+        name
         environment
         isActive
         partnerKey
@@ -77,6 +81,7 @@ export const UPSERT_NHANH_CREDENTIAL = gql`
 mutation UpsertNhanhCredential($input: UpsertNhanhCredentialInput!) {
     upsertNhanhCredential(input: $input) {
         id
+        name
         environment
         isActive
         partnerKey

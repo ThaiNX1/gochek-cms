@@ -37,7 +37,7 @@
                 (click)="onCancel()">
                 Hủy
             </button>
-            @if (canEditPurchaseOrder) {
+            @if (canSavePurchaseOrder) {
             <button type="button"
                 class="flex items-center justify-center gap-2 px-4 py-2 rounded-md border-none bg-primary text-white font-semibold hover:opacity-90"
                 (click)="onSave()">
@@ -181,7 +181,7 @@
                             <tr [formGroupName]="i">
                                 <td class="px-3 py-2 text-center border border-gray-300 text-gray-500">{{ i + 1 }}</td>
                                 <td class="px-3 py-2 border border-gray-300">
-                                    @if (canEditPurchaseOrder) {
+                                    @if (canEditProduct) {
                                     <app-select-search
                                         [options]="modelOptions"
                                         [searchQuery]="GET_MODELS_FOR_SELECT"
@@ -196,11 +196,11 @@
                                     </app-select-search>
                                     } @else {
                                     <span class="font-medium">{{ productForm.get('modelName')?.value }}</span>
-                                    <span class="text-gray-400 text-xs ml-1">{{ productForm.get('modelCode')?.value }}</span>
+                                    <span class="text-xs pl-1">({{ productForm.get('modelCode')?.value }})</span>
                                     }
                                 </td>
                                 <td class="px-2 py-2 text-center border border-gray-300 w-[110px] min-w-[110px] max-w-[110px]">
-                                    @if (canEditPurchaseOrder) {
+                                    @if (canEditProduct) {
                                     <mat-form-field appearance="outline" floatLabel="auto" class="table-form-field w-full">
                                         <input matInput type="text" inputmode="numeric" class="text-center"
                                             formControlName="quantity" (input)="onProductQuantityInput($event, i)"
@@ -211,7 +211,7 @@
                                     }
                                 </td>
                                 <td class="px-2 py-2 text-center border border-gray-300 w-[140px] min-w-[140px] max-w-[140px]">
-                                    @if (canEditPurchaseOrder) {
+                                    @if (canEditProduct) {
                                     <mat-form-field appearance="outline" floatLabel="auto" class="table-form-field w-full">
                                         <input matInput type="number" class="text-center" formControlName="unitPrice"
                                             (input)="updateProductLineTotal(i)" placeholder="--" min="0">
@@ -224,11 +224,13 @@
                                     {{ productForm.get('lineTotal')?.value != null ? (productForm.get('lineTotal')?.value | number) : '--' }}
                                 </td>
                                 <td class="px-3 py-2 text-center border border-gray-300">
-                                    @if (canEditPurchaseOrder) {
+                                    @if (canRemoveProduct(i)) {
                                     <button type="button" class="border-none bg-transparent p-1" title="Xóa"
                                         (click)="removeProduct(i)">
                                         <mat-icon class="text-red-500 text-xl">delete_outline</mat-icon>
                                     </button>
+                                    } @else {
+                                    <span class="text-xs text-gray-400" title="Không thể xóa sản phẩm có batch đã qua CREATED">-</span>
                                     }
                                 </td>
                             </tr>
@@ -255,7 +257,7 @@
                         <span class="px-2 py-1 rounded bg-blue-50 text-blue-700 text-xs font-semibold">
                             Đã chọn {{ selectedBatches.length }} batch
                         </span>
-                        @if (canEditPurchaseOrder && selectedBatches.length === 1) {
+                        @if (canEditSelectedBatch) {
                         <button type="button"
                             class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-blue-500 bg-white text-blue-600 text-sm font-semibold hover:bg-blue-50"
                             (click)="editSelectedBatch()">
@@ -263,7 +265,7 @@
                             Chỉnh sửa
                         </button>
                         }
-                        @if (canEditPurchaseOrder) {
+                        @if (canRemoveSelectedBatches) {
                         <button type="button"
                             class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-red-500 bg-white text-red-600 text-sm font-semibold hover:bg-red-50"
                             (click)="removeSelectedBatches()">
@@ -271,25 +273,23 @@
                             Xóa
                         </button>
                         }
-                        @if (canSelectSelectedBatchesForProduction) {
+                        @if (canMoveBatchesToProduction) {
                         <button type="button"
                             class="flex items-center gap-1 px-3 py-1.5 rounded-md border-none bg-green-600 text-white text-sm font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            [disabled]="updatingBatchId !== null"
+                            [disabled]="!canSelectSelectedBatchesForProduction || updatingBatchId !== null"
                             (click)="selectSelectedBatchesForProduction()">
-                            {{ updatingBatchId ? 'Đang chuyển...' : 'Bắt đầu sản xuất' }}
+                            {{ updatingBatchId ? 'Đang chuyển...' : 'Đang sản xuất' }}
                         </button>
-                        }
-                        @if (canSelectSelectedBatchesForProductionCompleted) {
                         <button type="button"
                             class="flex items-center gap-1 px-3 py-1.5 rounded-md border-none bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            [disabled]="updatingBatchId !== null"
+                            [disabled]="!canSelectSelectedBatchesForProductionCompleted || updatingBatchId !== null"
                             (click)="selectSelectedBatchesForProductionCompleted()">
                             <mat-icon class="text-sm">done_all</mat-icon>
-                            {{ updatingBatchId ? 'Đang cập nhật...' : 'Hoàn thành sản xuất' }}
+                            {{ updatingBatchId ? 'Đang cập nhật...' : 'Hoàn thành' }}
                         </button>
                         }
                         }
-                        @if (canEditPurchaseOrder) {
+                        @if (canAddBatch) {
                         <button type="button"
                             class="flex items-center gap-1 px-3 py-1.5 rounded-md border border-primary text-primary text-sm font-semibold hover:bg-green-50"
                             (click)="addBatch()">
@@ -369,23 +369,25 @@
                                         <span class="text-xs font-semibold">Batch đã hủy</span>
                                     </div>
                                     } @else {
-                                    <div class="flex items-start min-w-[420px]">
+                                    <div class="flex items-start justify-between min-w-[420px] relative">
                                         @for (step of batchSteps; track step.key; let sIdx = $index; let last = $last) {
-                                        <div class="flex flex-col items-center gap-1.5 shrink-0">
-                                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                        <div class="flex flex-col items-center gap-1.5 relative z-10">
+                                            <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
                                                 [ngClass]="getBatchStepCircleClass(batch.status, sIdx)" [title]="step.label">
-                                                @if (getBatchStepState(batch.status, sIdx) !== 'pending') {
-                                                <mat-icon class="!text-[16px] !w-[16px] !h-[16px] leading-none !text-white">check</mat-icon>
+                                                @if (getBatchStepState(batch.status, sIdx) === 'completed' || getBatchStepState(batch.status, sIdx) === 'current') {
+                                                <mat-icon class="!text-[14px] !w-[14px] !h-[14px] leading-none">check</mat-icon>
                                                 }
                                             </div>
-                                            <span class="text-[11px] whitespace-nowrap"
+                                            <span class="text-[10px] whitespace-nowrap text-center max-w-[60px]"
                                                 [ngClass]="getBatchStepLabelClass(batch.status, sIdx)">{{ step.label }}</span>
                                         </div>
-                                        @if (!last) {
-                                        <div class="flex-1 h-1 mx-1 mt-3 rounded"
-                                            [ngClass]="getBatchStepLineClass(batch.status, sIdx)"></div>
                                         }
-                                        }
+                                        <!-- Đường nối liền mạch phía sau các circle -->
+                                        <div class="absolute top-3 left-[1px] right-0 h-0.5 bg-gray-200" style="z-index: 0;">
+                                            <div class="h-full transition-all duration-300"
+                                                [ngClass]="getBatchProgressBarClass(batch.status)"
+                                                [style.width]="getBatchProgressWidth(batch.status)"></div>
+                                        </div>
                                     </div>
                                     }
                                 </td>
@@ -395,6 +397,7 @@
                                 </td>
                                 @if (!isEditMode) {
                                 <td class="px-3 py-2 text-center border border-gray-300">
+                                    @if (canEditBatch(batch)) {
                                     <div class="flex items-center justify-center gap-1">
                                     <button type="button" class="border-none bg-transparent p-1" title="Chỉnh sửa"
                                         (click)="editBatch(i)">
@@ -405,6 +408,9 @@
                                         <mat-icon class="text-red-500 text-xl">delete_outline</mat-icon>
                                     </button>
                                     </div>
+                                    } @else {
+                                    <span class="text-xs text-gray-400">Đang sản xuất</span>
+                                    }
                                 </td>
                                 }
                                 }
@@ -544,23 +550,25 @@
                                         <span class="text-xs font-semibold">Vận chuyển đã hủy</span>
                                     </div>
                                     } @else {
-                                    <div class="flex items-start min-w-[500px]">
+                                    <div class="flex items-start justify-between min-w-[500px] relative">
                                         @for (step of shipmentSteps; track step.key; let sIdx = $index; let last = $last) {
-                                        <div class="flex flex-col items-center gap-1.5 shrink-0">
-                                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                        <div class="flex flex-col items-center gap-1.5 relative z-10">
+                                            <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
                                                 [ngClass]="getShipmentStepCircleClass(shipment.status, sIdx)" [title]="step.label">
-                                                @if (getShipmentStepState(shipment.status, sIdx) !== 'pending') {
-                                                <mat-icon class="!text-[16px] !w-[16px] !h-[16px] leading-none !text-white">check</mat-icon>
+                                                @if (getShipmentStepState(shipment.status, sIdx) === 'completed' || getShipmentStepState(shipment.status, sIdx) === 'current') {
+                                                <mat-icon class="!text-[14px] !w-[14px] !h-[14px] leading-none">check</mat-icon>
                                                 }
                                             </div>
-                                            <span class="text-[11px] whitespace-nowrap"
+                                            <span class="text-[10px] whitespace-nowrap text-center max-w-[60px]"
                                                 [ngClass]="getShipmentStepLabelClass(shipment.status, sIdx)">{{ step.label }}</span>
                                         </div>
-                                        @if (!last) {
-                                        <div class="flex-1 h-1 mx-1 mt-3 rounded"
-                                            [ngClass]="getShipmentStepLineClass(shipment.status, sIdx)"></div>
                                         }
-                                        }
+                                        <!-- Đường nối liền mạch phía sau các circle -->
+                                        <div class="absolute top-3 left-0 right-0 h-0.5 bg-gray-200" style="z-index: 0;">
+                                            <div class="h-full transition-all duration-300"
+                                                [ngClass]="getShipmentProgressBarClass(shipment.status)"
+                                                [style.width]="getShipmentProgressWidth(shipment.status)"></div>
+                                        </div>
                                     </div>
                                     }
                                 </td>
@@ -571,7 +579,7 @@
                     } @else {
                     <div class="text-center text-gray-400 py-6">
                         Chưa có thông tin vận chuyển.
-                        @if (!canCreateShipment) {
+                        @if (!hasCompletedBatchForShipment) {
                         <div class="mt-1 text-xs">Chỉ có thể tạo vận chuyển khi có batch đã hoàn thành sản xuất.</div>
                         }
                     </div>
@@ -605,7 +613,8 @@
             <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-gray-700 require">Mã Batch / Lot</label>
                 <mat-form-field appearance="outline" floatLabel="auto">
-                    <input matInput formControlName="batchCode" placeholder="BAT-DDMMYY-001">
+                    <input matInput formControlName="batchCode"
+                        placeholder="BAT-{PO_CODE}-{DDMM}{XXX}{001}">
                 </mat-form-field>
             </div>
             <div class="flex flex-col gap-1">
@@ -631,7 +640,7 @@
                 <mat-form-field appearance="outline" floatLabel="auto">
                     <input type="text" matInput formControlName="serialPrefix"
                         placeholder="Chọn hoặc nhập tiền tố (2 ký tự)"
-                        minlength="2" maxlength="2"
+                        minlength="2" maxlength="3"
                         [matAutocomplete]="serialPrefixAuto">
                     <mat-autocomplete autoActiveFirstOption #serialPrefixAuto="matAutocomplete">
                         @for (option of prefixStrList; track option) {

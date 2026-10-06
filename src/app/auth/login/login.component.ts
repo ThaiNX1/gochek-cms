@@ -104,11 +104,18 @@ export class LoginComponent implements OnInit, OnDestroy {
         order: 10,
         children: [
           {
-            id: 'home',
-            path: '/home',
-            icon: 'home',
-            name: 'Trang chủ',
+            id: 'inventory-dashboard',
+            path: '/inventory-dashboard',
+            icon: 'inventory_2',
+            name: 'Tồn kho',
             order: 10,
+          },
+          {
+            id: 'manufacturing-dashboard',
+            path: '/manufacturing-dashboard',
+            icon: 'precision_manufacturing',
+            name: 'Sản xuất',
+            order: 20,
           },
         ],
       },
@@ -388,6 +395,14 @@ export class LoginComponent implements OnInit, OnDestroy {
           path: '/purchase-order',
           icon: 'receipt_long',
           name: 'Đơn đặt hàng',
+          permissions: actions
+        }, {
+          id: 'purchase-order-shipment',
+          groupId: 'inventory-shipping',
+          order: 26,
+          path: '/purchase-order-shipment',
+          icon: 'local_shipping',
+          name: 'Đơn giao hàng',
           permissions: actions
         }];
         break;

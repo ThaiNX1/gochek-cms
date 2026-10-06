@@ -1,25 +1,41 @@
 <div class="flex flex-1 min-h-0 flex-col overflow-hidden">
-    <div class="flex items-center border-b border-gray-200 bg-white px-4 py-3">
+    <!-- Header: title bên trái, switch tabs bên phải -->
+    <div class="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2 gap-3">
+        <!-- Title -->
+        <div class="flex items-center gap-2 min-w-0">
+            @switch(selectedDashboard) {
+                @case('manufacturing-management') {
+                    <mat-icon class="text-yellow-600 shrink-0 !text-[18px]">precision_manufacturing</mat-icon>
+                    <span class="text-sm font-semibold text-gray-700 truncate">Quản lý sản xuất</span>
+                }
+                @default {
+                    <mat-icon class="text-blue-600 shrink-0 !text-[18px]">space_dashboard</mat-icon>
+                    <span class="text-sm font-semibold text-gray-700 truncate">Tổng quan</span>
+                }
+            }
+        </div>
+
+        <!-- Switch tabs -->
         <mat-button-toggle-group class="dashboard-toggle" [value]="selectedDashboard"
             [hideSingleSelectionIndicator]="true" aria-label="Chọn bảng điều khiển"
             (change)="onSelectDashboard($event.value)">
-            <mat-button-toggle value="overview">
+            <mat-button-toggle value="overview" title="Tổng quan">
                 <span class="dashboard-toggle-label">
                     <mat-icon>space_dashboard</mat-icon>
-                    Tổng quan
+                    <span class="tab-text">Tổng quan</span>
                 </span>
             </mat-button-toggle>
             <mat-button-toggle value="manufacturing-management" [disabled]="!canViewManufacturingDashboard"
-                title="Bảng điều khiển này yêu cầu quyền quản lý thiết bị">
+                title="Quản lý sản xuất">
                 <span class="dashboard-toggle-label">
                     <mat-icon>precision_manufacturing</mat-icon>
-                    Quản lý sản xuất
+                    <span class="tab-text">Sản xuất</span>
                 </span>
             </mat-button-toggle>
         </mat-button-toggle-group>
     </div>
 
-    <div class="flex flex-1 min-h-0 flex-col overflow-auto gray-500-scroll p-4">
+    <div class="flex flex-1 min-h-0 flex-col overflow-auto gray-500-scroll p-2">
         @switch(selectedDashboard) {
             @case('manufacturing-management') {
                 <app-manufacturing-management-dashboard />

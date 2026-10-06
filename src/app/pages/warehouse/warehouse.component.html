@@ -36,6 +36,21 @@
     </app-table>
 </div>
 
+<ng-template myTemplate tempCode="warehouseNameColumnTemplate" let-item="item">
+    <div class="flex flex-col gap-1 px-4 py-1">
+        <span>{{ item.name }}</span>
+        @if(item.nhanhInfo?.depotName) {
+            <span class="inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium whitespace-nowrap">
+                <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">link</mat-icon>
+                {{ item.nhanhInfo.depotName }}
+                @if(item.nhanhInfo.businessId) {
+                    <span class="text-blue-400">({{ item.nhanhInfo.businessId }})</span>
+                }
+            </span>
+        }
+    </div>
+</ng-template>
+
 <ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
     @if (hasPermission([PermissionEnum.WAREHOUSE_MANAGE])) {
         <button class="!h-auto inline-flex w-fit items-center justify-center whitespace-nowrap px-2.5 py-1 rounded text-xs border-none"
@@ -88,7 +103,7 @@
 
         @if(selectedWarehouse?.nhanhPartnerCredentialId && selectedWarehouse?.nhanhDepotId) {
             <div class="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-                Liên kết hiện tại: tài khoản {{ selectedWarehouse?.nhanhPartnerCredential?.businessId || selectedWarehouse?.nhanhPartnerCredentialId }},
+                Liên kết hiện tại: tài khoản {{ selectedWarehouse?.nhanhPartnerCredential?.name || selectedWarehouse?.nhanhPartnerCredential?.businessId || selectedWarehouse?.nhanhPartnerCredentialId }},
                 kho Nhanh.vn {{ selectedWarehouse?.nhanhDepotId }}.
             </div>
         }
@@ -102,7 +117,7 @@
                         (selectionChange)="onNhanhCredentialChange($event.value)">
                         @for(credential of nhanhCredentials; track credential.id) {
                             <mat-option [value]="credential.id" [disabled]="!credential.isActive">
-                                {{ credential.businessId || 'Chưa có Business ID' }} - App {{ credential.appId || '--' }}
+                                {{ credential.name || credential.businessId || 'Chưa có tên' }} - {{ credential.businessId }}
                                 ({{ credential.environment }}){{ credential.isActive ? '' : ' - Ngừng hoạt động' }}
                             </mat-option>
                         }

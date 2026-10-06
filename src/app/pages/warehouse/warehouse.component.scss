@@ -1,1 +1,11 @@
+::ng-deep app-table {
+  tr.mat-mdc-row,
+  tr.mdc-data-table__row {
+    min-height: 64px;
+  }
 
+  td.mat-mdc-cell {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+}

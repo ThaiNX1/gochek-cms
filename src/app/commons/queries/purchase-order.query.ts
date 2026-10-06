@@ -1,5 +1,98 @@
 import { gql } from 'apollo-angular';
 
+export const GET_PURCHASE_ORDER_BATCHES = gql`
+  query PurchaseOrderBatches($filter: PurchaseOrderBatchSearchInput) {
+    purchaseOrderBatches(filter: $filter) {
+      pagination {
+        page
+        size
+        total
+        totalPages
+      }
+      data {
+        id
+        batchCode
+        orderedQuantity
+        generatedQuantity
+        status
+        plannedProductionDate
+        itemId
+        purchaseOrderId
+        purchaseOrder {
+          id
+          poNumber
+          supplier {
+            id
+            name
+          }
+        }
+        item {
+          id
+          modelCode
+          modelName
+          version
+        }
+      }
+    }
+  }
+`;
+
+export const GET_PURCHASE_ORDER_SHIPMENTS = gql`
+  query PurchaseOrderShipments($pagination: PurchaseOrderShipmentSearchInput) {
+    purchaseOrderShipments(pagination: $pagination) {
+      pagination {
+        page
+        size
+        total
+        totalPages
+      }
+      data {
+        id
+        shipmentCode
+        quantity
+        expectedShipDate
+        expectedArrivalDate
+        carrier
+        trackingNumber
+        note
+        status
+        createdAt
+        updatedAt
+        warehouseId
+        warehouse {
+          id
+          name
+          code
+        }
+        shipmentBatches {
+          id
+          batchId
+          quantity
+          purchaseOrderId
+          purchaseOrder {
+            id
+            poNumber
+          }
+          batch {
+            id
+            batchCode
+            orderedQuantity
+            generatedQuantity
+            status
+            itemId
+            item {
+              id
+              modelCode
+              modelName
+              version
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GET_PURCHASE_ORDERS = gql`
   query PurchaseOrders($pagination: PurchaseOrderSearchInput) {
     purchaseOrders(pagination: $pagination) {
@@ -57,12 +150,6 @@ export const GET_PURCHASE_ORDERS = gql`
             note
             status
             itemId
-            shipments {
-              id
-              shipmentCode
-              quantity
-              status
-            }
           }
         }
         shipments {
@@ -197,16 +284,6 @@ export const GET_PURCHASE_ORDER = gql`
           modelCode
           version
         }
-        shipments {
-          id
-          shipmentCode
-          quantity
-          status
-          carrier
-          trackingNumber
-          expectedShipDate
-          expectedArrivalDate
-        }
       }
       shipments {
         id
@@ -338,7 +415,6 @@ export const CREATE_PURCHASE_ORDER_SHIPMENT = gql`
       trackingNumber
       note
       status
-      purchaseOrderId
       warehouseId
       shipmentBatches {
         id
@@ -361,7 +437,6 @@ export const UPDATE_PURCHASE_ORDER_SHIPMENT = gql`
       trackingNumber
       note
       status
-      purchaseOrderId
       warehouseId
       shipmentBatches {
         id

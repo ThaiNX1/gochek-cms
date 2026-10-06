@@ -1,0 +1,312 @@
+<div class="h-full min-h-0 flex-1 flex flex-col items-stretch justify-start overflow-hidden gap-4">
+  <!-- Header: filter + actions -->
+  <div class="flex flex-wrap items-center justify-between gap-2 px-4">
+    <form [formGroup]="filterForm" class="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+      <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[250px] bg-white">
+        <input matInput formControlName="keyword" placeholder="Tìm mã giao hàng, mã vận đơn" />
+      </mat-form-field>
+
+      <app-select-search
+        class="w-full md:w-[200px] bg-white"
+        [options]="warehouseList"
+        formControlName="warehouseId"
+        [valueKey]="'id'"
+        [labelKey]="'name'"
+        placeholder="Chọn kho">
+      </app-select-search>
+
+      <mat-form-field appearance="outline" floatLabel="auto" class="w-full md:w-[180px] bg-white">
+        <mat-select formControlName="status" placeholder="Trạng thái">
+          <mat-option [value]="''">Tất cả</mat-option>
+          <mat-option *ngFor="let status of shipmentStatusList" [value]="status.value">
+            {{ status.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button type="button"
+        class="flex shrink-0 items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+        (click)="onGetData()">
+        <mat-icon class="text-white">filter_alt</mat-icon>
+        Tìm kiếm
+      </button>
+    </form>
+
+    <!-- Action button (thêm mới) -->
+    <button *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]"
+      class="flex items-center justify-center gap-2 px-3 bg-primary text-white font-semibold"
+      (click)="onOpenCreateSidenav()">
+      <mat-icon>add</mat-icon>
+      Thêm mới
+    </button>
+  </div>
+
+  <!-- Table -->
+  <section class="flex flex-col gap-3 px-4 flex-1 min-h-0">
+    <app-table
+      class="flex flex-col items-stretch justify-start flex-1 min-h-0 overflow-hidden bg-white rounded-md border border-gray-400 p-4"
+      [columns]="displayedColumns"
+      [dataSource]="dataSource"
+      [pagination]="pagination"
+      [expandable]="true"
+      [expandTemplate]="expandedRowTemplate"
+      (pageChange)="onPageChange($event)">
+    </app-table>
+  </section>
+</div>
+
+<!-- Create/Edit Drawer Content -->
+<ng-template #createDrawerContent>
+  <form [formGroup]="createForm" class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <label class="require">Mã giao hàng:</label>
+      <mat-form-field appearance="outline" floatLabel="auto">
+        <input matInput formControlName="shipmentCode" placeholder="Nhập mã giao hàng">
+      </mat-form-field>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="require">Chọn batch/lot:</label>
+      <mat-form-field appearance="outline" floatLabel="auto">
+        <input matInput [formControl]="batchSearchControl" [matAutocomplete]="batchAutocomplete"
+          placeholder="Tìm theo mã batch, mã PO hoặc model">
+        <mat-icon matSuffix>search</mat-icon>
+        <mat-autocomplete #batchAutocomplete="matAutocomplete" [displayWith]="displayBatchOption"
+          (optionSelected)="onBatchSelected($event.option.value)">
+          @for (batch of filteredBatchOptions; track batch.id) {
+            <mat-option [value]="batch">
+              <div class="flex items-center justify-between gap-4">
+                <span class="font-semibold">{{ batch.batchCode }}</span>
+                <span class="text-xs text-gray-500">{{ batch.poNumber }} · {{ batch.modelCode || batch.modelName }}</span>
+                <span class="text-xs font-medium text-primary shrink-0">SL: {{ batch.orderedQuantity | number }}</span>
+              </div>
+            </mat-option>
+          }
+          @if (!filteredBatchOptions.length) {
+            <mat-option disabled>Không tìm thấy batch đã hoàn thành sản xuất</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    <!-- Danh sách batch đã chọn - dạng list -->
+    <div formArrayName="batches" class="flex flex-col gap-2">
+      <label class="text-sm font-medium text-gray-700">
+        Danh sách batch đã chọn ({{ shipmentBatchesFormArray.length }})
+      </label>
+      
+      @for (batchGroup of shipmentBatchesFormArray.controls; track i; let i = $index) {
+        <div [formGroupName]="i" class="flex flex-col gap-2 p-3 bg-gray-50 rounded-md border border-gray-300">
+          <!-- Row 1: Batch code + PO + Quantity input + Delete button -->
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-sm font-semibold text-primary">{{ batchGroup.get('batchCode')?.value }}</span>
+              <span class="text-xs text-gray-500">·</span>
+              <span class="text-xs text-gray-500">{{ batchGroup.get('poNumber')?.value }}</span>
+            </div>
+            
+            <mat-form-field appearance="outline" floatLabel="auto" class="flex-1 bg-white">
+              <mat-label>SL thực tế</mat-label>
+              <input matInput type="number" min="1" step="1" formControlName="quantity"
+                placeholder="Nhập số lượng">
+            </mat-form-field>
+            
+            <button type="button" class="border-none bg-transparent text-red-500 shrink-0"
+              title="Xóa batch" (click)="removeSelectedBatch(i)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+          
+          <!-- Row 2: Model/Name + Ordered Quantity -->
+          <div class="text-xs text-gray-600">
+            <span>{{ batchGroup.get('modelCode')?.value || '-' }}</span>
+            @if (batchGroup.get('modelName')?.value) {
+              <span> - {{ batchGroup.get('modelName')?.value }}</span>
+            }
+            <span class="text-gray-500 ml-2">(SL đặt: {{ batchGroup.get('orderedQuantity')?.value | number }})</span>
+          </div>
+        </div>
+      } @empty {
+        <div class="px-3 py-6 text-center text-gray-500 bg-gray-50 rounded-md border border-gray-300 border-dashed">
+          Chưa chọn batch/lot nào
+        </div>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="require">Kho nhận:</label>
+      <app-select-search
+        class="w-full bg-white"
+        [options]="warehouseList"
+        formControlName="warehouseId"
+        [valueKey]="'id'"
+        [labelKey]="'name'"
+        placeholder="Chọn kho">
+      </app-select-search>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <label class="require">Trạng thái:</label>
+        <mat-form-field appearance="outline" floatLabel="auto">
+          <mat-select formControlName="status" placeholder="Chọn trạng thái">
+            <mat-option *ngFor="let status of shipmentStatusList" [value]="status.value">
+              {{ status.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label>Nhà vận chuyển:</label>
+        <mat-form-field appearance="outline" floatLabel="auto">
+          <input matInput formControlName="carrier" placeholder="Tên công ty vận chuyển">
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <label>Ngày giao dự kiến:</label>
+        <mat-form-field appearance="outline" floatLabel="auto">
+          <input matInput [matDatepicker]="shipDatePicker" formControlName="expectedShipDate"
+            placeholder="Chọn ngày">
+          <mat-datepicker-toggle matSuffix [for]="shipDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #shipDatePicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label>Ngày nhận dự kiến:</label>
+        <mat-form-field appearance="outline" floatLabel="auto">
+          <input matInput [matDatepicker]="arrivalDatePicker" formControlName="expectedArrivalDate"
+            placeholder="Chọn ngày">
+          <mat-datepicker-toggle matSuffix [for]="arrivalDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #arrivalDatePicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label>Mã vận đơn:</label>
+      <mat-form-field appearance="outline" floatLabel="auto">
+        <input matInput formControlName="trackingNumber" placeholder="Nhập mã vận đơn">
+      </mat-form-field>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label>Ghi chú:</label>
+      <mat-form-field appearance="outline" floatLabel="auto">
+        <textarea matInput formControlName="note" rows="3" placeholder="Nhập ghi chú"></textarea>
+      </mat-form-field>
+    </div>
+  </form>
+
+  <div class="flex items-center justify-end gap-3 pt-5">
+    <button type="button" class="flex items-center justify-center bg-white px-4" (click)="onCancel()">Hủy</button>
+    <button type="button" class="flex items-center justify-center text-white px-4 bg-primary"
+      (click)="onSave()">Lưu</button>
+  </div>
+</ng-template>
+
+<!-- Status badge template -->
+<ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
+  <div class="flex items-center justify-center px-4">
+    @if(item.status === 'PENDING') {
+      <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium whitespace-nowrap">Chờ giao</span>
+    } @else if(item.status === 'IN_TRANSIT') {
+      <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium whitespace-nowrap">Đang giao</span>
+    } @else if(item.status === 'DELIVERED') {
+      <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Đã giao</span>
+    } @else if(item.status === 'CANCELLED') {
+      <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Đã hủy</span>
+    } @else {
+      <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium whitespace-nowrap">{{ item.statusName }}</span>
+    }
+  </div>
+</ng-template>
+
+<!-- Action buttons template -->
+<ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
+  <div *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]" class="flex items-center justify-start px-4 gap-3">
+    <button class="flex items-center justify-center border-none bg-transparent" title="Chỉnh sửa"
+      (click)="onEdit(item); $event.stopPropagation()">
+      <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
+    </button>
+    <button class="flex items-center justify-center border-none bg-transparent" title="Xóa"
+      (click)="onDelete(item); $event.stopPropagation()">
+      <mat-icon class="text-red-500">delete</mat-icon>
+    </button>
+    @if(item.status === 'IN_TRANSIT') {
+      <button class="flex items-center justify-center border-none bg-transparent" title="Nhận hàng"
+        (click)="onReceiveShipment(item); $event.stopPropagation()">
+        <mat-icon class="text-green-500">check_circle</mat-icon>
+      </button>
+    }
+  </div>
+</ng-template>
+
+<!-- Expanded row template: chi tiết batches -->
+<ng-template #expandedRowTemplate let-item="item">
+  <div class="p-4 bg-white border-t border-gray-200 flex flex-col gap-3">
+    <h3 class="font-bold">Chi tiết lô hàng (Batches)</h3>
+    @if(item.shipmentBatches && item.shipmentBatches.length > 0) {
+
+      <!-- Group theo Mã PO -->
+      @for(group of groupBatchesByPO(item.shipmentBatches); track group.poNumber) {
+        <div class="rounded-md overflow-hidden">
+          <!-- PO Header -->
+          <div class="px-4 py-2 bg-gray-300 flex items-center gap-2">
+            <mat-icon class="text-primary text-base">receipt_long</mat-icon>
+            <span class="text-base font-bold text-primary">{{ group.poNumber }}</span>
+            <span class="text-xs text-gray-500">({{ group.batches.length }} batch)</span>
+          </div>
+
+          <!-- Batch table -->
+          <table class="min-w-full text-sm border-none border-separate">
+            <thead class="!bg-white">
+              <tr class="text-gray-600">
+                <th class="px-4 py-2 text-left w-[50px] font-medium">STT</th>
+                <th class="px-4 py-2 text-left font-medium">Mã Batch</th>
+                <th class="px-4 py-2 text-left font-medium">Model</th>
+                <th class="px-4 py-2 text-center font-medium">SL giao</th>
+                <th class="px-4 py-2 text-center font-medium">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(batch of group.batches; track batch.id; let i = $index) {
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-2 text-gray-500">{{ i + 1 }}</td>
+                  <td class="px-4 py-2 font-medium">{{ batch.batch?.batchCode ?? 'N/A' }}</td>
+                  <td class="px-4 py-2">{{ batch.batch?.item?.modelCode ?? 'N/A' }}{{ batch.batch?.item?.modelName ? ' - ' + batch.batch.item.modelName : '' }}</td>
+                  <td class="px-4 py-2 text-center font-medium">{{ batch.quantity ?? 0 | number }}</td>
+                  <td class="px-4 py-2 text-center">
+                    <span class="px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
+                      [ngClass]="getBatchStatusClass(batch.batch?.status)">
+                      {{ getBatchStatusLabel(batch.batch?.status) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+    } @else {
+      <p class="text-gray-500 text-sm">Chưa có batch nào được gắn với đơn giao hàng này.</p>
+    }
+
+    @if(item.note) {
+      <div class="text-sm">
+        <span class="font-semibold">Ghi chú:</span>
+        <span class="ml-2 text-gray-700">{{ item.note }}</span>
+      </div>
+    }
+  </div>
+</ng-template>
+
+<!-- Delete confirmation -->
+<ng-template #deleteNotification>
+  <p>Bạn có chắc muốn xóa đơn giao hàng <strong>{{selectedShipment?.shipmentCode}}</strong>?</p>
+</ng-template>

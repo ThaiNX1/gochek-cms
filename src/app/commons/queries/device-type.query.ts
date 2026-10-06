@@ -196,3 +196,37 @@ export const SYNC_NHANH_PRODUCTS = gql`
     }
   }
 `;
+
+export const GET_NHANH_PRODUCTS = gql`
+  query NhanhProducts($input: NhanhCredentialInput!) {
+    nhanhProducts(input: $input)
+  }
+`;
+
+export const GET_NHANH_PRODUCT_MAPPINGS = gql`
+  query NhanhProductMappings($input: NhanhProductMappingSearchInput) {
+    nhanhProductMappings(input: $input) {
+      id
+      isActive
+      modelId
+      nhanhProductId
+      partnerCredentialId
+      productCode
+      productName
+    }
+  }
+`;
+
+export const UPSERT_NHANH_PRODUCT_MAPPING = gql`
+  mutation UpsertNhanhProductMapping($input: UpsertNhanhProductMappingInput!) {
+    upsertNhanhProductMapping(input: $input) {
+      id
+      isActive
+      modelId
+      nhanhProductId
+      partnerCredentialId
+      productCode
+      productName
+    }
+  }
+`;

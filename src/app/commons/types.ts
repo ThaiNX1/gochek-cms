@@ -263,15 +263,13 @@ export type CreatePurchaseOrderItemInput = {
 };
 
 export type CreatePurchaseOrderShipmentInput = {
-  batchId?: InputMaybe<Scalars['ID']['input']>;
-  batches?: InputMaybe<Array<PurchaseOrderShipmentBatchInput>>;
+  batches: Array<PurchaseOrderShipmentBatchInput>;
   carrier?: InputMaybe<Scalars['String']['input']>;
   expectedArrivalDate?: InputMaybe<Scalars['String']['input']>;
   expectedShipDate?: InputMaybe<Scalars['String']['input']>;
   note?: InputMaybe<Scalars['String']['input']>;
-  purchaseOrderId: Scalars['ID']['input'];
-  quantity?: InputMaybe<Scalars['Int']['input']>;
   shipmentCode: Scalars['String']['input'];
+  status?: InputMaybe<PurchaseOrderShipmentStatus>;
   trackingNumber?: InputMaybe<Scalars['String']['input']>;
   warehouseId?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -1731,10 +1729,91 @@ export type NhanhCredentialInput = {
   partnerCredentialId: Scalars['ID']['input'];
 };
 
+export type NhanhDashboardInput = {
+  giftCategoryIds?: InputMaybe<Array<Scalars['Int']['input']>>;
+  lookbackDays?: InputMaybe<Scalars['Int']['input']>;
+  lowStockDays?: InputMaybe<Scalars['Int']['input']>;
+  overStockDays?: InputMaybe<Scalars['Int']['input']>;
+  partnerCredentialId: Scalars['ID']['input'];
+};
+
+export type NhanhDashboardResponse = {
+  businessId: Scalars['String']['output'];
+  excludedGiftCategoryIds: Array<Scalars['Int']['output']>;
+  inventory: NhanhInventorySummary;
+  inventoryByDepot: Array<NhanhDepotInventorySummary>;
+  inventoryRisks: Array<NhanhInventoryRisk>;
+  orders: NhanhOrderPeriodSummary;
+  partnerCredentialId: Scalars['String']['output'];
+  todayOrders: NhanhTodayOrderSummary;
+  topInventoryProducts: Array<NhanhTopInventoryProduct>;
+  updatedAt: Scalars['Float']['output'];
+};
+
+export type NhanhDepotInventorySummary = {
+  depotId: Scalars['String']['output'];
+  depotName?: Maybe<Scalars['String']['output']>;
+  totalAvailable: Scalars['Float']['output'];
+  totalDamaged: Scalars['Float']['output'];
+  totalHolding: Scalars['Float']['output'];
+  totalProducts: Scalars['Int']['output'];
+  totalRemain: Scalars['Float']['output'];
+  totalShipping: Scalars['Float']['output'];
+};
+
 export type NhanhDepotResponse = {
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   raw?: Maybe<Scalars['JSON']['output']>;
+};
+
+export type NhanhInventoryRisk = {
+  available: Scalars['Float']['output'];
+  averageDailySales: Scalars['Float']['output'];
+  code?: Maybe<Scalars['String']['output']>;
+  daysOfCover?: Maybe<Scalars['Float']['output']>;
+  message: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  productId: Scalars['String']['output'];
+  remain: Scalars['Float']['output'];
+  soldQuantity: Scalars['Float']['output'];
+  type: NhanhInventoryRiskType;
+};
+
+export enum NhanhInventoryRiskType {
+  LOW_STOCK = 'LOW_STOCK',
+  OUT_OF_STOCK = 'OUT_OF_STOCK',
+  OVERSTOCK = 'OVERSTOCK',
+  SLOW_MOVING = 'SLOW_MOVING'
+}
+
+export type NhanhInventorySummary = {
+  totalAvailable: Scalars['Float']['output'];
+  totalDamaged: Scalars['Float']['output'];
+  totalHolding: Scalars['Float']['output'];
+  totalProducts: Scalars['Int']['output'];
+  totalRemain: Scalars['Float']['output'];
+  totalShipping: Scalars['Float']['output'];
+};
+
+export type NhanhOrderChannelAverage = {
+  averageOrdersPerDay: Scalars['Float']['output'];
+  channel: Scalars['Int']['output'];
+  channelName: Scalars['String']['output'];
+  totalOrders: Scalars['Int']['output'];
+};
+
+export type NhanhOrderPeriodSummary = {
+  averageOrdersPerDay: Scalars['Float']['output'];
+  byChannel: Array<NhanhOrderChannelAverage>;
+  lookbackDays: Scalars['Int']['output'];
+  totalOrders: Scalars['Int']['output'];
+};
+
+export type NhanhOrderStatusCount = {
+  count: Scalars['Int']['output'];
+  status: Scalars['Int']['output'];
+  statusName: Scalars['String']['output'];
 };
 
 export type NhanhProductMapping = {
@@ -1840,6 +1919,28 @@ export enum NhanhSyncStatus {
   SYNCED = 'SYNCED'
 }
 
+export type NhanhTodayOrderChannelSummary = {
+  byStatus: Array<NhanhOrderStatusCount>;
+  channel: Scalars['Int']['output'];
+  channelName: Scalars['String']['output'];
+  totalOrders: Scalars['Int']['output'];
+};
+
+export type NhanhTodayOrderSummary = {
+  byChannel: Array<NhanhTodayOrderChannelSummary>;
+  byStatus: Array<NhanhOrderStatusCount>;
+  totalOrders: Scalars['Int']['output'];
+};
+
+export type NhanhTopInventoryProduct = {
+  available: Scalars['Float']['output'];
+  categoryId?: Maybe<Scalars['Int']['output']>;
+  code?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  productId: Scalars['String']['output'];
+  remain: Scalars['Float']['output'];
+};
+
 export type Organization = {
   address?: Maybe<Scalars['String']['output']>;
   code?: Maybe<Scalars['String']['output']>;
@@ -1915,10 +2016,20 @@ export type PaginatedOrganizationResponse = {
   pagination: PaginationResponse;
 };
 
+export type PaginatedPurchaseOrderBatchResponse = {
+  data: Array<PurchaseOrderBatch>;
+  pagination: PaginationResponse;
+};
+
 export type PaginatedPurchaseOrderResponse = {
   data: Array<PurchaseOrder>;
   pagination: PaginationResponse;
   statusCounts: Array<PurchaseOrderStatusCount>;
+};
+
+export type PaginatedPurchaseOrderShipmentResponse = {
+  data: Array<PurchaseOrderShipment>;
+  pagination: PaginationResponse;
 };
 
 export type PaginatedShippingOrderResponse = {
@@ -1995,6 +2106,7 @@ export type PartnerCredential = {
   lastOwnerConnectAt?: Maybe<Scalars['Float']['output']>;
   lastVerifiedAt?: Maybe<Scalars['Float']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
   nhanhSupplierId?: Maybe<Scalars['String']['output']>;
   ownerTokenExpiresAt?: Maybe<Scalars['Float']['output']>;
   partnerKey: PartnerKey;
@@ -2020,6 +2132,7 @@ export enum PartnerEnvironment {
 export enum PartnerKey {
   ESMS = 'ESMS',
   NHANH = 'NHANH',
+  PANCAKE = 'PANCAKE',
   SPHOTON = 'SPHOTON',
   VIETTEL_POST = 'VIETTEL_POST'
 }
@@ -2154,7 +2267,6 @@ export type PurchaseOrderBatch = {
   serialGenerationHistories?: Maybe<Array<GenerateHistory>>;
   serialPrefix?: Maybe<Scalars['String']['output']>;
   shipmentBatches?: Maybe<Array<PurchaseOrderShipmentBatch>>;
-  shipments?: Maybe<Array<PurchaseOrderShipment>>;
   status: PurchaseOrderBatchStatus;
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -2168,6 +2280,17 @@ export type PurchaseOrderBatchDetailsInput = {
   packagingVersion?: InputMaybe<Scalars['String']['input']>;
   plannedProductionDate?: InputMaybe<Scalars['String']['input']>;
   serialPrefix?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PurchaseOrderBatchSearchInput = {
+  keyword?: InputMaybe<Scalars['String']['input']>;
+  page?: Scalars['Int']['input'];
+  plannedProductionDateFrom?: InputMaybe<Scalars['String']['input']>;
+  plannedProductionDateTo?: InputMaybe<Scalars['String']['input']>;
+  purchaseOrderId?: InputMaybe<Scalars['ID']['input']>;
+  size?: Scalars['Int']['input'];
+  status?: InputMaybe<PurchaseOrderBatchStatus>;
+  supplierId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export enum PurchaseOrderBatchStatus {
@@ -2209,8 +2332,6 @@ export type PurchaseOrderSearchInput = {
 };
 
 export type PurchaseOrderShipment = {
-  batch?: Maybe<PurchaseOrderBatch>;
-  batchId?: Maybe<Scalars['String']['output']>;
   carrier?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -2219,8 +2340,6 @@ export type PurchaseOrderShipment = {
   id: Scalars['ID']['output'];
   note?: Maybe<Scalars['String']['output']>;
   organizationId?: Maybe<Scalars['String']['output']>;
-  purchaseOrder?: Maybe<PurchaseOrder>;
-  purchaseOrderId: Scalars['String']['output'];
   quantity: Scalars['Float']['output'];
   shipmentBatches?: Maybe<Array<PurchaseOrderShipmentBatch>>;
   shipmentCode: Scalars['String']['output'];
@@ -2238,6 +2357,8 @@ export type PurchaseOrderShipmentBatch = {
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['ID']['output'];
   organizationId?: Maybe<Scalars['String']['output']>;
+  purchaseOrder: PurchaseOrder;
+  purchaseOrderId: Scalars['String']['output'];
   quantity: Scalars['Int']['output'];
   shipment: PurchaseOrderShipment;
   shipmentId: Scalars['String']['output'];
@@ -2247,6 +2368,18 @@ export type PurchaseOrderShipmentBatch = {
 export type PurchaseOrderShipmentBatchInput = {
   batchId: Scalars['ID']['input'];
   quantity: Scalars['Int']['input'];
+};
+
+export type PurchaseOrderShipmentSearchInput = {
+  createdAtFrom?: InputMaybe<Scalars['String']['input']>;
+  createdAtTo?: InputMaybe<Scalars['String']['input']>;
+  expectedShipDateFrom?: InputMaybe<Scalars['String']['input']>;
+  expectedShipDateTo?: InputMaybe<Scalars['String']['input']>;
+  keyword?: InputMaybe<Scalars['String']['input']>;
+  page?: Scalars['Int']['input'];
+  size?: Scalars['Int']['input'];
+  status?: InputMaybe<PurchaseOrderShipmentStatus>;
+  warehouseId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export enum PurchaseOrderShipmentStatus {
@@ -2311,6 +2444,7 @@ export type Query = {
   model: Model;
   models: PaginatedModelResponse;
   nhanhCredentials: Array<PartnerCredential>;
+  nhanhDashboard: NhanhDashboardResponse;
   nhanhDepots: Array<NhanhDepotResponse>;
   nhanhProductMappings: Array<NhanhProductMapping>;
   nhanhProducts: Scalars['JSON']['output'];
@@ -2330,6 +2464,8 @@ export type Query = {
   publicModel: Model;
   publicModels: PaginatedModelResponse;
   purchaseOrder: PurchaseOrder;
+  purchaseOrderBatches: PaginatedPurchaseOrderBatchResponse;
+  purchaseOrderShipments: PaginatedPurchaseOrderShipmentResponse;
   purchaseOrders: PaginatedPurchaseOrderResponse;
   roleHierarchy: Array<BusinessRole>;
   searchNhanhPurchaseDocuments: NhanhPurchaseDocumentSearchResponse;
@@ -2524,6 +2660,11 @@ export type QueryModelsArgs = {
 };
 
 
+export type QueryNhanhDashboardArgs = {
+  input: NhanhDashboardInput;
+};
+
+
 export type QueryNhanhDepotsArgs = {
   input: NhanhCredentialInput;
 };
@@ -2606,6 +2747,16 @@ export type QueryPublicModelsArgs = {
 
 export type QueryPurchaseOrderArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryPurchaseOrderBatchesArgs = {
+  filter?: InputMaybe<PurchaseOrderBatchSearchInput>;
+};
+
+
+export type QueryPurchaseOrderShipmentsArgs = {
+  pagination?: InputMaybe<PurchaseOrderShipmentSearchInput>;
 };
 
 
@@ -3241,13 +3392,11 @@ export type UpdatePurchaseOrderInput = {
 };
 
 export type UpdatePurchaseOrderShipmentInput = {
-  batchId?: InputMaybe<Scalars['ID']['input']>;
   batches?: InputMaybe<Array<PurchaseOrderShipmentBatchInput>>;
   carrier?: InputMaybe<Scalars['String']['input']>;
   expectedArrivalDate?: InputMaybe<Scalars['String']['input']>;
   expectedShipDate?: InputMaybe<Scalars['String']['input']>;
   note?: InputMaybe<Scalars['String']['input']>;
-  quantity?: InputMaybe<Scalars['Int']['input']>;
   trackingNumber?: InputMaybe<Scalars['String']['input']>;
   warehouseId?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -3331,6 +3480,7 @@ export type UpsertNhanhCredentialInput = {
   id?: InputMaybe<Scalars['ID']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
   metadata?: InputMaybe<Scalars['JSON']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
   password?: InputMaybe<Scalars['String']['input']>;
   permissions?: InputMaybe<Scalars['JSON']['input']>;
   secretKey?: InputMaybe<Scalars['String']['input']>;
@@ -3358,6 +3508,7 @@ export type UpsertPartnerCredentialInput = {
   id?: InputMaybe<Scalars['ID']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
   metadata?: InputMaybe<Scalars['JSON']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
   partnerKey: PartnerKey;
   password?: InputMaybe<Scalars['String']['input']>;
   permissions?: InputMaybe<Scalars['JSON']['input']>;
@@ -3432,10 +3583,19 @@ export type Warehouse = {
   managerName?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   nhanhDepotId?: Maybe<Scalars['String']['output']>;
+  nhanhInfo?: Maybe<WarehouseNhanhInfo>;
   nhanhPartnerCredential?: Maybe<PartnerCredential>;
   nhanhPartnerCredentialId?: Maybe<Scalars['String']['output']>;
   phone?: Maybe<Scalars['String']['output']>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type WarehouseNhanhInfo = {
+  appId?: Maybe<Scalars['String']['output']>;
+  businessId?: Maybe<Scalars['String']['output']>;
+  credentialId: Scalars['String']['output'];
+  depotId: Scalars['String']['output'];
+  depotName: Scalars['String']['output'];
 };
 
 export type WarehouseSearchInput = {

@@ -89,6 +89,14 @@
                             </div>
 
                             <form [formGroup]="credentialForm" class="flex flex-col gap-5 p-5 max-w-[760px]">
+                                <div class="flex flex-col gap-1">
+                                    <label>Tên hiển thị</label>
+                                    <mat-form-field appearance="outline" floatLabel="auto">
+                                        <input matInput formControlName="name" autocomplete="off"
+                                            placeholder="Tên gợi nhớ cho tài khoản này">
+                                    </mat-form-field>
+                                </div>
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div class="flex flex-col gap-1">
                                         <label class="require">Môi trường</label>
@@ -208,14 +216,14 @@
                                             [class.credential-item-active]="selectedNhanhCredentialId === credential.id"
                                             (click)="onSelectNhanhCredential(credential)">
                                             <div class="flex items-center justify-between gap-3">
-                                                <span class="font-semibold truncate">Business ID: {{ credential.businessId }}</span>
+                                                <span class="font-semibold truncate">{{ credential.name || credential.businessId }}</span>
                                                 <span class="px-2 py-1 text-xs rounded whitespace-nowrap"
                                                     [ngClass]="credential.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'">
                                                     {{ credential.isActive ? 'Đang dùng' : 'Tạm tắt' }}
                                                 </span>
                                             </div>
                                             <div class="flex items-center justify-between gap-3 text-xs text-gray-500">
-                                                <span>App ID: {{ credential.appId }}</span>
+                                                <span>Business ID: {{ credential.businessId }}</span>
                                                 <span>{{ getEnvironmentName(credential.environment) }}</span>
                                             </div>
                                         </button>
@@ -248,6 +256,14 @@
                             </div>
 
                             <form [formGroup]="nhanhCredentialForm" class="flex flex-col gap-5 p-5 max-w-[860px]">
+                                <div class="flex flex-col gap-1">
+                                    <label>Tên hiển thị</label>
+                                    <mat-form-field appearance="outline" floatLabel="auto">
+                                        <input matInput formControlName="name" autocomplete="off"
+                                            placeholder="Tên gợi nhớ cho tài khoản này">
+                                    </mat-form-field>
+                                </div>
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div class="flex flex-col gap-1">
                                         <label class="require">Môi trường</label>

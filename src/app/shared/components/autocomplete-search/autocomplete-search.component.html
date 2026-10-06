@@ -1,0 +1,43 @@
+<mat-form-field appearance="outline" floatLabel="auto" class="w-full"
+  [ngClass]="{'form-field-invalid': isInvalid}">
+
+  <input matInput
+    [formControl]="searchControl"
+    [matAutocomplete]="auto"
+    [placeholder]="placeholder"
+    (input)="onInputChange(searchControl.value ?? '')"
+    (blur)="onBlur()">
+
+  <!-- Suffix: spinner / clear / search icon -->
+  @if(loading) {
+    <mat-spinner matSuffix diameter="18"></mat-spinner>
+  } @else if(clearable && hasValue) {
+    <button matSuffix type="button"
+      class="flex items-center justify-center border-none bg-transparent p-0 min-h-0"
+      (mousedown)="onClear($event)">
+      <mat-icon class="text-gray-400 hover:text-gray-600">close</mat-icon>
+    </button>
+  } @else {
+    <mat-icon matSuffix class="text-gray-400">search</mat-icon>
+  }
+
+  <mat-autocomplete #auto="matAutocomplete"
+    (optionSelected)="onOptionSelected($event.option.value)">
+    @for(option of filteredOptions; track option[valueKey]) {
+      <mat-option [value]="option">
+        <ng-container *ngTemplateOutlet="resolvedOptionTemplate || defaultOptionTpl; context: { $implicit: option }">
+        </ng-container>
+      </mat-option>
+    }
+    @if(!loading && !filteredOptions.length) {
+      <mat-option disabled>
+        <span class="text-gray-400 text-sm">Không tìm thấy kết quả</span>
+      </mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>
+
+<!-- Template mặc định nếu không truyền custom template -->
+<ng-template #defaultOptionTpl let-option>
+  <span class="text-sm">{{ getLabel(option) }}</span>
+</ng-template>
