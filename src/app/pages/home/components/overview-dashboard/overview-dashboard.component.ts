@@ -81,6 +81,11 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
   // Form filter - BaseClass đã có filterForm, không cần khai báo lại
   nhanhCredentials: any[] = [];
   isLoading = false;
+  
+  // Check if desktop (md breakpoint = 768px)
+  get isDesktop(): boolean {
+    return window.innerWidth >= 768;
+  }
 
   // ─── 1. Tổng tồn kho ───────────────────────────────────────────────────────
   totalStock = 0;
@@ -175,6 +180,11 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
   }
 
   async loadNhanhCredentials() {
+    // Disable global loading chỉ cho desktop
+    if (this.isDesktop) {
+      this.commonService.setRemoveShowGlobalLoading(true);
+    }
+    
     const response = await this.injector.get(ApiService).executeQuery<{ nhanhCredentials: any[] }>(
       GET_NHANH_CREDENTIALS
     );
@@ -184,6 +194,11 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     if (this.nhanhCredentials.length > 0) {
       this.filterForm.patchValue({ partnerCredentialId: this.nhanhCredentials[0].id });
       await this.loadDashboard();
+    }
+    
+    // Reset lại flag sau khi hoàn tất (chỉ khi đã set)
+    if (this.isDesktop) {
+      this.commonService.setRemoveShowGlobalLoading(false);
     }
   }
 
@@ -195,6 +210,12 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     }
 
     this.isLoading = true;
+    
+    // Disable global loading chỉ cho desktop
+    if (this.isDesktop) {
+      this.commonService.setRemoveShowGlobalLoading(true);
+    }
+    
     const response = await this.injector.get(ApiService).executeQuery<{ nhanhDashboard: any }>(
       GET_NHANH_DASHBOARD,
       {
@@ -208,6 +229,11 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     );
 
     this.isLoading = false;
+    
+    // Reset lại flag sau khi hoàn tất (chỉ khi đã set)
+    if (this.isDesktop) {
+      this.commonService.setRemoveShowGlobalLoading(false);
+    }
 
     if (response?.nhanhDashboard) {
       this.mapDashboardData(response.nhanhDashboard);
