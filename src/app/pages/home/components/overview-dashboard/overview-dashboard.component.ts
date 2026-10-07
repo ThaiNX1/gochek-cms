@@ -6,11 +6,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { RouterLink } from '@angular/router';
 import { BaseClass } from '../../../../commons/base.class';
+import { GET_NHANH_DASHBOARD } from '../../../../commons/queries/dashboard.query';
 import { GET_NHANH_CREDENTIALS } from '../../../../commons/queries/partner-credential.query';
 import { ApiService } from '../../../../core/shared-services.provider';
-import { GET_NHANH_DASHBOARD } from '../../../../commons/queries/dashboard.query';
 
 interface WarehouseStock {
   name: string;
@@ -67,7 +66,7 @@ interface POStatus {
 @Component({
   selector: 'app-overview-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatExpansionModule],
+  imports: [CommonModule, MatIconModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatExpansionModule],
   templateUrl: './overview-dashboard.component.html',
 })
 export class OverviewDashboardComponent extends BaseClass implements OnInit {
@@ -81,7 +80,7 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
   // Form filter - BaseClass đã có filterForm, không cần khai báo lại
   nhanhCredentials: any[] = [];
   isLoading = false;
-  
+
   // Check if desktop (md breakpoint = 768px)
   get isDesktop(): boolean {
     return window.innerWidth >= 768;
@@ -150,25 +149,25 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
       averageOrdersPerDay: number;
     }>;
   } = {
-    lookbackDays: 0,
-    totalOrders: 0,
-    averageOrdersPerDay: 0,
-    byChannel: [],
-  };
+      lookbackDays: 0,
+      totalOrders: 0,
+      averageOrdersPerDay: 0,
+      byChannel: [],
+    };
 
   // ─── 7. Tình trạng đơn đặt hàng (PO) ─────────────────────────────────────
   readonly poStatuses: POStatus[] = [
-    { label: 'Đang sản xuất',        value: 3,  icon: 'precision_manufacturing', color: 'text-yellow-700', bgColor: 'bg-yellow-50 border-yellow-200', description: 'batch đang trong quy trình sản xuất' },
-    { label: 'Đang vận chuyển',      value: 5,  icon: 'local_shipping',          color: 'text-blue-700',   bgColor: 'bg-blue-50 border-blue-200',     description: 'lô hàng đang trên đường' },
-    { label: 'Đã nhận, chờ nhập kho', value: 2, icon: 'inventory',               color: 'text-orange-700', bgColor: 'bg-orange-50 border-orange-200', description: 'lô hàng chờ kiểm đếm nhập kho' },
-    { label: 'Chờ xác nhận',         value: 4,  icon: 'pending_actions',         color: 'text-purple-700', bgColor: 'bg-purple-50 border-purple-200', description: 'PO chờ nhà cung cấp xác nhận' },
-    { label: 'Hoàn thành tháng này', value: 8,  icon: 'task_alt',                color: 'text-green-700',  bgColor: 'bg-green-50 border-green-200',   description: 'PO đã nhập kho đầy đủ' },
-    { label: 'Đã hủy tháng này',     value: 1,  icon: 'cancel',                  color: 'text-red-700',    bgColor: 'bg-red-50 border-red-200',       description: 'PO bị hủy trong tháng' },
+    { label: 'Đang sản xuất', value: 3, icon: 'precision_manufacturing', color: 'text-yellow-700', bgColor: 'bg-yellow-50 border-yellow-200', description: 'batch đang trong quy trình sản xuất' },
+    { label: 'Đang vận chuyển', value: 5, icon: 'local_shipping', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200', description: 'lô hàng đang trên đường' },
+    { label: 'Đã nhận, chờ nhập kho', value: 2, icon: 'inventory', color: 'text-orange-700', bgColor: 'bg-orange-50 border-orange-200', description: 'lô hàng chờ kiểm đếm nhập kho' },
+    { label: 'Chờ xác nhận', value: 4, icon: 'pending_actions', color: 'text-purple-700', bgColor: 'bg-purple-50 border-purple-200', description: 'PO chờ nhà cung cấp xác nhận' },
+    { label: 'Hoàn thành tháng này', value: 8, icon: 'task_alt', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200', description: 'PO đã nhập kho đầy đủ' },
+    { label: 'Đã hủy tháng này', value: 1, icon: 'cancel', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200', description: 'PO bị hủy trong tháng' },
   ];
 
   override ngOnInit(): void {
     super.ngOnInit();
-    
+
     this.filterForm = new FormGroup({
       partnerCredentialId: new FormControl(''),
       lookbackDays: new FormControl(7),
@@ -184,18 +183,18 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     if (this.isDesktop) {
       this.commonService.setRemoveShowGlobalLoading(true);
     }
-    
+
     const response = await this.injector.get(ApiService).executeQuery<{ nhanhCredentials: any[] }>(
       GET_NHANH_CREDENTIALS
     );
 
     this.nhanhCredentials = response?.nhanhCredentials?.filter((c: any) => c.isActive) ?? [];
-    
+
     if (this.nhanhCredentials.length > 0) {
       this.filterForm.patchValue({ partnerCredentialId: this.nhanhCredentials[0].id });
       await this.loadDashboard();
     }
-    
+
     // Reset lại flag sau khi hoàn tất (chỉ khi đã set)
     if (this.isDesktop) {
       this.commonService.setRemoveShowGlobalLoading(false);
@@ -210,12 +209,12 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     }
 
     this.isLoading = true;
-    
+
     // Disable global loading chỉ cho desktop
     if (this.isDesktop) {
       this.commonService.setRemoveShowGlobalLoading(true);
     }
-    
+
     const response = await this.injector.get(ApiService).executeQuery<{ nhanhDashboard: any }>(
       GET_NHANH_DASHBOARD,
       {
@@ -229,7 +228,7 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     );
 
     this.isLoading = false;
-    
+
     // Reset lại flag sau khi hoàn tất (chỉ khi đã set)
     if (this.isDesktop) {
       this.commonService.setRemoveShowGlobalLoading(false);
@@ -286,7 +285,7 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
 
     // Tạo summary cho mỗi loại (hiển thị số lượng products, không phải tổng remain)
     this.stockRisks = [];
-    
+
     if (risksByType['LOW_STOCK'].length > 0) {
       const totalRemain = risksByType['LOW_STOCK'].reduce((sum, r) => sum + (r.remain ?? 0), 0);
       this.stockRisks.push({
@@ -345,7 +344,7 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
 
     // 6. Tình trạng đơn hàng hôm nay
     this.mapTodayOrders(data.todayOrders);
-    
+
     // Tổng quan đơn hàng (lookback period)
     if (data.orders) {
       this.ordersOverview = {
@@ -366,39 +365,39 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
 
     // Stock Health Summary
     this.stockHealthSummary = [
-      { 
-        key: 'LOW_STOCK',  
-        label: 'Sắp hết hàng',         
-        count: riskCounts['LOW_STOCK'] || 0,   
-        color: 'text-orange-600', 
-        bg: 'bg-orange-50 border-orange-200', 
-        icon: 'shopping_cart' 
+      {
+        key: 'LOW_STOCK',
+        label: 'Sắp hết hàng',
+        count: riskCounts['LOW_STOCK'] || 0,
+        color: 'text-orange-600',
+        bg: 'bg-orange-50 border-orange-200',
+        icon: 'shopping_cart'
       },
-      { 
-        key: 'OUT_OF_STOCK',  
-        label: 'Đã hết hàng',           
-        count: riskCounts['OUT_OF_STOCK'] || 0,   
-        color: 'text-red-600',    
-        bg: 'bg-red-50 border-red-200',       
-        icon: 'remove_shopping_cart' 
+      {
+        key: 'OUT_OF_STOCK',
+        label: 'Đã hết hàng',
+        count: riskCounts['OUT_OF_STOCK'] || 0,
+        color: 'text-red-600',
+        bg: 'bg-red-50 border-red-200',
+        icon: 'remove_shopping_cart'
       },
-      { 
-        key: 'OVERSTOCK', 
-        label: 'Tồn kho cao',           
-        count: riskCounts['OVERSTOCK'] || 0,   
-        color: 'text-yellow-600', 
-        bg: 'bg-yellow-50 border-yellow-200', 
-        icon: 'inventory_2' 
+      {
+        key: 'OVERSTOCK',
+        label: 'Tồn kho cao',
+        count: riskCounts['OVERSTOCK'] || 0,
+        color: 'text-yellow-600',
+        bg: 'bg-yellow-50 border-yellow-200',
+        icon: 'inventory_2'
       },
-      { 
-        key: 'SLOW_MOVING',      
-        label: 'Tồn lâu (>90 ngày)',    
+      {
+        key: 'SLOW_MOVING',
+        label: 'Tồn lâu (>90 ngày)',
         count: riskCounts['SLOW_MOVING'] || 0,
         unit: 'sp',
         subLabel: `${riskCounts['SLOW_MOVING'] || 0} models chậm luân chuyển`,
-        color: 'text-purple-600', 
-        bg: 'bg-purple-50 border-purple-200', 
-        icon: 'hourglass_empty' 
+        color: 'text-purple-600',
+        bg: 'bg-purple-50 border-purple-200',
+        icon: 'hourglass_empty'
       },
     ];
 
@@ -412,7 +411,7 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
       const dos = r.daysOfCover ?? 0;
       const status = this.getDosStatus(r.type, dos);
       const action = this.getDosAction(r.type);
-      
+
       return {
         model: r.name || r.code || 'N/A',
         warehouse: '', // API không có warehouse riêng cho từng risk
@@ -448,34 +447,34 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
   getDosStatus(type: string, dos: number): { label: string; color: string; bg: string } {
     switch (type) {
       case 'LOW_STOCK':
-        return { 
-          label: 'Sắp hết hàng', 
-          color: 'text-orange-700', 
-          bg: 'bg-orange-50 border-orange-200' 
+        return {
+          label: 'Sắp hết hàng',
+          color: 'text-orange-700',
+          bg: 'bg-orange-50 border-orange-200'
         };
       case 'OUT_OF_STOCK':
-        return { 
-          label: 'Hết hàng (Stockout)', 
-          color: 'text-red-700', 
-          bg: 'bg-red-50 border-red-200' 
+        return {
+          label: 'Hết hàng (Stockout)',
+          color: 'text-red-700',
+          bg: 'bg-red-50 border-red-200'
         };
       case 'OVERSTOCK':
-        return { 
-          label: 'Tồn cao', 
-          color: 'text-yellow-700', 
-          bg: 'bg-yellow-50 border-yellow-200' 
+        return {
+          label: 'Tồn cao',
+          color: 'text-yellow-700',
+          bg: 'bg-yellow-50 border-yellow-200'
         };
       case 'SLOW_MOVING':
-        return { 
-          label: 'Tồn lâu (>90n)', 
-          color: 'text-purple-700', 
-          bg: 'bg-purple-50 border-purple-200' 
+        return {
+          label: 'Tồn lâu (>90n)',
+          color: 'text-purple-700',
+          bg: 'bg-purple-50 border-purple-200'
         };
       default:
-        return { 
-          label: 'Bình thường', 
-          color: 'text-green-700', 
-          bg: 'bg-green-50 border-green-200' 
+        return {
+          label: 'Bình thường',
+          color: 'text-green-700',
+          bg: 'bg-green-50 border-green-200'
         };
     }
   }
@@ -533,7 +532,7 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     }
 
     const byStatus = todayOrders.byStatus || [];
-    
+
     // Map các trạng thái đơn hàng chi tiết từ Nhanh.vn
     // Dựa trên data từ API: status + statusName
     const statusMap: { [key: number]: { icon: string; color: string; bgColor: string } } = {
@@ -550,12 +549,12 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     this.ordersToday = byStatus
       .filter((s: any) => s.count > 0) // Chỉ hiển thị status có đơn
       .map((s: any) => {
-        const style = statusMap[s.status] || { 
-          icon: 'receipt_long', 
-          color: 'text-gray-600', 
-          bgColor: 'bg-gray-50' 
+        const style = statusMap[s.status] || {
+          icon: 'receipt_long',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-50'
         };
-        
+
         return {
           label: s.statusName || `Trạng thái ${s.status}`,
           value: s.count || 0,
@@ -617,9 +616,9 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
 
   getChannelColor(channelName: string): string {
     if (!channelName) return 'text-gray-600';
-    
+
     const name = channelName.toLowerCase();
-    
+
     if (name.includes('tiktok')) return 'text-pink-600';
     if (name.includes('shopee')) return 'text-orange-600';
     if (name.includes('lazada')) return 'text-blue-600';
@@ -627,15 +626,15 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     if (name.includes('sendo')) return 'text-red-600';
     if (name.includes('nhanh')) return 'text-purple-600';
     if (name.includes('admin')) return 'text-gray-600';
-    
+
     return 'text-gray-600';
   }
 
   getChannelBgColor(channelName: string): string {
     if (!channelName) return 'bg-gray-50 border-gray-200';
-    
+
     const name = channelName.toLowerCase();
-    
+
     if (name.includes('tiktok')) return 'bg-pink-50 border-pink-200';
     if (name.includes('shopee')) return 'bg-orange-50 border-orange-200';
     if (name.includes('lazada')) return 'bg-blue-50 border-blue-200';
@@ -643,7 +642,7 @@ export class OverviewDashboardComponent extends BaseClass implements OnInit {
     if (name.includes('sendo')) return 'bg-red-50 border-red-200';
     if (name.includes('nhanh')) return 'bg-purple-50 border-purple-200';
     if (name.includes('admin')) return 'bg-gray-50 border-gray-200';
-    
+
     return 'bg-gray-50 border-gray-200';
   }
 }
