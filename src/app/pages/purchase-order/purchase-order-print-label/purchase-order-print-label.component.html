@@ -133,6 +133,15 @@
         <div class="barcode-text">{{ label.batchCode }}</div>
       </div>
 
+      <div class="barcode-divider"></div>
+
+      <div class="barcode-item">
+        <div class="barcode-title">Shipment QR</div>
+        <qrcode [qrdata]="label.shipmentNo" [width]="84" [margin]="0" errorCorrectionLevel="M"
+          elementType="img" cssClass="qr-img"></qrcode>
+        <div class="barcode-text">{{ label.shipmentNo }}</div>
+      </div>
+
       <!-- <div class="qr-item">
         <div class="qr-title">QR Scan</div>
         <img [src]="getQrCodeUrl(label.batchCode)" alt="QR Code" class="qr-img">

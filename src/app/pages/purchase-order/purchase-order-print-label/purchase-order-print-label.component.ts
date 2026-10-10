@@ -67,19 +67,20 @@ export class PurchaseOrderPrintLabelComponent implements OnInit, OnDestroy {
     
     // Create one label per batch in the shipment
     batches.forEach((batch: any) => {
-      const model = poData.items?.find((item: any) => item.model?.id === batch.modelId || item.model?.code === batch.modelCode) || {};
+      const labelPoData = batch.poData ?? poData ?? {};
+      const model = labelPoData.items?.find((item: any) => item.model?.id === batch.modelId || item.model?.code === batch.modelCode) || {};
       
       this.labels.push({
-        poNo: poData.poNumber,
-        orderDate: this.formatDate(poData.orderDate),
-        deliveryDate: this.formatDate(poData.requestedDeliveryDate),
+        poNo: labelPoData.poNumber,
+        orderDate: this.formatDate(labelPoData.orderDate),
+        deliveryDate: this.formatDate(labelPoData.requestedDeliveryDate),
         product: model.modelName || model.model?.name || batch.product || '-',
         model: model.modelCode || model.model?.code || batch.modelCode || '-',
         color: model.color || 'White',
         hwVersion: batch.hardwareVersion || '-',
         fwVersion: batch.firmwareVersion || '-',
-        totalPoQty: totalPoQty,
-        factory: poData.supplier?.name || '-',
+        totalPoQty: batch.totalPoQty ?? totalPoQty ?? 0,
+        factory: labelPoData.supplier?.name || '-',
         destination: this.getShipmentNoteValue(shipment.note, 'Kho nhận') || shipment.receivingWarehouseName || 'Kho Việt Nam - Hà Nội',
         
         batchCode: batch.batchCode,

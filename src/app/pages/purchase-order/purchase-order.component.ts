@@ -384,6 +384,26 @@ export class PurchaseOrderComponent extends BaseClass {
     }
   }
 
+  getBatchProgressBarClass(batchStatus?: PurchaseOrderBatchStatus): string {
+    if (batchStatus === PurchaseOrderBatchStatus.CANCELLED) {
+      return 'bg-red-300';
+    }
+    return 'bg-green-500';
+  }
+
+  getBatchProgressWidth(batchStatus?: PurchaseOrderBatchStatus): string {
+    if (!batchStatus || batchStatus === PurchaseOrderBatchStatus.CANCELLED) {
+      return '0%';
+    }
+    const currentIndex = this.getBatchStepIndex(batchStatus);
+    if (currentIndex === -1) {
+      return '0%';
+    }
+    const totalSteps = this.batchSteps.length;
+    const percentage = (currentIndex / (totalSteps - 1)) * 100;
+    return `${percentage}%`;
+  }
+
   isBatchCancelled(status: PurchaseOrderBatchStatus): boolean {
     return status === PurchaseOrderBatchStatus.CANCELLED;
   }

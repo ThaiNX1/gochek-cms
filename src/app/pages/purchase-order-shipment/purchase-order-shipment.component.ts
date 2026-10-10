@@ -47,6 +47,17 @@ interface ShipmentBatchOption {
   status: PurchaseOrderBatchStatus;
 }
 
+interface ShipmentPurchaseOrderQuantity {
+  purchaseOrderId: string;
+  poNumber: string;
+  quantity: number;
+}
+
+interface ShipmentStatusOption {
+  value: PurchaseOrderShipmentStatus;
+  label: string;
+}
+
 @Component({
   selector: 'app-purchase-order-shipment',
   standalone: true,
@@ -70,6 +81,7 @@ interface ShipmentBatchOption {
 export class PurchaseOrderShipmentComponent extends BaseClass {
   @ViewChild('expandedRowTemplate') expandedRowTemplate!: TemplateRef<any>;
   @ViewChild('deleteNotification') deleteNotification!: TemplateRef<any>;
+  @ViewChild('statusUpdateNotification') statusUpdateNotification!: TemplateRef<any>;
   @ViewChild('createDrawerContent') createDrawerContent!: TemplateRef<any>;
 
   override PermissionEnum = PermissionEnum;
@@ -82,7 +94,7 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
   batchOptions: ShipmentBatchOption[] = [];
   filteredBatchOptions: ShipmentBatchOption[] = [];
   batchSearchControl = new FormControl<string | ShipmentBatchOption>('');
-  shipmentStatusList = [
+  readonly shipmentStatusList: ShipmentStatusOption[] = [
     { value: PurchaseOrderShipmentStatus.PLANNED, label: 'Đã lên kế hoạch' },
     { value: PurchaseOrderShipmentStatus.READY_TO_SHIP, label: 'Sẵn sàng xuất' },
     { value: PurchaseOrderShipmentStatus.SHIPPED, label: 'Đã xuất' },
@@ -90,22 +102,32 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
     { value: PurchaseOrderShipmentStatus.DELIVERED, label: 'Đã nhận hàng' },
     { value: PurchaseOrderShipmentStatus.CANCELLED, label: 'Đã hủy' },
   ];
+  readonly shipmentStatusOrder: PurchaseOrderShipmentStatus[] = [
+    PurchaseOrderShipmentStatus.PLANNED,
+    PurchaseOrderShipmentStatus.READY_TO_SHIP,
+    PurchaseOrderShipmentStatus.SHIPPED,
+    PurchaseOrderShipmentStatus.IN_TRANSIT,
+    PurchaseOrderShipmentStatus.DELIVERED,
+  ];
+  availableShipmentStatuses: ShipmentStatusOption[] = [];
+  shipmentStatusControl = new FormControl<PurchaseOrderShipmentStatus | null>(null, [Validators.required]);
+  isUpdatingShipmentStatus = false;
 
   constructor(private dialog: MatDialog) {
     super();
     this.columns = [
       { name: 'STT', field: 'index', className: 'text-center min-w-[50px] max-w-[50px]', type: TableColumnType.NUMBER },
-      { name: 'Mã giao hàng', field: 'shipmentCode', className: 'min-w-[150px] max-w-[150px]' },
-      { name: 'Mã PO', field: 'poNumber', className: 'min-w-[160px] max-w-[160px]' },
-      { name: 'Nhà cung cấp', field: 'supplierName', className: 'min-w-[180px] max-w-[180px]' },
+      { name: 'Mã giao hàng', field: 'shipmentCode', className: 'min-w-[200px] max-w-[200px]' },
+      // { name: 'Mã PO', field: 'poNumber', className: 'min-w-[160px] max-w-[160px]' },
+      // { name: 'Nhà cung cấp', field: 'supplierName', className: 'min-w-[180px] max-w-[180px]' },
       { name: 'Kho nhận', field: 'warehouseName', className: 'min-w-[150px] max-w-[150px]' },
-      { name: 'Số lượng', field: 'quantity', className: 'text-center min-w-[100px] max-w-[100px]', type: TableColumnType.NUMBER },
+      { name: 'Số lượng', field: 'quantity', className: 'min-w-[240px] max-w-[240px]', templateCode: 'quantityColumnTemplate' },
       { name: 'Ngày giao dự kiến', field: 'expectedShipDate', className: 'min-w-[150px] max-w-[150px]', type: TableColumnType.DATE },
+      { name: 'Trạng thái', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
       { name: 'Ngày nhận dự kiến', field: 'expectedArrivalDate', className: 'min-w-[150px] max-w-[150px]', type: TableColumnType.DATE },
       { name: 'Mã vận đơn', field: 'trackingNumber', className: 'min-w-[150px] max-w-[150px]' },
-      { name: 'Trạng thái', field: 'statusName', className: 'min-w-[150px] max-w-[150px]', templateCode: 'statusColumnTemplate' },
       { name: 'Ngày tạo', field: 'createdAt', className: 'min-w-[150px] max-w-[150px]', type: TableColumnType.DATE },
-      { name: 'Hành động', field: 'action', className: 'min-w-[150px] max-w-[150px]', templateCode: 'actionColumnTemplate' },
+      { name: 'Hành động', field: 'action', className: 'min-w-[210px] max-w-[210px]', templateCode: 'actionColumnTemplate', stickyEnd: true },
     ];
   }
   
@@ -285,6 +307,7 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
         poNumber: 'N/A', // Backend không expose purchaseOrder relation
         supplierName: 'N/A', // Backend không expose purchaseOrder relation
         warehouseName: item.warehouse?.name ?? '',
+        purchaseOrderQuantities: this.getPurchaseOrderQuantities(item.shipmentBatches),
         statusName: this.getStatusLabel(item.status),
       });
       return acc;
@@ -301,6 +324,38 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
   getStatusLabel(status: string): string {
     const found = this.shipmentStatusList.find(s => s.value === status);
     return found?.label ?? status;
+  }
+
+  getShipmentStatusClass(status: PurchaseOrderShipmentStatus): string {
+    switch (status) {
+      case PurchaseOrderShipmentStatus.PLANNED:       return 'bg-gray-100 text-gray-700';
+      case PurchaseOrderShipmentStatus.READY_TO_SHIP: return 'bg-cyan-100 text-cyan-800';
+      case PurchaseOrderShipmentStatus.SHIPPED:       return 'bg-indigo-100 text-indigo-800';
+      case PurchaseOrderShipmentStatus.IN_TRANSIT:    return 'bg-blue-100 text-blue-800';
+      case PurchaseOrderShipmentStatus.DELIVERED:     return 'bg-green-100 text-green-800';
+      case PurchaseOrderShipmentStatus.CANCELLED:     return 'bg-red-100 text-red-800';
+      default:                                        return 'bg-gray-100 text-gray-700';
+    }
+  }
+
+  canEditShipment(item: any): boolean {
+    return item?.status === PurchaseOrderShipmentStatus.PLANNED;
+  }
+
+  getNextShipmentStatuses(status: PurchaseOrderShipmentStatus): ShipmentStatusOption[] {
+    const currentIndex = this.shipmentStatusOrder.indexOf(status);
+    if (currentIndex < 0 || status === PurchaseOrderShipmentStatus.DELIVERED || status === PurchaseOrderShipmentStatus.CANCELLED) {
+      return [];
+    }
+
+    const nextStatuses = this.shipmentStatusList.filter(option => {
+      const targetIndex = this.shipmentStatusOrder.indexOf(option.value);
+      return targetIndex > currentIndex;
+    });
+    const cancelledStatus = this.shipmentStatusList.find(
+      option => option.value === PurchaseOrderShipmentStatus.CANCELLED
+    );
+    return cancelledStatus ? [...nextStatuses, cancelledStatus] : nextStatuses;
   }
 
   getBatchStatusLabel(status: string | undefined): string {
@@ -329,6 +384,29 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
       case PurchaseOrderBatchStatus.CANCELLED:           return 'bg-red-100 text-red-700';
       default: return 'bg-gray-100 text-gray-600';
     }
+  }
+
+  private getPurchaseOrderQuantities(shipmentBatches: any[] = []): ShipmentPurchaseOrderQuantity[] {
+    const quantityByPurchaseOrder = new Map<string, ShipmentPurchaseOrderQuantity>();
+
+    for (const shipmentBatch of shipmentBatches ?? []) {
+      const purchaseOrder = shipmentBatch.purchaseOrder ?? shipmentBatch.batch?.purchaseOrder;
+      const purchaseOrderId = purchaseOrder?.id ?? shipmentBatch.purchaseOrderId ?? 'N/A';
+      const current = quantityByPurchaseOrder.get(purchaseOrderId);
+
+      if (current) {
+        current.quantity += Number(shipmentBatch.quantity ?? 0);
+        continue;
+      }
+
+      quantityByPurchaseOrder.set(purchaseOrderId, {
+        purchaseOrderId,
+        poNumber: purchaseOrder?.poNumber ?? 'N/A',
+        quantity: Number(shipmentBatch.quantity ?? 0),
+      });
+    }
+
+    return Array.from(quantityByPurchaseOrder.values());
   }
 
   groupBatchesByPO(shipmentBatches: any[]): { poNumber: string; batches: any[] }[] {
@@ -381,6 +459,10 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
   }
 
   async onEdit(item: any): Promise<void> {
+    if (!this.canEditShipment(item)) {
+      this.commonService.openSnackBarError('Chỉ có thể chỉnh sửa đơn giao hàng ở trạng thái Đã lên kế hoạch');
+      return;
+    }
     this.isEditMode = true;
     this.selectedShipment = item;
     this.createForm.get('shipmentCode')?.disable({ emitEvent: false });
@@ -430,6 +512,10 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
   }
 
   async onSave() {
+    if (this.isEditMode && !this.canEditShipment(this.selectedShipment)) {
+      this.commonService.openSnackBarError('Chỉ có thể chỉnh sửa đơn giao hàng ở trạng thái Đã lên kế hoạch');
+      return;
+    }
     this.createForm.markAllAsTouched();
     if (this.createForm.invalid) {
       this.commonService.openSnackBarError('Vui lòng nhập đầy đủ thông tin');
@@ -510,12 +596,92 @@ export class PurchaseOrderShipmentComponent extends BaseClass {
     });
   }
 
-  async onUpdateStatus(item: any, status: string) {
+  printLabel(item: any): void {
+    const shipmentBatches = item?.shipmentBatches ?? [];
+    if (!shipmentBatches.length) {
+      this.commonService.openSnackBarError('Không có dữ liệu lô hàng để in nhãn');
+      return;
+    }
+
+    const batches = shipmentBatches.map((shipmentBatch: any) => {
+      const batch = shipmentBatch.batch ?? {};
+      const purchaseOrder = shipmentBatch.purchaseOrder ?? {};
+
+      return {
+        ...batch,
+        product: batch.item?.modelName || batch.item?.modelCode || '-',
+        modelCode: batch.item?.modelCode || '-',
+        poData: purchaseOrder,
+        totalPoQty: (purchaseOrder.items ?? []).reduce(
+          (sum: number, purchaseOrderItem: any) => sum + Number(purchaseOrderItem.quantity || 0),
+          0
+        ),
+      };
+    });
+
+    const printData = {
+      shipment: {
+        ...item,
+        receivingWarehouseName: item.warehouse?.name ?? item.warehouseName ?? '',
+      },
+      batches,
+    };
+    const printId = `print_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    localStorage.setItem(printId, JSON.stringify(printData));
+
+    const url = this.injector.get(Router).serializeUrl(
+      this.injector.get(Router).createUrlTree(['/print-label'], {
+        queryParams: { session: printId },
+      })
+    );
+    window.open(url, '_blank');
+  }
+
+  onOpenUpdateStatus(item: any): void {
+    this.availableShipmentStatuses = this.getNextShipmentStatuses(item.status);
+    if (!this.availableShipmentStatuses.length) {
+      this.commonService.openSnackBarError('Đơn giao hàng không còn trạng thái tiếp theo');
+      return;
+    }
+
+    this.selectedShipment = item;
+    this.shipmentStatusControl.setValue(this.availableShipmentStatuses[0].value);
+    const dialogRef = this.injector.get(MatDialog).open(DialogNotificationComponent, {
+      disableClose: true,
+      data: {
+        title: 'Chuyển trạng thái đơn giao hàng',
+        confirmText: 'Xác nhận',
+        cancelText: 'Hủy',
+        width: '480px',
+      },
+    });
+    dialogRef.componentInstance.content = this.statusUpdateNotification;
+    dialogRef.afterClosed().subscribe(async result => {
+      const status = this.shipmentStatusControl.value;
+      if (result && status) {
+        await this.onUpdateStatus(item, status);
+      }
+      this.shipmentStatusControl.reset();
+      this.availableShipmentStatuses = [];
+    });
+  }
+
+  async onUpdateStatus(item: any, status: PurchaseOrderShipmentStatus): Promise<void> {
+    const isAllowed = this.getNextShipmentStatuses(item.status).some(option => option.value === status);
+    if (!isAllowed || this.isUpdatingShipmentStatus) {
+      if (!isAllowed) {
+        this.commonService.openSnackBarError('Không thể chuyển lùi hoặc giữ nguyên trạng thái đơn giao hàng');
+      }
+      return;
+    }
+
+    this.isUpdatingShipmentStatus = true;
     const response = await this.injector.get(ApiService).executeMutation(
       UPDATE_PURCHASE_ORDER_SHIPMENT_STATUS,
       { id: item.id, status }
     );
-    if (response) {
+    this.isUpdatingShipmentStatus = false;
+    if (response?.updatePurchaseOrderShipmentStatus) {
       this.commonService.openSnackBar('Cập nhật trạng thái thành công');
       await this.onGetData(this.pagination.page + 1);
     } else {

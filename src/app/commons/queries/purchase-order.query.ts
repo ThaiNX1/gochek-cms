@@ -72,6 +72,15 @@ export const GET_PURCHASE_ORDER_SHIPMENTS = gql`
           purchaseOrder {
             id
             poNumber
+            orderDate
+            requestedDeliveryDate
+            supplier {
+              id
+              name
+            }
+            items {
+              quantity
+            }
           }
           batch {
             id
@@ -79,6 +88,9 @@ export const GET_PURCHASE_ORDER_SHIPMENTS = gql`
             orderedQuantity
             generatedQuantity
             status
+            plannedProductionDate
+            hardwareVersion
+            firmwareVersion
             itemId
             item {
               id

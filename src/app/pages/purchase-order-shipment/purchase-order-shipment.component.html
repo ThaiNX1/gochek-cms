@@ -209,27 +209,41 @@
   </div>
 </ng-template>
 
+<!-- Quantity grouped by purchase order -->
+<ng-template myTemplate tempCode="quantityColumnTemplate" let-item="item">
+  <div class="flex w-full flex-col items-start gap-1 px-3 py-2 text-left">
+    @for (purchaseOrder of item.purchaseOrderQuantities; track purchaseOrder.purchaseOrderId; let index = $index) {
+      <div class="w-full truncate text-sm text-gray-700"
+        [title]="purchaseOrder.poNumber + ' (' + purchaseOrder.quantity + ')'">
+        <span class="text-gray-500">{{ index + 1 }}.&nbsp;</span>
+        <span>{{ purchaseOrder.poNumber }} (</span><strong class="font-bold text-primary">{{ purchaseOrder.quantity | number }}</strong><span>)</span>
+      </div>
+    } @empty {
+      <span class="text-center text-gray-500">{{ item.quantity ?? 0 | number }}</span>
+    }
+  </div>
+</ng-template>
+
 <!-- Status badge template -->
 <ng-template myTemplate tempCode="statusColumnTemplate" let-item="item">
   <div class="flex items-center justify-center px-4">
-    @if(item.status === 'PENDING') {
-      <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium whitespace-nowrap">Chờ giao</span>
-    } @else if(item.status === 'IN_TRANSIT') {
-      <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium whitespace-nowrap">Đang giao</span>
-    } @else if(item.status === 'DELIVERED') {
-      <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">Đã giao</span>
-    } @else if(item.status === 'CANCELLED') {
-      <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium whitespace-nowrap">Đã hủy</span>
-    } @else {
-      <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium whitespace-nowrap">{{ item.statusName }}</span>
-    }
+    <span class="px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
+      [ngClass]="getShipmentStatusClass(item.status)">
+      {{ item.statusName }}
+    </span>
   </div>
 </ng-template>
 
 <!-- Action buttons template -->
 <ng-template myTemplate tempCode="actionColumnTemplate" let-item="item">
   <div *permission="[PermissionEnum.PURCHASE_ORDERS_MANAGE]" class="flex items-center justify-start px-4 gap-3">
-    <button class="flex items-center justify-center border-none bg-transparent" title="Chỉnh sửa"
+    <button class="flex items-center justify-center border-none bg-transparent" title="In label"
+      (click)="printLabel(item); $event.stopPropagation()">
+      <mat-icon class="text-blue-500">print</mat-icon>
+    </button>
+    <button class="flex items-center justify-center border-none bg-transparent disabled:cursor-not-allowed disabled:opacity-40"
+      [disabled]="!canEditShipment(item)"
+      [title]="canEditShipment(item) ? 'Chỉnh sửa' : 'Chỉ được chỉnh sửa khi đơn đang ở trạng thái Đã lên kế hoạch'"
       (click)="onEdit(item); $event.stopPropagation()">
       <mat-icon class="text-gray-500">drive_file_rename_outline</mat-icon>
     </button>
@@ -237,6 +251,12 @@
       (click)="onDelete(item); $event.stopPropagation()">
       <mat-icon class="text-red-500">delete</mat-icon>
     </button>
+    @if(getNextShipmentStatuses(item.status).length) {
+      <button class="flex items-center justify-center border-none bg-transparent" title="Chuyển trạng thái"
+        (click)="onOpenUpdateStatus(item); $event.stopPropagation()">
+        <mat-icon class="text-orange-500">published_with_changes</mat-icon>
+      </button>
+    }
     @if(item.status === 'IN_TRANSIT') {
       <button class="flex items-center justify-center border-none bg-transparent" title="Nhận hàng"
         (click)="onReceiveShipment(item); $event.stopPropagation()">
@@ -309,4 +329,26 @@
 <!-- Delete confirmation -->
 <ng-template #deleteNotification>
   <p>Bạn có chắc muốn xóa đơn giao hàng <strong>{{selectedShipment?.shipmentCode}}</strong>?</p>
+</ng-template>
+
+<!-- Status update confirmation -->
+<ng-template #statusUpdateNotification>
+  <div class="flex flex-col gap-4">
+    <p class="text-gray-700">
+      Đơn giao hàng: <strong>{{ selectedShipment?.shipmentCode }}</strong>
+    </p>
+    <div class="flex flex-col gap-1">
+      <label class="require">Trạng thái mới:</label>
+      <mat-form-field appearance="outline" floatLabel="auto" class="w-full">
+        <mat-select [formControl]="shipmentStatusControl" placeholder="Chọn trạng thái">
+          @for(status of availableShipmentStatuses; track status.value) {
+            <mat-option [value]="status.value">{{ status.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <p class="text-xs text-gray-500">
+      Chỉ có thể chuyển sang trạng thái phía sau trong quy trình; không thể chuyển ngược lại.
+    </p>
+  </div>
 </ng-template>

@@ -58,6 +58,22 @@ export type AssignCustomerInput = {
   userId: Scalars['String']['input'];
 };
 
+export type AssignPartnerTrackingNumberInput = {
+  note?: InputMaybe<Scalars['String']['input']>;
+  orderNumber?: InputMaybe<Scalars['String']['input']>;
+  partnerCredentialId?: InputMaybe<Scalars['ID']['input']>;
+  partnerKey: PartnerKey;
+  serialNumbers: Array<Scalars['String']['input']>;
+  trackingNumber: Scalars['String']['input'];
+};
+
+export type AssignTrackingNumberResult = {
+  assignedCount: Scalars['Int']['output'];
+  assignedSerials: Array<Scalars['String']['output']>;
+  notFoundSerials: Array<Scalars['String']['output']>;
+  shippingOrder: ShippingOrder;
+};
+
 export type BatchLabelItem = {
   activeCode: Scalars['String']['output'];
   qrData: Scalars['String']['output'];
@@ -983,6 +999,7 @@ export type Mutation = {
   approvePurchaseOrder: PurchaseOrder;
   assignComponent: DeviceComponent;
   assignCustomer: Customer;
+  assignPartnerTrackingNumber: AssignTrackingNumberResult;
   assignPermissionRole: Permission;
   assignUserRole: User;
   cancelPurchaseOrder: PurchaseOrder;
@@ -1040,6 +1057,7 @@ export type Mutation = {
   printViettelPostOrder: ShippingOrder;
   receiveBatch: Array<PurchaseOrderBatch>;
   receivePurchaseOrderShipment: PurchaseOrderShipment;
+  receivePurchaseOrderShipmentBatches: PurchaseOrderShipmentReceivingResponse;
   refreshToken: RefreshTokenResponse;
   refreshViettelPostToken: PartnerCredential;
   rejectPurchaseOrder: PurchaseOrder;
@@ -1130,6 +1148,11 @@ export type MutationAssignComponentArgs = {
 
 export type MutationAssignCustomerArgs = {
   input: AssignCustomerInput;
+};
+
+
+export type MutationAssignPartnerTrackingNumberArgs = {
+  input: AssignPartnerTrackingNumberInput;
 };
 
 
@@ -1411,6 +1434,11 @@ export type MutationReceiveBatchArgs = {
 
 export type MutationReceivePurchaseOrderShipmentArgs = {
   input: ReceivePurchaseOrderShipmentInput;
+};
+
+
+export type MutationReceivePurchaseOrderShipmentBatchesArgs = {
+  input: ReceivePurchaseOrderShipmentBatchesInput;
 };
 
 
@@ -2241,7 +2269,7 @@ export type PurchaseOrder = {
   serialGenerationHistories?: Maybe<Array<GenerateHistory>>;
   shipments?: Maybe<Array<PurchaseOrderShipment>>;
   status: PurchaseOrderStatus;
-  supplier: Supplier;
+  supplier?: Maybe<Supplier>;
   supplierId: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   updatedById?: Maybe<Scalars['String']['output']>;
@@ -2264,6 +2292,7 @@ export type PurchaseOrderBatch = {
   plannedProductionDate?: Maybe<Scalars['String']['output']>;
   purchaseOrder?: Maybe<PurchaseOrder>;
   purchaseOrderId: Scalars['String']['output'];
+  receivedQuantity?: Maybe<Scalars['Float']['output']>;
   serialGenerationHistories?: Maybe<Array<GenerateHistory>>;
   serialPrefix?: Maybe<Scalars['String']['output']>;
   shipmentBatches?: Maybe<Array<PurchaseOrderShipmentBatch>>;
@@ -2370,6 +2399,69 @@ export type PurchaseOrderShipmentBatchInput = {
   quantity: Scalars['Int']['input'];
 };
 
+export type PurchaseOrderShipmentReceiptHistory = {
+  accuracyMeters?: Maybe<Scalars['Float']['output']>;
+  id: Scalars['ID']['output'];
+  latitude?: Maybe<Scalars['Float']['output']>;
+  locationCapturedAt?: Maybe<Scalars['Float']['output']>;
+  locationIsMocked?: Maybe<Scalars['Boolean']['output']>;
+  longitude?: Maybe<Scalars['Float']['output']>;
+  note?: Maybe<Scalars['String']['output']>;
+  performedById?: Maybe<Scalars['String']['output']>;
+  quantity: Scalars['Int']['output'];
+  receivedAt: Scalars['Float']['output'];
+  warehouseId?: Maybe<Scalars['ID']['output']>;
+};
+
+export type PurchaseOrderShipmentReceivingBatch = {
+  allocatedQuantity: Scalars['Int']['output'];
+  availableSerialQuantity: Scalars['Int']['output'];
+  batchCode: Scalars['String']['output'];
+  batchId: Scalars['ID']['output'];
+  batchStatus: PurchaseOrderBatchStatus;
+  generatedQuantity: Scalars['Int']['output'];
+  purchaseOrder: PurchaseOrderShipmentReceivingPurchaseOrder;
+  receiptHistory: Array<PurchaseOrderShipmentReceiptHistory>;
+  receivedQuantity: Scalars['Int']['output'];
+  receivingStatus: PurchaseOrderShipmentReceivingStatus;
+  remainingQuantity: Scalars['Int']['output'];
+  shipmentBatchId: Scalars['ID']['output'];
+};
+
+export type PurchaseOrderShipmentReceivingLocationInput = {
+  accuracyMeters?: InputMaybe<Scalars['Float']['input']>;
+  capturedAt: Scalars['Float']['input'];
+  isMocked?: InputMaybe<Scalars['Boolean']['input']>;
+  latitude: Scalars['Float']['input'];
+  longitude: Scalars['Float']['input'];
+};
+
+export type PurchaseOrderShipmentReceivingPurchaseOrder = {
+  id: Scalars['ID']['output'];
+  poNumber: Scalars['String']['output'];
+  supplierName?: Maybe<Scalars['String']['output']>;
+};
+
+export type PurchaseOrderShipmentReceivingResponse = {
+  allocatedQuantity: Scalars['Int']['output'];
+  batches: Array<PurchaseOrderShipmentReceivingBatch>;
+  receivedQuantity: Scalars['Int']['output'];
+  receivingStatus: PurchaseOrderShipmentReceivingStatus;
+  remainingQuantity: Scalars['Int']['output'];
+  shipmentCode: Scalars['String']['output'];
+  shipmentId: Scalars['ID']['output'];
+  shipmentStatus: PurchaseOrderShipmentStatus;
+  trackingNumber?: Maybe<Scalars['String']['output']>;
+  warehouseId?: Maybe<Scalars['ID']['output']>;
+};
+
+export enum PurchaseOrderShipmentReceivingStatus {
+  FULLY_RECEIVED = 'FULLY_RECEIVED',
+  NOT_RECEIVED = 'NOT_RECEIVED',
+  OVER_RECEIVED = 'OVER_RECEIVED',
+  PARTIALLY_RECEIVED = 'PARTIALLY_RECEIVED'
+}
+
 export type PurchaseOrderShipmentSearchInput = {
   createdAtFrom?: InputMaybe<Scalars['String']['input']>;
   createdAtTo?: InputMaybe<Scalars['String']['input']>;
@@ -2470,6 +2562,7 @@ export type Query = {
   roleHierarchy: Array<BusinessRole>;
   searchNhanhPurchaseDocuments: NhanhPurchaseDocumentSearchResponse;
   searchPOByCode: PurchaseOrder;
+  shipmentReceivingByCode: PurchaseOrderShipmentReceivingResponse;
   shippingOrder: ShippingOrder;
   shippingOrders: PaginatedShippingOrderResponse;
   stockBatch: StockBatchResponse;
@@ -2775,6 +2868,11 @@ export type QuerySearchPOByCodeArgs = {
 };
 
 
+export type QueryShipmentReceivingByCodeArgs = {
+  shipmentCode: Scalars['String']['input'];
+};
+
+
 export type QueryShippingOrderArgs = {
   id: Scalars['String']['input'];
 };
@@ -2893,6 +2991,20 @@ export type QueryWebsiteBannersArgs = {
 export type ReceiveBatchInput = {
   batches: Array<BatchReceiveItem>;
   note?: InputMaybe<Scalars['String']['input']>;
+  warehouseId: Scalars['ID']['input'];
+};
+
+export type ReceivePurchaseOrderShipmentBatchItemInput = {
+  actualQuantity: Scalars['Int']['input'];
+  shipmentBatchId: Scalars['ID']['input'];
+};
+
+export type ReceivePurchaseOrderShipmentBatchesInput = {
+  confirmOverAllocation?: InputMaybe<Scalars['Boolean']['input']>;
+  items: Array<ReceivePurchaseOrderShipmentBatchItemInput>;
+  location: PurchaseOrderShipmentReceivingLocationInput;
+  note?: InputMaybe<Scalars['String']['input']>;
+  shipmentId: Scalars['ID']['input'];
   warehouseId: Scalars['ID']['input'];
 };
 
@@ -3045,6 +3157,7 @@ export type ShippingOrder = {
   id: Scalars['ID']['output'];
   lastError?: Maybe<Scalars['String']['output']>;
   orderNumber?: Maybe<Scalars['String']['output']>;
+  partnerCredentialId?: Maybe<Scalars['String']['output']>;
   partnerKey: PartnerKey;
   partnerStatusCode?: Maybe<Scalars['String']['output']>;
   printUrl?: Maybe<Scalars['String']['output']>;
@@ -3127,9 +3240,18 @@ export type StockHistory = {
   fromWarehouse?: Maybe<Warehouse>;
   fromWarehouseId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  latitude?: Maybe<Scalars['Float']['output']>;
+  locationAccuracyMeters?: Maybe<Scalars['Float']['output']>;
+  locationCapturedAt?: Maybe<Scalars['Float']['output']>;
+  locationIsMocked?: Maybe<Scalars['Boolean']['output']>;
+  longitude?: Maybe<Scalars['Float']['output']>;
   metadata?: Maybe<Scalars['JSON']['output']>;
   note?: Maybe<Scalars['String']['output']>;
+  organizationId?: Maybe<Scalars['String']['output']>;
   performedById?: Maybe<Scalars['String']['output']>;
+  purchaseOrderBatchId?: Maybe<Scalars['String']['output']>;
+  purchaseOrderId?: Maybe<Scalars['String']['output']>;
+  purchaseOrderShipmentId?: Maybe<Scalars['String']['output']>;
   quantity: Scalars['Float']['output'];
   serialNumber?: Maybe<Scalars['String']['output']>;
   shippingStatus?: Maybe<ShippingStatusEnum>;
